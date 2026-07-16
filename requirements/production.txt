@@ -1,0 +1,4 @@
+-r base.txt
+
+# WSGI server (CLAUDE.md ch.3 — Gunicorn behind Nginx)
+gunicorn==23.0.0

@@ -1,0 +1,72 @@
+/* Minimal modern reset (CLAUDE.md ch.7 "base/reset.css"). */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    background: var(--color-white);
+    color: var(--color-text-primary);
+    min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd {
+    margin: 0;
+}
+
+ul, ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+img, picture, svg {
+    display: block;
+    max-width: 100%;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button, input, select, textarea {
+    font: inherit;
+    color: inherit;
+}
+
+button {
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/*
+ * Guards every `[hidden]` toggle (dropdowns, row menus, bulk bars,
+ * search panels — anything JS shows by removing the attribute) against
+ * being un-hidden by an unrelated component rule that sets `display`
+ * unconditionally on the same class. Author CSS beats the UA stylesheet's
+ * own `[hidden] { display: none }`, so without this a rule as ordinary as
+ * `.cms-bulk-bar { display: flex; }` silently defeats `hidden`.
+ */
+[hidden] {
+    display: none !important;
+}

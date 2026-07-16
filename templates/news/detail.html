@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% load static az_dates %}
+
+{% block title %}{{ article.meta_title|default:article.title }} — {{ site_settings.site_name }}{% endblock %}
+{% block meta_description %}{{ article.meta_description|default:article.short_description }}{% endblock %}
+{% block robots %}{% if article.robots_index %}index{% else %}noindex{% endif %}, {% if article.robots_follow %}follow{% else %}nofollow{% endif %}{% endblock %}
+{% block canonical_url %}{{ article.canonical_url|default:request.build_absolute_uri }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ article.og_title|default:article.title }}{% endblock %}
+{% block og_description %}{{ article.og_description|default:article.short_description }}{% endblock %}
+{% block og_image %}
+    {% if article.og_image %}
+        <meta property="og:image" content="{{ article.og_image.file.url }}">
+    {% elif article.featured_image %}
+        <meta property="og:image" content="{{ article.featured_image.file.url }}">
+    {% endif %}
+{% endblock %}
+{% block extra_meta %}
+    {% if article.meta_keywords %}<meta name="keywords" content="{{ article.meta_keywords }}">{% endif %}
+{% endblock %}
+
+{% block structured_data %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    "headline": "{{ article.title|escapejs }}",
+    "description": "{{ article.short_description|escapejs }}",
+    {% if article.featured_image %}"image": ["{{ request.scheme }}://{{ request.get_host }}{{ article.featured_image.file.url }}"],{% endif %}
+    "datePublished": "{{ article.published_at|date:'c' }}",
+    "dateModified": "{{ article.updated_at|date:'c' }}",
+    "author": {
+        "@type": "Person",
+        "name": "{{ article.author.get_full_name|default:article.author.username|escapejs }}"
+    },
+    "publisher": {
+        "@type": "Organization",
+        "name": "{{ site_settings.site_name|default:'XəbərPortal'|escapejs }}"{% if site_settings.logo %},
+        "logo": {
+            "@type": "ImageObject",
+            "url": "{{ request.scheme }}://{{ request.get_host }}{{ site_settings.logo.file.url }}"
+        }{% endif %}
+    },
+    "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "{{ request.build_absolute_uri }}"
+    }
+}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/pages/article.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/rich-text.css' %}">
+{% endblock %}
+
+{% block content %}
+{% include "components/breadcrumbs.html" with items=article.breadcrumb_items %}
+
+{% if article.status != 'published' %}
+    <div class="container">
+        <div class="alert alert--warning">
+            <i class="bi bi-eye" aria-hidden="true"></i>
+            Önizləmə — bu material hələ dərc olunmayıb ({{ article.get_status_display }}). Yalnız CMS istifadəçilərinə görünür.
+        </div>
+    </div>
+{% endif %}
+
+<article class="container article">
+    <header class="article__header">
+        <a href="{{ article.category.get_absolute_url }}" class="type-caption">{{ article.category.name }}</a>
+        <h1 class="article__title">{{ article.title }}</h1>
+        <div class="article__byline">
+            <span class="article__author-avatar" aria-hidden="true"></span>
+            <div>
+                <div class="article__author-name">{{ article.author.get_full_name|default:article.author.username }}</div>
+                <div class="article__date">
+                    {{ article.published_at|date:"d.m.Y" }} · {{ article.published_at|az_timesince }} · {{ article.reading_time_minutes }} dəq oxuma
+                    · <i class="bi bi-eye" aria-hidden="true"></i> {{ article.view_count }} baxış
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="article__layout">
+        <div class="article__share">
+            <a class="article__share-btn" title="Facebook-da paylaş" href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri|urlencode }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-facebook" aria-hidden="true"></i></a>
+            <a class="article__share-btn" title="X-də (Twitter) paylaş" href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri|urlencode }}&text={{ article.title|urlencode }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-twitter-x" aria-hidden="true"></i></a>
+            <a class="article__share-btn" title="Telegram-da paylaş" href="https://t.me/share/url?url={{ request.build_absolute_uri|urlencode }}&text={{ article.title|urlencode }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-telegram" aria-hidden="true"></i></a>
+            <a class="article__share-btn" title="WhatsApp-da paylaş" href="https://wa.me/?text={{ article.title|urlencode }}%20{{ request.build_absolute_uri|urlencode }}" target="_blank" rel="noopener noreferrer"><i class="bi bi-whatsapp" aria-hidden="true"></i></a>
+            <button type="button" class="article__share-btn" data-action="print" title="Çap et"><i class="bi bi-printer" aria-hidden="true"></i></button>
+        </div>
+
+        <div class="article__body">
+            {% if article.featured_image %}
+                <img src="{{ article.featured_image.file.url }}" alt="{{ article.featured_image.alt_text|default:article.title }}" class="article__image">
+            {% endif %}
+
+            <div class="type-body-lg article__content rich-text-content">
+                {{ article.content|safe }}
+            </div>
+
+            {% if article.tags.all %}
+            <div class="article__tags">
+                {% for tag in article.tags.all %}
+                    <a href="{{ tag.get_absolute_url }}" class="badge badge--tag">#{{ tag.name }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if related_articles %}
+    <section class="article__related">
+        <h2 class="article__related-title">Oxşar xəbərlər</h2>
+        <div class="grid">
+            {% for related in related_articles %}
+                <div class="col-span-3">
+                    {% include "components/news_card.html" with article=related layout="compact" %}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</article>
+{% endblock %}
+
+{% block extra_js %}
+    <script defer src="{% static 'js/pages/article.js' %}"></script>
+{% endblock %}

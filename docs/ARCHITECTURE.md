@@ -1,0 +1,2074 @@
+# Architecture Decisions — Phase 1 (Project Scaffolding)
+
+This file records decisions made while building the project skeleton that
+aren't obvious from reading the code alone, so future work doesn't
+re-litigate them (CLAUDE.md ch.15 "Documentation").
+
+## App layout
+
+All 13 applications required by CLAUDE.md ch.4 exist under `apps/` and are
+registered in `INSTALLED_APPS`. Apps without a Phase-1 feature
+(`advertisements`, `pages`, `cms`, `logs`, `users`) are valid, empty Django
+apps — no models yet, not placeholder code. They gain models when the
+phase that implements their feature starts.
+
+Each app's `AppConfig.name` is `apps.<name>` (since apps live under the
+`apps` package) but `AppConfig.label` is kept as the short name (e.g.
+`news`, not `apps_news`) so migrations, the admin, and `related_name`
+lookups read the same as if the apps lived at the project root.
+
+## `News.category` — no separate `subcategory` field
+
+`Category` is a two-level self-referential tree (`parent`/`children`).
+`News.category` is a single FK that may point at a top-level category or
+a subcategory. When it points at a subcategory, `category.parent` *is*
+the top-level category for breadcrumbs — there is no second FK, because
+that would store the same fact twice (CLAUDE.md ch.10 "Avoid storing
+derived information whenever possible").
+
+## `MediaFile` has no `uploaded_by` field
+
+`BaseModel.created_by` already means "who created this record." For
+`MediaFile` that is identical in meaning to "uploaded by" — a separate
+field would duplicate the same fact (CLAUDE.md ch.10 "Avoid duplicated
+fields"). `News.author`, by contrast, stays a distinct field from
+`created_by`: an editor can enter an article on behalf of a journalist,
+so "who wrote it" and "who created the DB record" are allowed to differ.
+
+## Azerbaijani slugs — `apps.core.utils.az_slugify`
+
+Django's `slugify(allow_unicode=False)` silently **drops** any character
+it can't decompose to ASCII. Azerbaijani has seven Latin letters with no
+ASCII decomposition (`ə ğ ı İ ö ü ş ç`), so the stock function would
+mangle nearly every title on a site that is Azerbaijani-only (CLAUDE.md
+ch.3 "Language", ch.14 "Slug Rules"). `apps/core/utils.py` transliterates
+those letters first (`ə→e, ğ→g, ı/İ→i, ö→o, ü→u, ş→s, ç→c`) before
+calling Django's slugify. `İ`/`I` are replaced as literal characters, not
+via `.str.lower()`, to avoid the "Turkish/Azerbaijani dotted-I" Unicode
+casing bug (`'İ'.lower()` produces a combining-dot artifact, not a plain
+`i`). Every future model that generates slugs from Azerbaijani text
+(`News`, `Page`, `Tag` auto-suggestions) should reuse `az_slugify`
+instead of calling `slugify` directly.
+
+## `SEOFieldsMixin` lives in `apps/seo`, not `apps/core`
+
+`core` is documented as containing no business logic (CLAUDE.md ch.4). SEO
+metadata is a business concern with its own app (`apps/seo`) per the
+architecture chapter, so the abstract mixin lives there, not in `core`.
+`News` inherits it now; `Page`/`Category` will once those apps have their
+own publicly indexable content.
+
+## Django Admin is mounted for development only
+
+`config/urls.py` only adds `django-admin/` when `DEBUG=True`. It exists
+purely so a developer can eyeball that migrations and model relationships
+work correctly while there is no real CMS yet — CLAUDE.md ch.9 forbids
+building the actual CMS on top of Django Admin, it does not forbid having
+it available as an internal debugging tool. It must not be relied on, or
+exposed, once the real CMS exists; remove or continue to gate it behind
+`DEBUG` before production deployment.
+
+## Self-hosted fonts and icons, no CDNs
+
+`design/Design System.dc.html` loads Noto Sans/Noto Serif from Google
+Fonts and icons from the Lucide CDN. CLAUDE.md ch.13 prefers self-hosted
+fonts, and ch.4 requires vendor assets under `static/vendors/` rather
+than pulled from a CDN at runtime, so both were downloaded once and
+committed under `static/fonts/` and `static/vendors/bootstrap-icons/`.
+Only the `latin` + `latin-ext` Google Fonts subsets were kept — together
+they cover the full Azerbaijani alphabet, and the site has no other
+language to support.
+
+## Icons: Bootstrap Icons, not Lucide (deviation from the mockups)
+
+The design mockups use Lucide icons throughout. CLAUDE.md ch.7/11
+explicitly mandates Bootstrap Icons and forbids mixing icon libraries.
+Confirmed with the project owner: **Bootstrap Icons wins** — every icon
+in the mockups will be re-implemented with its closest Bootstrap Icons
+equivalent when the corresponding templates are built.
+
+## Known gap: Redis / Celery are configured but unverified
+
+`CACHES` and `CELERY_BROKER_URL` point at Redis (`django-redis`), which
+is not installed in this local dev environment (no Docker, no native
+Windows Redis/Memurai found). Phase 1 has no caching or background-task
+feature yet, so this doesn't block anything here — but before any phase
+that adds real caching or Celery tasks, Redis needs to be running
+locally. Recommended: Docker Desktop (`docker run -p 6379:6379 redis`)
+or Memurai for Windows.
+
+## Django / Python versions
+
+Python 3.14.3 (already installed) + Django 6.0.7 — verified compatible
+via a clean `pip install` with no dependency conflicts.
+
+---
+
+# Phase 2 (Public Navigation Shell — Homepage + cross-cutting pages)
+
+## Scope decision: "Homepage" became the whole first-click navigation graph
+
+The header/footer that appear on every page link to categories, search,
+login, and four static pages. CLAUDE.md forbids `href="#"` and hardcoded
+URLs, so Homepage couldn't ship without a working destination for every
+one of those links. Phase 2 therefore also shipped: category/subcategory
+listing, article detail, tag listing, search, About/Contact/Privacy/Terms,
+and editorial login/logout — the minimum set that makes every header/
+footer link real. Comments, bookmarks, the newsletter block, Archive,
+full JSON-LD/sitemap/robots.txt, and the real advertisement system are
+still out of scope (see plan file for the full list); the sidebar ad slot
+is a reserved empty `div` sized to prevent layout shift, not a stub.
+
+## `apps.core.utils.az_slugify` reused everywhere; new `az_timesince` filter
+
+`Category`, `Tag`, `News`, `Page` all now auto-generate their slug in
+`save()` via the Phase-1 `az_slugify` helper when one isn't supplied.
+Relative timestamps ("3 saat əvvəl") needed the same treatment: Django's
+built-in `timesince` filter renders English unit words because
+`USE_I18N=False` (CLAUDE.md ch.3 — no i18n architecture is allowed, so
+translation catalogs are off the table). `apps/core/templatetags/az_dates.py`
+implements `az_timesince` as a plain string-formatting filter, not a
+translation framework, so it doesn't need `USE_I18N`.
+
+## Self-hosted font paths — CSS is two directories deeper than the fonts
+
+`static/css/base/typography.css` was written with `url('../fonts/...')`,
+which resolves to `static/css/fonts/` — one level short. The actual
+files live at `static/fonts/`, two levels up from `css/base/`. Caught by
+rendering the homepage with Playwright and reading `console --errors`
+(12 silent 404s for every font weight) rather than by eyeballing the
+CSS. Fixed to `../../fonts/...`. Worth remembering for any other CSS
+file nested under `css/<subdir>/` that references top-level `static/`
+assets — the relative path depth depends on where the *CSS file* sits,
+not where `static/` sits.
+
+## `News.category` still has no `subcategory` field — category pages compensate
+
+Per the Phase-1 decision, `News.category` may point at a top-level
+category or a subcategory. `NewsQuerySet.in_category()` (used by both
+`HomeView`'s category sections and `CategoryDetailView`) shows a
+top-level category page the union of its own articles and its
+subcategories' articles, so nothing is lost by not having a redundant
+field.
+
+## Contact form email — Celery task, eager in development
+
+`apps/pages/tasks.py:send_contact_email` is a real `@shared_task`,
+dispatched with `.delay()` from `ContactView.form_valid()` (CLAUDE.md
+ch.13 "Email sending" must not block the request). Since Redis isn't
+available locally (Phase-1 known gap), `development.py` sets
+`CELERY_TASK_ALWAYS_EAGER = True` — Celery's own documented pattern for
+running tasks inline without a broker in dev. `production.py` leaves it
+unset, so production dispatches through Redis for real. Verified
+end-to-end: form POST → 302 → email text appears in the `runserver`
+console (via `EMAIL_BACKEND = console` from Phase 1) with the Celery
+"task succeeded" log line.
+
+## View-count de-duplication uses the session, not a new table
+
+`NewsDetailView.get_object()` increments `view_count` via `F('view_count') + 1`
+only the first time a given session visits a given article (slug ids
+kept in `request.session`, capped at 200 entries). This satisfies
+CLAUDE.md ch.14's "prevent obvious duplicate counting" without a new
+`ArticleView` audit model — bot filtering, if it's ever needed, is
+still a clean addition later since nothing here assumes it won't exist.
+
+## `Page` model — same interim pattern as `SiteSettings`
+
+About/Privacy/Terms are `Page` rows (title, slug, content, SEO fields),
+editable only through the dev-only Django Admin until the CMS "Pages"
+screen exists — identical reasoning to why `SiteSettings` got a model in
+Phase 1 before any settings form existed. `content` is a plain
+`TextField` split into paragraphs by `apps.core.utils.split_paragraphs`
+(shared with `News.content_paragraphs`), same interim state as article
+body text pending the CKEditor phase.
+
+## Login destination
+
+`LOGIN_REDIRECT_URL = 'news:home'` for now — there is no `/cms/` yet.
+Update this the moment the CMS dashboard phase lands; searching for
+`LOGIN_REDIRECT_URL` in `config/settings/base.py` finds it.
+
+---
+
+# Phase 3 (CMS Dashboard)
+
+## `LOGIN_REDIRECT_URL` now points at `/cms/`
+
+Per the Phase-2 TODO above, `config/settings/base.py` now sets
+`LOGIN_REDIRECT_URL = 'cms:dashboard'`. Editorial login lands in the CMS,
+not the public homepage.
+
+## Dashboard shows real, computable data only — not the mockup's numbers
+
+`CMS Dashboard.dc.html` shows daily page-view analytics ("▲12% dünənə
+görə") and a pending-comments count. Neither exists: we don't track
+per-day view history (only a cumulative `News.view_count`), and Comments
+are out of scope entirely (`Future Expansion`, ch.11). Rendering those
+would mean fabricating numbers — a direct violation of "no placeholder
+implementations" (ch.15). The stat-card row instead shows exactly the six
+metrics TZ.md lists for the Dashboard (Total/Published/Draft/Scheduled
+Articles, Categories, Users), and the "last 7 days" chart plots articles
+*published* per day (real, from `News.published_at`) rather than page
+views. Quick Actions is omitted outright — its only sensible action
+("+ Yeni xəbər") has no destination until CMS News Management exists;
+a button to nowhere is worse than no button.
+
+## Sidebar: disabled `<span>`, not disabled `<a>`
+
+Sections that don't exist yet (Xəbərlər, Kateqoriyalar, Media,
+İstifadəçilər, Reklam, SEO, Tənzimləmələr) render as non-interactive
+`<span aria-disabled="true">` — no `href`, not part of the tab order.
+This preserves the full sidebar structure from the mockup (so the CMS's
+eventual shape is visible) without a single dead link. "Şərhlər" was
+dropped from the sidebar entirely rather than greyed out — unlike the
+others it isn't a near-term phase, it's explicitly out of product scope.
+
+## `apps.logs.ActivityLog` — minimal `Action` enum, grows with each producer
+
+Only `login_success` / `login_failed` / `logout` exist as choices —
+exactly what this phase logs (`apps/accounts/views.py` `LoginView`/
+`LogoutView`). Article/category/settings actions (ch.5's fuller list)
+get their own choices added in the phase that starts producing them,
+not speculatively now. No `GenericForeignKey` to a target object yet —
+`description` (plain text) is enough for auth events; add a real target
+reference later without touching this schema if a future phase needs it.
+Registered in the dev-only admin as fully read-only (no add/change/
+delete permission) per ch.9 "Logs are read-only".
+
+## Fixed a pre-existing bug: `News.Status` / `User.Role` labels were English
+
+Both enums were written in Phase 1/2, before anything rendered
+`get_status_display()`/`get_role_display()` in a template. Once the
+Dashboard's recent-articles table and topbar role label actually
+displayed them, the English choice labels ("Draft", "Published",
+"Journalist") surfaced as a real bug on an Azerbaijani-only site
+(ch.3). Fixed via `accounts.0002_alter_user_role` and
+`news.0002_alter_news_status` — worth checking any *new* `TextChoices`
+for the same mistake, since it's invisible until something actually
+renders `get_FOO_display()`.
+
+## Known gap: the seeded `admin` superuser has `role=Journalist`
+
+`createsuperuser --noinput` (Phase 1) doesn't prompt for custom fields,
+so it took the model default (`Role.JOURNALIST`). Cosmetically wrong in
+the topbar ("admin — Jurnalist") but harmless — nothing in this phase
+gates behavior on `role` yet. Fix directly in `/django-admin/` or
+`manage.py shell` if it bothers you before a demo; a real fix (role
+prompt or a management command flag) belongs to whichever future phase
+introduces role-gated permissions.
+
+---
+
+# Phase 4 (CMS News Management)
+
+## CKEditor 5, not django-ckeditor's bundled CKEditor 4
+
+The plan called for "CKEditor" per CLAUDE.md ch.3, and `django-ckeditor`
+is the obvious package — but installing it prints a Django system-check
+warning that its bundled CKEditor 4 is EOL with **unfixed** security
+issues (the maintainers' own words). CLAUDE.md ch.15 says "avoid
+abandoned libraries" in plain terms, so mid-implementation this swapped
+to `django-ckeditor-5` (actively maintained, wraps CKEditor 5). Settings
+key is `CKEDITOR_5_CONFIGS` (not `CKEDITOR_CONFIGS`), field is
+`django_ckeditor_5.fields.CKEditor5Field`, and — important gotcha — its
+widget unconditionally calls `reverse('ck_editor_5_upload_file')` when
+it renders, even though our toolbar has no upload button. Skipping
+`path('ckeditor5/', include('django_ckeditor_5.urls'))` makes *every*
+News editor page 500, not just the unused upload feature.
+
+## Toolbar excludes Images and Videos, not just image upload
+
+The original plan was "image insertion via URL only, no upload button."
+In practice CKEditor 5's image plugin in this package is upload-oriented
+enough that a clean URL-only mode wasn't there to configure, and
+`mediaEmbed` (the URL-based "Videos" option) saves non-standard
+`<oembed url="...">` markup that needs a server-side oEmbed resolver to
+actually render on the public site — shipping that button would be a
+toolbar entry that visibly does nothing. Both are dropped from
+`CKEDITOR_5_CONFIGS['default']['toolbar']` until Media Library (images)
+and a real embed-rendering pass (video) exist. `apps/news/utils.py`'s
+bleach allow-list still permits `img` — harmless to allow now, saves a
+config edit when the button returns.
+
+## `apps.news.utils.sanitize_article_html` — bleach, applied in `save()`
+
+CLAUDE.md ch.12: "CKEditor content must be filtered before rendering."
+The allow-list is hand-mirrored to the toolbar config (tags the toolbar
+can't produce shouldn't survive `save()` either) — the two are meant to
+be edited together; a comment in each file points at the other.
+`bleach`'s `styles=` kwarg was removed as of bleach 6 in favor of
+`css_sanitizer=CSSSanitizer(...)`, which needs `tinycss2` — not pulled
+in automatically, added as its own requirements line. Verified against
+a real `<script>` + `onclick=` payload posted through the live form: the
+script tag and the handler attribute are both gone from what's stored;
+only inert text remains.
+
+## `News.slug` gained `blank=True`
+
+`NewsForm` sets `slug` `required=False` so the CMS form can submit it
+empty and let `News.save()` auto-generate it (`az_slugify`, unchanged
+from Phase 1) — matching TZ "Slugs: automatically generated, editable
+by administrators." That alone isn't enough: Django's `ModelForm`
+re-validates the constructed instance against the *model* field's own
+`blank=False` inside `_post_clean()`, so an empty submission still
+failed with "This field is required" until the model field itself
+became `blank=True` too. `Category`/`Tag` have the same
+auto-slug-if-blank `save()` logic without `blank=True` on their model
+fields — harmless today only because nothing exposes them through a
+`ModelForm` yet (Django Admin's `prepopulated_fields` fills the input
+with JS before submit, so admin never hits this). Apply the same fix
+there the moment either gets a CMS form.
+
+## `News.is_deleted` — soft delete, `NewsQuerySet.visible()`
+
+Per CLAUDE.md ch.10 ("Public content should generally use soft
+deletion... Articles"). `visible()` filters `is_deleted=False`;
+`published()` now builds on `visible()`, so every public view
+(`HomeView`, `CategoryDetailView`, `NewsSearchView`,
+`NewsQuerySet.in_category()`) got the exclusion for free — none of them
+needed a direct edit. `NewsDeleteView`/`NewsRestoreView` just flip the
+flag with `update_fields=['is_deleted']`; `NewsBulkActionView` does the
+same via a single `.update()` call across selected rows (bypasses
+`save()` — fine here since bulk actions only ever touch `status`/
+`is_deleted`/`published_at`, never `content` or `slug`).
+
+## Preview reuses the public article URL — no separate preview route
+
+`NewsDetailView.get_queryset()` returns `.visible()` (any non-deleted
+status) for authenticated requests and `.published()` for anonymous
+ones. Since the only accounts that exist belong to CMS staff (Phase 2
+decision), "logged in" and "allowed to preview drafts" are the same
+condition — no role check needed. The editor's "Önizləmə" link is just
+`article.get_absolute_url()` opened in a new tab; the detail template
+shows a dismissible "not published yet" banner keyed off `article.status`.
+
+## Discovered: Django 6 always wraps template loaders in `cached.Loader`
+
+Cost real time mid-phase — edited `news_form.html` and `news_confirm_delete.html`
+repeatedly with no visible effect until stumbling on this. In older
+Django, `cached.Loader` was only used when `DEBUG=False`; in this
+version (confirmed via `engines['django'].engine.template_loaders` in a
+shell), it's unconditional — `Engine.__init__` always wraps loaders in
+`cached.Loader` regardless of the `debug` flag, and that loader has no
+mtime check at all (`django/template/loaders/cached.py`), so a cached
+template stays cached for the life of the process. Normally
+`runserver`'s autoreloader restarts the whole process on any watched
+file change — including templates — which incidentally clears this
+cache too. **The dev server in this project had been started with
+`--noreload`** (to keep background-process bookkeeping simple), which
+disabled that safety net along with Python autoreload. Fix: run
+`manage.py runserver` **without** `--noreload` for any session that
+touches templates. Static files (CSS/JS) aren't affected — those are
+served straight from disk on every request, not through this cache —
+only `.html` template edits need the process to actually restart or
+autoreload to pick them up.
+
+## Discovered mid-phase: Redis (Memurai) is now running locally
+
+Phase 1 flagged Redis as unavailable, gating cache/Celery testing.
+Sessions survived a full `runserver` process restart during this
+phase's verification — proof the `django_redis` cache backend
+(`SESSION_ENGINE = 'django.contrib.sessions.backends.cache'`) is live,
+which is only possible with a working Redis. `Get-Service Memurai`
+confirms it's installed and running (Redis-compatible, Windows-native).
+The Phase-1 "known gap" is stale — caching and Celery's real async mode
+(as opposed to the `CELERY_TASK_ALWAYS_EAGER` dev fallback from Phase 2)
+can now actually be exercised and should no longer be assumed broken.
+
+## `curl -F` gotcha hit repeatedly during verification (not a project bug)
+
+Worth recording since it cost real debugging time and will recur:
+`curl -F "field=<p>...</p>"` — a value starting with `<` — is
+special-cased by curl to mean "read this field's value from the file
+named after the `<`", not literal text. It fails with "Failed to
+open/read local data" for any HTML-shaped payload (which is exactly
+what article content looks like). Use `--form-string "field=value"` for
+any text field whose value might start with `<`; reserve plain `-F` for
+the actual file-upload field.
+
+# Phase 5 (Media Library)
+
+## Closes the gap Phase 4 deliberately left open
+
+`MediaFile` existed as a metadata schema since Phase 1, but nothing ever
+implemented CLAUDE.md ch.3's mandatory pipeline ("Original images should
+never be served directly to users" — validate → crop → optimize → WebP
+→ thumbnail). Phase 4 shipped a temporary direct-upload workaround
+(`featured_image_file`, no crop) to keep the News editor usable. This
+phase replaces it with the real pipeline and swaps the News editor's
+cover picker over to it — `NewsForm` loses `featured_image_file`, gets
+back the real `featured_image` FK it had all along on the model.
+
+## Two-step stage/crop-confirm, not one upload request
+
+Matches the design mockup's actual UX (dropzone → Cropper.js panel →
+"Tətbiq et") rather than a single blocking upload+process call.
+`stage_upload()` validates and parks the raw file under `media/temp/`
+with no DB row yet (`temp_id` — the generated filename — is the only
+handle needed). `process_crop()` opens it, applies the crop box
+Cropper.js reports, resizes, converts to WebP, generates a thumbnail,
+and only then creates the `MediaFile`. SVGs skip crop/resize/WebP
+entirely (CLAUDE.md ch.3: "SVG files should not be converted") and are
+stored verbatim — the JS widget detects `is_svg` in the stage response
+and calls confirm immediately without ever opening the crop modal.
+
+## `media/temp/` cleanup is a management command, not Celery Beat
+
+Abandoned uploads (user picks a file, then never hits "Tətbiq et")
+leave orphaned files under `media/temp/`. `clean_temp_uploads` deletes
+anything older than 24h. No Celery Beat schedule exists yet in this
+project, so this is a manual/cron-driven command for now (CLAUDE.md
+ch.4 "Management Commands... Remove temporary files") — noted in the
+command's own `help` text so it isn't mistaken for something that runs
+itself.
+
+## Crop UI is a modal, not the mockup's persistent 360px column
+
+`CMS Media Manager.dc.html` shows the crop panel as a fixed right-hand
+column, always part of the page layout. That only works for the
+single-purpose Media Library page — the same crop UI is also needed
+inside the News editor's two-column layout (main content + existing
+360px sidebar already full of other fields), where a third column
+doesn't fit. `templates/cms/partials/media_crop_modal.html` is instead
+a shared overlay, included on both pages, driven entirely by
+`static/js/cms/media-uploader.js`'s `MediaUploader` class — one crop
+pipeline, two call sites (`media-library.js` for the library dropzone
+and per-card "Əvəz et", `editor.js`'s `initCoverPicker()` for the News
+cover field). Deviation from the mockup's literal placement, not from
+its interaction design.
+
+## Mockup's "İxrac formatı" (export format) selector was dropped
+
+The mockup shows WebP/JPG/PNG as a user choice. CLAUDE.md ch.3 "Media
+Formats" is unconditional: "Automatically convert: JPEG → WEBP, PNG →
+WEBP" — no user override contemplated. `process_crop()` always writes
+WebP for raster input; the modal has no format control. Alt text and
+caption inputs took that space instead, since `MediaFile.alt_text`/
+`caption` existed on the model since Phase 1 with no UI to set them.
+
+## Replace folds into `MediaCropConfirmView`, no separate view/URL
+
+The original plan sketched a distinct `MediaReplaceView` /
+`media/<pk>/evez-et/`. Implemented instead as an optional `replace`
+POST field on the same crop-confirm endpoint: `process_crop(...,
+media_file=existing_instance)` updates that row in place rather than
+creating a new one, so the pk — and every FK pointing at it
+(`News.featured_image`, future `og_image`/`SiteSettings.logo`) —
+survives unchanged. One pipeline, one endpoint, instead of two nearly-
+identical code paths. Verified end-to-end: replacing the `MediaFile`
+backing a published article's cover updates the public page's `<img>`
+src without touching the article row.
+
+## Hard delete, not soft delete, for `MediaFile`
+
+CLAUDE.md ch.10's soft-delete list is "Articles / Pages / Advertisements
+/ Categories" — editorial content with its own lifecycle. A `MediaFile`
+is a storage-backed resource, not content with a workflow; every FK
+that can reference one (`News.featured_image`, `og_image`) is already
+`on_delete=SET_NULL`. `MediaDeleteView` hard-deletes the row and calls
+`.delete(save=False)` on all three FileFields first (Django doesn't
+remove files from storage on model delete). The confirm page surfaces
+`MediaFile.usage_count` as a warning when non-zero, but doesn't block
+the delete — consistent with "every FK survives as NULL" rather than
+inventing a reference-counted guard nothing else in the project has.
+
+## Discovered: `{{ x.some_filefield.url|default:... }}` is not a safe fallback
+
+The plan called for templates to fall back from `thumbnail.url` to
+`file.url` when a row predates this pipeline (Phase 4's rows have no
+`thumbnail`). The obvious `{{ file.thumbnail.url|default:file.url }}`
+crashed every page rendering it with `ValueError: The 'thumbnail'
+attribute has no file associated with it` — a 500, not a graceful
+fallback. Django's `Variable._resolve_lookup` only swallows lookup
+failures silently when the raised exception carries
+`silent_variable_failure = True` (true for `ObjectDoesNotExist`, false
+for a bare `ValueError`, which is exactly what `FieldFile.url` raises
+on an empty field) — so `default` never got a chance to run; the
+exception propagated straight through the template render. Fixed by
+testing the `FieldFile` itself for truthiness first (`{% if
+file.thumbnail %}...{% else %}...{% endif %}`), which only calls
+`FieldFile.__bool__` (a cheap `bool(self.name)` check, no `.url`
+access, no exception) — applied in `media_grid.html`,
+`components/news_card.html`, and the News editor's cover preview.
+General lesson: never chain `.url` behind `|default` on a nullable
+`FileField` — check the field's truthiness in an `{% if %}` first.
+
+## `window.showToast` exposed from `toast.js`
+
+`static/js/components/toast.js` previously only rendered toasts sourced
+from server-rendered Django messages on `DOMContentLoaded`. AJAX
+failures (upload/crop/replace errors) need to raise a toast from a
+client-side event with no page reload — CLAUDE.md ch.8 bans
+`alert()` outright ("Never use browser alert()"). Exposed the existing
+`createToast` as `window.showToast(message, type)` rather than building
+a second notification mechanism; `media-uploader.js`'s `onError`
+callback and `media-library.js`/`editor.js`'s consumers of it both use
+this instead of a new one-off.
+
+# Phase 6 (CMS: Kateqoriyalar + Etiketlər)
+
+## `Category` gains `is_deleted` — the same soft-delete shape as `News`
+
+CLAUDE.md ch.10 names Categories explicitly in its soft-delete list.
+Added `Category.is_deleted` + `CategoryQuerySet.visible()`, mirroring
+`NewsQuerySet.visible()` exactly. Kept independent from the pre-existing
+`is_active` (a "hide from public nav" toggle, unrelated to trash state)
+— every public call site that filtered `.active()` now filters
+`.active().visible()` (`apps/categories/views.py`,
+`apps/core/context_processors.py`, `apps/news/views.py`,
+`apps/news/forms.py`). The nav's `main_categories` context processor
+also switched its `children` prefetch to a filtered `Prefetch(...,
+queryset=Category.objects.active().visible())` — previously it
+prefetched *all* children unconditionally, so an inactive/deleted
+subcategory would have silently kept appearing in the header/footer
+dropdowns even though this bug predates this phase.
+
+## `Category.slug` / `Tag.slug` gained `blank=True`
+
+Exactly the gap flagged in the Phase 4 note above ("`Category`/`Tag`
+have the same auto-slug-if-blank `save()` logic without `blank=True`...
+apply the same fix there the moment either gets a CMS form") — this is
+that moment. Same fix as `News.slug`: `ModelForm._post_clean()`
+re-validates against the model field's own `blank=False` regardless of
+the form field's `required=False`, so both needed the model-level change
+too.
+
+## No CMS Tags mockup exists — screen designed from the Categories mockup
+
+`CMS Categories.dc.html` is a real, closely-followed spec. `Tags.dc.html`
+turned out to be the **public** tag archive page, not an admin screen —
+confirmed by reading it in full before building anything. There is no
+`CMS Tags.*` file anywhere in `design/`. `templates/cms/tag_list.html`
+mirrors the Categories screen's shell/table/button/⋯-menu conventions
+(same `cms-table`, `cms-list-toolbar`, `cms-row-menu` classes) minus the
+hierarchy/drag-reorder parts, since tags are flat — the closest
+consistent choice available, not a guess at an unseen design.
+
+## Category `order` is drag-and-drop only, not a form field
+
+Removed from `CategoryForm.Meta.fields` entirely — new categories get
+`order = max(sibling.order) + 1` automatically
+(`CategoryCreateView.form_valid`). The only way to change it is the
+native HTML5 drag-and-drop in `static/js/cms/categories.js`, matching
+CLAUDE.md's "Category ordering is managed manually" and the mockup's
+`grip-vertical` handles on top-level rows (child rows are draggable too,
+just without the visible handle — the mockup only had one example
+subcategory to show, not a deliberate "children can't reorder" choice).
+A vanilla `dragstart`/`dragover`/`drop` implementation, no library —
+reordering is scoped to a sibling group (`data-parent` must match
+between dragged and target rows) and, when a top-level row with children
+is dragged, its child rows move as one block immediately after it so the
+DOM's parent→children grouping survives the move. `CategoryReorderView`
+re-validates group membership server-side from the posted pk list before
+calling `bulk_update` — a client that fabricates a request naming pks
+outside the claimed group gets a 400, not a silent cross-group reorder.
+
+## Category delete is blocked outright, not soft-warned
+
+Unlike `MediaFile.usage_count` (Phase 5's pattern — warn, don't block),
+`CategoryDeleteView` refuses the delete entirely when the category still
+has visible news or child categories attached, returning a
+`messages.error` instead of flipping `is_deleted`. Reasoning: once
+`.visible()` filtering rolled out to every public category query this
+phase, a soft-deleted category with articles still pointing at it would
+break their category link, breadcrumb, and category-page URL — Category
+isn't a standalone resource like `MediaFile` (whose references are all
+`on_delete=SET_NULL`), it's load-bearing for News's `on_delete=PROTECT`
+FK. `Tag` has no such constraint (`News.tags` is a plain M2M), so
+`TagDeleteView` keeps the Phase-5-style warn-not-block pattern.
+
+## Tag merge — CLAUDE.md-mandated, no prior precedent in the codebase
+
+CLAUDE.md ch.9: "Editors can: Create, Edit, **Merge**, Delete, Assign."
+`TagMergeView` GET renders a target-tag `<select>` (all tags except the
+source), POST reassigns every `News` row from source to target via the
+M2M (`article.tags.add(target); article.tags.remove(source)` per row —
+`NewsDuplicateView`'s `.tags.set(...)` was the only prior M2M-tag code
+to draw from, but merge needed per-row add/remove instead of a blanket
+`.set()`), then hard-deletes the source tag. Verified via Django's test
+`Client` rather than Playwright for this one — the browser run's own
+`Promise.all(waitForNavigation + click)` pattern raced against a
+same-page form-error re-render (attempting to create a tag name that
+collided with a leftover from an earlier verification pass) and produced
+misleading console output, even though the underlying merge/delete logic
+was correct both times. `Client(SERVER_NAME='127.0.0.1')` (matching
+`ALLOWED_HOSTS`) gave a deterministic, DB-state-checked pass: source
+deleted, target's `news_count` incremented, the reassigned article
+carries the target tag.
+
+## Sidebar gained a standalone "Etiketlər" item
+
+CLAUDE.md ch.9's canonical sidebar order lists Tags as its own item
+right after Categories; the actual sidebar built up incrementally across
+Phases 3–5 never had one (only "Kateqoriyalar" existed, as a disabled
+placeholder). Added `Etiketlər` → `cms:tag_list` immediately after the
+now-live `Kateqoriyalar` link, matching that canonical order rather than
+appending it wherever there was room.
+
+## Media Library folders: rename + delete added post-launch
+
+Phase 5's approved scope was explicitly "flat list, create-only — no
+rename/move/nesting." Extended on request to add rename and delete
+(nesting/move are still out of scope — untouched). Two implementation
+notes:
+
+- **Rename is a plain POST + redirect** (`FolderUpdateView`), not AJAX —
+  deliberately mirrors `FolderCreateView`'s existing interaction pattern
+  rather than introducing a second one for the same sidebar (CLAUDE.md
+  ch.8: "AJAX should be used only when necessary"). The inline
+  edit/cancel toggle is pure CSS/JS (`static/js/cms/media-library.js`'s
+  `initFolderRename()`), but the actual save is a normal form submit.
+- **Delete never touches files** — `MediaFile.folder` is already
+  `on_delete=SET_NULL` (Phase 5), so a deleted folder's files simply
+  fall back into "Bütün fayllar"; the confirm page states this rather
+  than warning about data loss that can't actually happen. Also fixed a
+  pre-existing gap while touching this file: `FolderCreateView` had
+  never written an `ActivityLog` entry — now all three folder actions do
+  (`FOLDER_CREATED/RENAMED/DELETED`).
+
+# Phase 7 (CMS: İstifadəçilər + password reset)
+
+## First role-gated view in the project
+
+Every CMS view up to this phase used only `LoginRequiredMixin` — no view
+anywhere checked `role`. CLAUDE.md ch.9 scopes user management to
+Administrators, so `apps/core/mixins.py`'s new `AdministratorRequiredMixin`
+is genuinely new architecture, not a reused pattern. It passes
+`is_superuser` OR `role == Role.ADMINISTRATOR` — not just the role check —
+because the seeded `admin` account is a `createsuperuser`-made account,
+and `createsuperuser` never touches custom fields, so its `role` silently
+defaulted to Journalist. Without the `is_superuser` escape hatch, `admin`
+would have been locked out of the very screen meant to fix that. Fixed
+the live `admin` row's `role` to `Administrator` as a one-time data
+correction during verification (cosmetic — the mixin already covered it).
+
+## `apps/users/` (empty scaffold app) stays unused
+
+It's registered in `INSTALLED_APPS` but contains nothing beyond
+`startapp` boilerplate — apparently reserved for this feature by an
+earlier phase's `INSTALLED_APPS` entry, never built out. Went with
+`apps/accounts/forms.py`'s `UserForm` + `apps/cms/views/user.py` instead,
+mirroring the Category/Tag precedent exactly: the form lives with the
+model it edits (`accounts.User`), CMS views live in `apps/cms/views/`.
+Not reopened — no code currently imports anything from `apps/users/`.
+
+## New-account passwords: real random password, not `set_unusable_password()`
+
+The obvious design — create the account with no usable password, then
+immediately email a setup link — silently fails. Checked Django's own
+source (`django/contrib/auth/forms.py:423-442`): `PasswordResetForm.
+get_users()` explicitly filters out any user where `has_usable_password()`
+is `False`. So `UserCreateView.form_valid()` calls
+`form.instance.set_password(get_random_string(32))` before saving —
+a real, hashed, immediately-discarded password no one (including the
+creating administrator) ever sees — which makes `get_users()` include the
+account and the setup email actually go out. Verified end-to-end: create
+→ email printed by the console backend → confirm link → set real
+password → log in with it.
+
+## Password reset is a full Django built-in flow, not just an admin action
+
+User confirmed (asked directly, given the real scope this adds — 5 new
+public templates plus 2 email templates) that CLAUDE.md's "Password
+Reset" requirement should be built as the complete self-service flow
+(`PasswordResetView` → `...Done` → `...Confirm` → `...Complete`), not
+only the admin-triggered shortcut. Both paths converge on the same
+`apps/accounts/services.py:send_password_setup_email()` helper, which is
+just `PasswordResetForm.save()` with the project's own Azerbaijani email/
+subject templates — the admin-triggered "Şifrəni sıfırla" skips the
+"type your email" step (it already knows the target user) but otherwise
+runs the identical token/email/confirm machinery. Never sends or displays
+a password itself, only a link (CLAUDE.md ch.12).
+
+## Discovered: `USE_I18N = False` means Django's *own* form labels leak English
+
+Not something this phase introduced — hit while reviewing the rendered
+password-reset-confirm page, which showed "New password" / "Your
+password can't be too similar to your other personal information." in
+plain English despite every other string on the site being Azerbaijani.
+Root cause: `config/settings/base.py` sets `USE_I18N = False` (CLAUDE.md
+ch.3: single-language site, no i18n architecture), so Django's
+`gettext`-wrapped built-in strings (field labels, validator help text on
+`AuthenticationForm`/`PasswordResetForm`/`SetPasswordForm`) never get
+translated — they render as their literal English source with no
+translation catalog to fall back on. This project's own hand-written
+forms were never affected (every CMS form's labels are hardcoded
+Azerbaijani strings directly in the template, e.g. `user_form.html`'s
+`<label>Ad</label>`, never `{{ field.label }}`) — only forms that use
+Django's *own* labels via a generic `{% for field in form %}...{{
+field.label }}...{% endfor %}` loop were exposed: `LoginForm` (pre-dates
+this phase — "Username"/"Password" were already rendering in English on
+`login.html`, unnoticed until this review) and the two new password-reset
+forms. Fixed by subclassing (`PasswordResetForm`, `SetPasswordForm` in
+`apps/accounts/forms.py`, plus `LoginForm`'s existing class) and
+overriding `.label`/`.help_text` in `__init__`, mirroring every other
+form's hand-written-Azerbaijani-string convention instead of fighting
+Django's i18n system for a site that deliberately has none.
+
+## `templates/403.html` — first custom error page in the project
+
+`AdministratorRequiredMixin` is also the first thing that can actually
+produce a 403 in this project, surfacing a pre-existing gap CLAUDE.md
+ch.6 requires (custom 404/403/500 pages) but no earlier phase needed.
+Added only `403.html` (root-level, Django's zero-config convention for
+`django.views.defaults.permission_denied` — no `handler403` wiring
+needed) extending `cms/base.html` rather than the public site shell,
+since the only way to reach it is already-authenticated-but-unauthorized
+(`LoginRequiredMixin` redirects anonymous requests to login before
+`test_func` ever runs) — full CMS chrome reads better than a bare public
+error page. 404/500 remain unbuilt — out of scope, unrelated to this
+feature, an older gap this phase didn't create.
+
+# Phase 8 (CMS: Tənzimləmələr)
+
+## Went beyond the mockup — user confirmed managing every existing model field, not just what's drawn
+
+`CMS Settings.dc.html` only shows two fields (site name, contact email)
+plus a decorative language selector and a category-reorder list that's an
+exact duplicate of the Kateqoriyalar page (Phase 6) — dropped entirely,
+not rebuilt here. Meanwhile `SiteSettings` already had `logo`, `favicon`,
+`footer_text`, `contact_phone`, `contact_address`, and four social-link
+URLs sitting in the schema since Phase 1 with no way to edit any of them
+outside a shell. Asked the user directly rather than guessing; confirmed
+scope is "every existing model field," not the mockup's literal two
+inputs — the mockup under-specifies this screen, not a deliberate design
+choice to leave most of the model unmanageable.
+
+## First singleton `UpdateView` in the project
+
+`SiteSettings.get_solo()` always resolves `pk=1` (`save()` hardcodes it,
+`delete()` is a no-op) — `SettingsUpdateView` has no pk in its URL
+(`tenzimlemeler/`, no `<int:pk>`) and overrides `get_object()` to return
+`SiteSettings.get_solo()` directly. Every other CMS `UpdateView` up to
+this phase took a pk from the URL; this is the first one that doesn't,
+since there's exactly one row and it always exists.
+
+## Two image pickers, one shared crop modal — new `static/js/cms/settings.js`
+
+`static/js/cms/editor.js`'s `initCoverPicker()` (News cover image) is
+hardcoded to a single picker's ids/selectors. Instantiating `MediaUploader`
+twice on one page — once for logo, once for favicon — would double-bind
+click handlers onto the same singleton `#media-crop-modal` DOM
+(`templates/cms/partials/media_crop_modal.html` is shared, one instance
+per page), so clicking "Tətbiq et" would fire both uploaders' confirm
+handlers at once. Fixed by using **one** `MediaUploader` instance for the
+whole page and reassigning `.onComplete`/`.defaultRatio` on it right
+before each `uploadFile()` call, keyed off which picker's file input
+changed — safe because `MediaUploader` (Phase 5) already reads
+`this.onComplete`/`this.defaultRatio` at the moment it needs them, not
+once at construction time (confirmed by re-reading `media-uploader.js`
+before relying on it). Selectors generalized to `data-role="image-picker"`
++ an optional `data-aspect-ratio` attribute (favicon → `"1"` for a square
+crop, logo → unset → free crop) instead of hardcoded per-field ids, so a
+third picker could be added to some future page by copying the markup
+pattern, not the JS. Deliberately did not refactor `editor.js` to share
+this — the News cover picker already works and is tested; duplicating
+~15 lines was judged lower-risk than touching it for this phase.
+
+## Logo and social links now actually render on the public site
+
+Both were "defined on the model but not yet rendered anywhere" before
+this phase (confirmed by grepping every template) — saving them from the
+new Settings screen would have been pointless if nothing ever displayed
+them. `templates/components/header.html`'s brand link now shows
+`site_settings.logo.file.url` when set (falls back to the `site_name`
+text link otherwise) — uses `.file.url` directly, not `.thumbnail`, since
+a logo doesn't go through the same small-card thumbnail pipeline as a
+News cover image. `templates/components/footer.html` gained a row of
+social icons in the brand column, one per non-empty `social_*` URL
+(Bootstrap Icons `bi-facebook`/`bi-instagram`/`bi-twitter-x`/`bi-youtube`
+— confirmed all four exist in the vendored icon font before using them).
+`favicon` was already wired correctly in `templates/base.html` since an
+earlier phase — untouched here.
+
+## Access restricted to Administrators, same as User Management
+
+CLAUDE.md's Settings chapter doesn't explicitly say "Administrators
+only" the way the User Management chapter does, but site-wide branding/
+contact/social configuration is at least as sensitive as user accounts —
+reused `AdministratorRequiredMixin` (Phase 7) rather than leaving it at
+plain `LoginRequiredMixin`. Sidebar's "Tənzimləmələr" item follows the
+same conditional-link-vs-disabled-span pattern already used for
+"İstifadəçilər".
+
+# Phase 9 (CMS: Statik səhifələr)
+
+## `Page.content` upgraded from plain TextField to CKEditor5Field
+
+User confirmed upgrading it to match `News.content` — Haqqımızda/Privacy/
+Terms benefit from real formatting (headings, lists), which a
+paragraph-only plain-text field couldn't offer. This meant:
+
+- **`sanitize_article_html` relocated to `apps/core/utils.py` as
+  `sanitize_rich_text_html`.** It lived in `apps/news/utils.py`, but
+  `apps/pages` importing from `apps.news` would violate CLAUDE.md ch.4
+  ("Avoid importing unrelated applications directly") — News and Pages
+  share no other relationship. Moved verbatim (same allow-list, same
+  bleach config) to `apps/core/utils.py`, already home to `az_slugify`/
+  `get_client_ip` — exactly the "Shared Services" pattern ch.4 describes.
+  `apps/news/models.py` updated its import; `apps/news/utils.py` deleted
+  (nothing else used it, confirmed by grep before removing). Verified the
+  moved function behaves identically: `<strong>`/`<ul>`/`<li>` survive,
+  `<script>` is stripped — same as News's existing behavior.
+- **`split_paragraphs`/`Page.content_paragraphs` removed as dead code.**
+  `News` had already stopped calling `split_paragraphs` when it moved to
+  CKEditor (Phase 4) — `Page` was the only remaining caller, so once Page
+  also moved to CKEditor, the helper had zero callers left.
+  `templates/pages/page_detail.html` and `about.html` switched from
+  looping `page.content_paragraphs` to `{{ page.content|safe }}`,
+  mirroring `templates/news/detail.html`'s `article.content|safe` exactly
+  — content is already bleach-sanitized in `save()`, same trust boundary
+  as News.
+- **`Page.slug` gained `blank=True`** — the same `ModelForm._post_clean()`
+  fix applied to News/Category/Tag/Tag in earlier phases, needed the
+  moment a model gets its first real CMS form.
+- **Existing seeded pages needed a one-time data fix.** `_seed_pages()`
+  now wraps paragraphs in `<p>` tags (mirroring `ARTICLES`' existing
+  transformation in the same file) so *newly seeded* pages render
+  correctly under `|safe` — but `get_or_create()` only sets defaults on
+  first creation, so the three pages already in the dev DB from earlier
+  phases still held old plain-text content with no HTML markup at all.
+  Fixed with a one-time shell command wrapping their stored content in
+  `<p>` tags to match; a fresh `seed_initial_data` run on a clean database
+  doesn't need this step.
+
+## No CMS Pages mockup — screen follows the Category/Tag/User shell
+
+Same situation as Phase 6's Tags screen: `design/` has public-facing
+`About.dc.html`/`Contact.dc.html` but no CMS admin screen for managing
+`Page` rows. Built `page_list.html`/`page_form.html`/
+`page_confirm_delete.html` directly from the already-established
+`tag_list.html`/`tag_form.html`/`tag_confirm_delete.html` shell (search,
+`cms-table`, row menu, `cms-simple-form`, `cms-confirm`) rather than
+inventing new patterns. One addition: `.cms-simple-form--wide` (880px,
+matching the News editor's `.editor__main`) — the existing 480px
+`.cms-simple-form` was sized for Category/Tag/User's few short fields,
+too narrow to give the new CKEditor instance reasonable room.
+
+## Hard delete, redirect-to-edit after create — matches Page's actual shape
+
+`Page` has no `is_deleted` field (unlike `News`/`Category`) — confirmed
+in the model before building anything — so `PageDeleteView` hard-deletes,
+same shape as `TagDeleteView`. `PageCreateView` redirects to
+`page_edit` after saving (like `NewsCreateView`), not to the list (like
+`CategoryCreateView`/`TagCreateView`) — with a CKEditor field involved,
+staying on the edit screen to keep refining content matches how News
+already works, more than the short-form Category/Tag pattern does.
+
+## "Əlaqə" (Contact) is explicitly out of scope — confirmed before building anything
+
+Contact is `ContactView` + `ContactForm` + a Celery email task, not a
+`Page` row (confirmed by grepping `seed_initial_data.py`'s `PAGES` list
+— "Əlaqə" never appears in it). The new Pages CMS section manages actual
+`Page` table rows only; Contact's form/email flow is untouched.
+
+## Sidebar gained a "Səhifələr" item with no prior placeholder
+
+Unlike Reklam/SEO (which at least have `is-disabled` stub spans),
+Pages had no sidebar slot at all before this phase — confirmed by reading
+`templates/cms/base.html` in full before adding one. Placed right after
+"Media", grouping it with the other content-management items
+(Xəbərlər/Kateqoriyalar/Etiketlər/Media/Səhifələr) ahead of the more
+sensitive İstifadəçilər/Tənzimləmələr items. Plain `LoginRequiredMixin`,
+not `AdministratorRequiredMixin` — static pages are editorial content,
+not site-wide sensitive configuration.
+
+# Phase 10 (CMS: Reklam / Advertisements)
+
+## First entirely-new domain model built this project — `AdPosition` + `Advertisement`
+
+`apps/advertisements/` existed only as empty `startapp` scaffolding since
+Phase 1 (same state `apps/users/` was in before Phase 7) — no prior model
+to extend, unlike every other phase so far. Two models, not one:
+
+- **`AdPosition`** is a separate model, not a hardcoded `TextChoices` field
+  on `Advertisement` — user confirmed this explicitly. CLAUDE.md ch.9
+  states "Advertisements should never require template modifications"
+  and separately lists "Default advertisement positions" as seed data —
+  both only make sense if positions are DB rows an admin (or a seed
+  command) can add, not enum values requiring a code change. Templates
+  reference a position by its `code` through `{% ad_slot "code" %}`
+  (`apps/advertisements/templatetags/ads.py`) — adding a *new* campaign
+  to an *existing* slot, or even adding a whole new `AdPosition` row,
+  never touches a template again after this phase.
+- **`Advertisement.status` is computed, not stored** — `is_active`
+  (manual pause/resume, same shape as `News.is_featured`) combined with
+  `start_date`/`end_date` yields `active`/`scheduled`/`paused`/`expired`
+  via a property, exactly mirroring how `NewsQuerySet.published()`
+  computes visibility from `status` + `published_at` at query time. No
+  Celery Beat schedule exists anywhere in this project (confirmed before
+  designing this — `config/celery.py` has no `beat_schedule`, no
+  `django-celery-beat` installed) — News doesn't get automatic status
+  transitions either, so building one just for Ads would be inventing
+  infrastructure the rest of the project doesn't have.
+
+## `AdPosition` gets Django admin only, not a CMS screen
+
+The `CMS Ads.dc.html` mockup shows only a campaign list — no position
+manager UI anywhere. Combined with CLAUDE.md treating positions as seed
+data rather than a described CMS workflow, positions are managed via
+Django admin (`apps/advertisements/admin.py`, dev-only per CLAUDE.md
+ch.9) plus `seed_initial_data.py`'s new `_seed_ad_positions()` — which
+seeds exactly the two positions the public templates' `data-position`
+attributes already implied (`home-sidebar-1`, `category-sidebar-1`,
+both 360×280 — the only pixel-exact ad placement in any mockup). The
+full CMS section (list/create/edit/soft-delete/restore, matching
+`CategoryListView`'s tabbed soft-delete shape since CLAUDE.md ch.10
+lists Advertisements among soft-delete entities, unlike Page in Phase 9)
+is for `Advertisement` campaigns only.
+
+## `banner`/`position` are `on_delete=PROTECT`, not `SET_NULL` — and that required fixing `MediaDeleteView`
+
+Every other `MediaFile`-referencing FK in the project (`News.featured_image/
+og_image`, `SiteSettings.logo/favicon`) is `SET_NULL` — losing the image
+just means nothing renders, never blocks a delete. An ad's banner is
+different: a live campaign silently losing its creative (or its position)
+is a real content-integrity problem, not a cosmetic one, so both FKs are
+`PROTECT` here, the same reasoning as `News.category`. That surfaced a
+real bug while implementing it: `MediaDeleteView.post()`
+(`apps/cms/views/media.py`, Phase 5) called `media_file.delete()`
+unconditionally — with a `PROTECT` reference now possible, that would
+raise an unhandled `ProtectedError` → 500, not the graceful
+usage-count warning the confirm page already shows. Fixed by wrapping the
+delete in `try/except ProtectedError` with a friendly message, and — while
+touching it — reordered the method to delete the DB row *before* deleting
+the physical files (previously files were deleted first), so a blocked
+delete can no longer leave a `MediaFile` row pointing at files that no
+longer exist on disk. `MediaFile.usage_count` also gained a
+`Advertisement.objects.filter(banner=self).count()` term so the warning
+actually fires for banner references, not just News/Settings ones.
+
+## Click tracking only — impressions explicitly deferred
+
+CLAUDE.md itself lists "Click tracking (future)" under Advertisements,
+and separately doesn't mention impressions at all — user confirmed
+building just the click side. `Advertisement.click_count` is a plain
+counter (`F('click_count') + 1`, avoiding a read-modify-write race, same
+pattern as `News.view_count` would use) incremented by the public,
+unauthenticated `AdClickView` at `/reklam-klik/<pk>/`, which then
+redirects to `target_url`. No per-click log exists, so the CMS list's
+"Bu ay klik sayı" stat is an approximation (sum of `click_count` across
+campaigns that are live *right now*, not a true monthly tally) —
+documented in the view's code comment, not hidden.
+
+## `/reklam-klik/` — not `/reklam/` — to leave room for the "advertise with us" page
+
+`Sitemap.dc.html` shows `/reklam/` as a public advertiser-info page, and
+that's just a `Page` row (seeded this phase, `apps/pages` infrastructure
+from Phase 9, zero new code) served by `apps.pages.urls`'s root-level
+`<slug:slug>/` catch-all. Mounting `apps.advertisements.urls` at
+`reklam/` instead of a distinct `reklam-klik/` prefix would have
+permanently blocked that slug from ever working. Chose the non-colliding
+prefix up front rather than discovering the conflict later.
+
+## Public rendering never touches the two existing `ad-slot` divs directly
+
+`templates/news/home.html` and `templates/categories/category_detail.html`
+already had empty `<div class="ad-slot ad-slot--sidebar" data-position="...">`
+placeholders stubbed in from an earlier phase. Replaced with
+`{% ad_slot "home-sidebar-1" %}` / `{% ad_slot "category-sidebar-1" %}` —
+the inclusion tag renders the *same* empty placeholder markup when no
+campaign is live for that position (verified: an empty database produces
+pixel-identical output to before this phase), and the real banner
+`<img>` once one exists. One active campaign per position, no rotation/
+carousel — nothing in any mockup suggested multiple banners sharing a
+slot, and building rotation logic nobody asked for would be exactly the
+kind of speculative feature CLAUDE.md's "avoid unnecessary abstraction"
+warns against. A future phase can add it if it's ever actually needed.
+
+# Phase 11 (CMS: SEO)
+
+## Full scope confirmed — sitemap, robots.txt, remaining `SEOFieldsMixin` fields, JSON-LD
+
+`apps/seo/` had existed since early phases as just an abstract
+`SEOFieldsMixin` (9 fields, mixed into `News`/`Page`) with no sitemap, no
+robots.txt, and only 2 of its 9 fields (`meta_title`/`meta_description`)
+actually editable anywhere. User confirmed the full option rather than a
+partial one: `django.contrib.sitemaps`-based sitemap.xml, dynamic
+robots.txt, the remaining 7 fields exposed on the News/Page edit forms,
+and JSON-LD (`NewsArticle`, `BreadcrumbList`, `WebSite`/`Organization`).
+Analytics fields (GA/Meta Pixel) were explicitly out of scope.
+
+## Sitemap and robots.txt use Django's own `django.contrib.sitemaps`, not a hand-rolled view
+
+CLAUDE.md ch.15 prefers standard Django solutions over custom code where
+one already exists. `apps/seo/sitemaps.py` defines one `Sitemap` subclass
+per public entity (`News`, `Category`, `Tag`, `Page`, plus a `static`
+sitemap for the homepage), each reusing an existing queryset method
+(`News.objects.published()`, `Category.objects.active().visible()`) so
+"only real content, never drafts/soft-deleted" is enforced in exactly one
+place already trusted elsewhere in the codebase — not reimplemented.
+`TagSitemap` deliberately filters to tags with at least one published
+article; an empty tag page isn't worth a sitemap entry. Because
+`django.contrib.sitemaps` queries the database fresh on every request
+(no caching layer of its own), "sitemap updates automatically after
+content changes" (CLAUDE.md ch.14) is true for free — no signal, no cache
+invalidation to wire up. `robots_txt` (`apps/seo/views.py`) is a plain
+view, not a static file, specifically so its `Sitemap:` line always
+matches the live host via `request.build_absolute_uri()` rather than a
+hardcoded domain.
+
+## `static/js/cms/settings.js` renamed to `static/js/cms/image-pickers.js`
+
+The file stopped being Settings-specific back in Phase 10 (Reklam's
+banner picker already used it) — this phase makes it a third and fourth
+consumer (News, Page), so it finally got a name that describes what it
+does rather than where it was first written. Pure rename, no logic
+change; `settings.html`/`ad_form.html`'s script tags were updated to
+match.
+
+## News' `featured_image` picker migrated off the old single-picker `editor.js` code, to make room for `og_image`
+
+Before this phase, `news_form.html`'s cover image used a bespoke,
+News-only implementation (`editor.js`'s `initCoverPicker()`) hardcoded to
+one picker per page (`data-role="cover-picker"`, `#cover-file-input` as a
+literal DOM id). Adding a second picker for `og_image` on the same page
+would have hit the exact "two independent `MediaUploader` instances
+double-bind the shared crop modal's click handlers" bug already solved
+once in Phase 8 for Settings' logo+favicon pair. Rather than solve it
+twice, `featured_image` was migrated onto the same generalized
+`data-role="image-picker"`/`"picker-input"` pattern Settings/Reklam
+already use — one shared `MediaUploader` instance per page, with
+`onComplete`/`defaultRatio` reassigned per-picker immediately before each
+`uploadFile()` call. `og_image` then became a second picker on
+already-proven shared infrastructure instead of new one-off code.
+`initCoverPicker()` was deleted from `editor.js` as dead code once no
+template referenced `data-role="cover-picker"` anymore. `Page` gained an
+`og_image` picker the same way — it never had any picker before this
+phase.
+
+**Bug found and fixed during verification**: the first draft of both
+picker blocks placed the hidden `{{ form.featured_image }}`/
+`{{ form.og_image }}` input *after* the closing `</div>` of the
+`.media-picker` wrapper. `image-pickers.js` scopes its
+`querySelector('[data-role="picker-input"]')` lookup to each picker's own
+wrapper element, so the hidden input has to live *inside* that wrapper
+(matching the working Settings/Reklam markup) — otherwise
+`hiddenInput` resolves to `null` and the upload's `onComplete` callback
+throws `Cannot set properties of null (setting 'value')`, silently
+swallowed into a toast rather than a visible page error. Caught by an
+end-to-end Playwright pass that actually uploaded a file into each
+picker and read back the hidden field's value, not just by checking the
+markup rendered.
+
+## `<head>` gained blocks it never had: `robots`, `extra_meta`, `structured_data`
+
+`templates/base.html` previously had no `<meta name="robots">` tag at
+all, and no block a child template could use to inject arbitrary extra
+`<meta>` tags or JSON-LD. Added `{% block robots %}index, follow{% endblock %}`
+(default matches previous implicit behavior — everything was indexable
+before), `{% block extra_meta %}{% endblock %}` (used by `meta_keywords`
+on News/Page), and `{% block structured_data %}{% endblock %}` (used by
+`NewsArticle` JSON-LD) right after the site-wide `Organization`/`WebSite`
+JSON-LD block, which now renders unconditionally on every page. A single
+`<meta name="twitter:card" content="summary_large_image">` was added —
+title/description/image are already covered by the existing `og:*` tags,
+so no separate `twitter:title`/`twitter:image` were added; X reads
+Open Graph tags as a fallback in their absence.
+
+## `News`/`Page` detail templates: `canonical_url`/`og_image`/`robots` now fall back correctly, not silently ignore the field
+
+Before this phase `canonical_url` was rendered as `{{ request.build_absolute_uri }}`
+unconditionally — the field existed in the database but had no effect.
+Same for `og_image` (`og:image` always came from `featured_image`, never
+checking whether an editor had set a distinct `og_image`) and
+`robots_index`/`robots_follow` (no `<meta name="robots">` override
+existed at all, so a `noindex` article would still say "index, follow").
+Fixed with `{{ article.canonical_url|default:request.build_absolute_uri }}`,
+an `og_image`-first-then-`featured_image` fallback, and a computed
+`{% block robots %}` reading both boolean fields. `page_detail.html`'s
+`{% block title %}` also started using `page.meta_title` (previously
+ignored entirely, always falling back to `page.title`) — a pre-existing
+gap being closed as part of exposing the full field set, not a new
+feature.
+
+## JSON-LD kept to three schema types, no duplicate CMS meta-tag editor
+
+`NewsArticle` (per-article, `news/detail.html`), `BreadcrumbList` (added
+directly to `components/breadcrumbs.html` so it renders "for free" on
+every page that already includes that component — News, Category, Page,
+Tag), and `WebSite`+`Organization` (site-wide, `base.html`, rendered once
+per page as a single `@graph`). All string values embedded via Django's
+`escapejs` filter rather than raw interpolation, since JSON-LD lives
+inside a `<script>` tag and needs the same escaping discipline as any
+other JS string literal. The `CMS SEO.dc.html` mockup includes a
+per-article meta-tag editor alongside its 3 status cards — deliberately
+not built as a second screen: those exact fields are now edited on the
+article's/page's own form (this phase's other change), and a duplicate
+editing surface for the same underlying fields would violate CLAUDE.md's
+DRY principle for no benefit. `apps/cms/views/seo.py`'s
+`SeoOverviewView` renders only the 3 status cards (sitemap active,
+robots.txt configured, count of published-but-`robots_index=False`
+News+Pages) plus a short note pointing editors to the article/page forms
+instead.
+
+# Phase 12 (CMS: inline images + YouTube video in CKEditor)
+
+## Both blockers from the original CKEditor toolbar comment are now resolved
+
+`CKEDITOR_5_CONFIGS['default']` had shipped since early phases with Images
+and Videos deliberately left off the toolbar, with the reason spelled out
+in a code comment: images needed the Media Library's upload→`MediaFile`
+pipeline (didn't exist yet at that point), and `mediaEmbed` by default
+saves a non-standard `<oembed>` tag with no resolver to render it on the
+public site. Both are now false: the Media Library pipeline
+(`apps/media_manager/services.py`) has existed since Phase 4/5 and is
+reused directly, and `mediaEmbed.previewsInData: true` bakes the actual
+`<iframe>` straight into the saved data, so no resolver is needed at all.
+
+## No npm rebuild — the bundled package already ships every plugin used
+
+`django_ckeditor_5`'s pinned bundle (`django_ckeditor_5/static/
+django_ckeditor_5/src/ckeditor.js`) is a "kitchen sink" build that already
+includes `Image`, `ImageCaption`, `ImageStyle`, `ImageToolbar`,
+`ImageResize`, `SimpleUploadAdapter`, and `MediaEmbed` — confirmed by
+reading the installed package's source before writing any code. Enabling
+both features was therefore a matter of Django-side config (toolbar
+array, a new upload view, a small custom JS file) rather than a
+frontend build step.
+
+## Inline images upload through the same pipeline as every other image, minus the crop step
+
+New `CKEditorImageUploadView` (`apps/cms/views/media.py`) is the upload
+target CKEditor5's `SimpleUploadAdapter` posts to — wired in via
+`CK_EDITOR_5_UPLOAD_FILE_VIEW_NAME` (`config/settings/base.py`), which
+`django_ckeditor_5`'s widget reads instead of its own default view. The
+view calls the exact same `stage_upload()` → `process_crop()` pair the
+Media Library and every image picker use, just with `crop_box=None` —
+confirmed by user: inline body images skip the interactive Cropper.js
+step (unlike Featured/OG images), resized instead via CKEditor's own
+drag handles (`ImageResize`, bundled). Every inline image still gets
+WebP conversion, a thumbnail, and a real `MediaFile` row — not a raw
+file dumped under `MEDIA_ROOT`, which is what the package's own default
+upload view (`django_ckeditor_5/views.py`) does.
+
+**SVG is not selectable through this button, and can't be** — confirmed
+by testing, not assumed. `CKEDITOR_5_UPLOAD_FILE_TYPES` (a Django
+setting) only controls part of the picker's behavior; the file input's
+actual `accept` HTML attribute is built by CKEditor5's own Image plugin
+from a hardcoded extension→MIME table that has no SVG entry, regardless
+of what's listed in that Django setting. SVGs remain fully supported
+everywhere else in the project (Media Library, Featured/OG image
+pickers) — this is a CKEditor5 library limitation specific to inline
+body-content images, not a gap in this project's pipeline.
+
+## YouTube video uses a hand-written provider, not MediaEmbed's own default one
+
+MediaEmbed ships a built-in YouTube provider, but with
+`previewsInData: true` its saved output is `<div style="position:
+absolute;...">` — inline styles throughout, which CLAUDE.md forbids
+outright ("Never generate inline styles", ch.3/ch.6/ch.7). It would also
+recognize every other bundled provider (Vimeo, Twitter, Instagram,
+Spotify, …), when only YouTube was asked for. A one-function custom
+provider (`static/js/cms/ckeditor-youtube-embed.js`, wired in via
+`CKEDITOR_5_CONFIGS['default']['mediaEmbed']['providers']`) avoids both
+problems: its output is a plain `<div class="media-embed"><iframe>`
+styled by a real stylesheet (`static/css/components/rich-text.css`), and
+no other provider is registered, so pasting a Vimeo/Twitter/etc. link
+simply does nothing.
+
+**Discovered mid-implementation**: `django_ckeditor_5`'s widget bootstrap
+(`app.js`) resolves regex-shaped config strings to real `RegExp` objects
+by calling `value.toString()` and checking the result against
+`^/(.*?)/([gimy]*)$`. That works for a single regex string, but breaks
+silently for an array of regex strings — `Array.prototype.toString()`
+joins all elements with commas *before* the check runs, collapsing three
+separate patterns into one garbled, unusable string (and then matching
+the outer detection pattern *again* on the joined mess, mangling it
+further). Caught by inspecting the live `editor.config.get('mediaEmbed')`
+in a real browser, not by reading source alone — the config *looked*
+correct in Python and in the rendered `<script type="application/json">`
+tag; only the parsed runtime value was actually broken. Fixed by
+combining the three YouTube URL shapes (`watch?v=`, `/shorts/`,
+`youtu.be/`) into one regex with alternation instead of a list — sidesteps
+the library bug entirely rather than working around it.
+
+## Bleach allow-list changes are structural, not just "trust the toolbar"
+
+`sanitize_rich_text_html` (`apps/core/utils.py`) is the actual security
+boundary — applied in `save()`, not just the form, per its own existing
+docstring. Two additions, both verified against the *exact* HTML
+CKEditor produces (captured via `editor.getData()` in a real browser
+session, not guessed):
+
+- `figure`/`figcaption` (CKEditor5's block-image wrapper, also reused —
+  with `class="media"` — as `previewsInData`'s outer wrapper around the
+  custom YouTube provider's own markup) and `div`/`iframe`
+  (the provider's inner wrapper).
+- `iframe`'s `src` attribute is validated by a callable, not a plain
+  list — `_validate_iframe_attribute` only allows `https://` URLs whose
+  host is `youtube-nocookie.com` (or its `www.` form). The CKEditor UI
+  only ever offers YouTube, but the UI isn't the boundary; a raw `<iframe
+  src="https://evil.example/">` crafted any other way (a direct API call,
+  a future SourceEditing slip) gets its `src` attribute stripped on
+  save, same as any other write path. Verified with a Django-shell
+  negative test before considering this done.
+- `_CSS_SANITIZER`'s allowed CSS properties gained `width` (CKEditor5's
+  `ImageResize` writes `style="width: NN%"` on the `<figure>`, not the
+  `<img>`) and `aspect-ratio` (CKEditor5 stamps `style="aspect-ratio:
+  W/H"` on every inserted `<img>` to prevent layout shift — discovered
+  from real editor output, not anticipated in the original plan).
+
+## Shared `rich-text-content` CSS class instead of per-page-type duplication
+
+New `static/css/components/rich-text.css` styles `figure.image img`,
+`figcaption`, and `.media-embed` once. Applied via a `rich-text-content`
+class added to three existing prose wrapper divs — `.article__content`
+(News), `.about-page__prose` (both `Page` detail and the dedicated About
+page) — rather than writing the same rules three times (CLAUDE.md ch.7
+"component-based architecture").
+
+## Pagination audit — no changes made
+
+Explored before starting this phase: every list-type page across the
+public site and CMS already paginates (`paginate_by` + `components/
+pagination.html`) except the CMS Categories list, which is unpaginated
+*by design*, documented in the view's own docstring (`apps/cms/views/
+category.py`) — the category tree is capped at two levels, so the list
+is inherently short, and the `CMS Categories.dc.html` mockup doesn't show
+a pager. Nothing was changed here this phase; it was audited and found
+already correct.
+
+# Phase 13 (CMS responsiveness)
+
+## The CMS had zero media queries anywhere — a real, user-reported bug, not a gap discovered internally
+
+User reported the admin panel wasn't responsive at all, pages overflowing
+the screen. Verified before touching anything: `templates/cms/base.html`
+never loads `static/css/responsive/mobile.css`, and that file has no
+`.cms`-prefixed selectors regardless — the entire CMS section had no
+responsive behavior whatsoever. `.cms-sidebar` was a hardcoded `width:
+240px; flex: none` with no collapse mechanism, directly violating
+CLAUDE.md ch.9's explicit spec: *"The sidebar is permanently visible on
+desktop. On tablets and mobile devices it becomes collapsible."*
+
+## Diagnosed by measurement, not by CSS inspection alone
+
+Static CSS reading can't reliably predict real overflow — flex/grid
+shrink behavior, cascade order, and `overflow-x: auto` containment all
+interact in ways that are easy to get wrong on paper. Instead: started
+the dev server, logged in via Playwright, and on all 12 CMS pages at 4
+viewport widths (1440/1024/768/375) measured
+`document.documentElement.scrollWidth` against `window.innerWidth`, then
+walked the DOM for the actual overflowing element. The first version of
+that DOM walk gave false positives — it flagged elements sitting *inside*
+an already-correct `overflow-x: auto` wrapper (e.g. `.cms-table` inside
+`.cms-table-wrapper`) as if they were the problem, when the wrapper was
+already containing them exactly as designed. Rewritten to only count an
+element as a true culprit if no ancestor's `overflow-x` was already
+absorbing it — this is what actually found the real, independent bugs
+below instead of chasing scroll containers that were working correctly.
+
+## `.visually-hidden` needed `!important` — a genuine specificity bug, unmasked by the same diagnostic
+
+The single biggest overflow contributor (up to +1072px of document width
+at 1440px) wasn't a missing media query at all: `news_form.html`'s tag
+`<select multiple>` (`static/js/cms/editor.js`'s `initTagPicker()` adds
+`.visually-hidden` to it once the JS pill-picker widget takes over) also
+carries `.form-input`. `forms.css` loads after `utilities.css` in
+`base.html`'s `<head>`, so with equal specificity `.form-input`'s width
+rule wins the cascade, leaving a full-width, absolutely-positioned
+`<select>` (with every `<option>` at that same width) that still
+contributes to the page's scrollable area despite being visually
+invisible. Fixed with `!important` on every `.visually-hidden` property
+(`static/css/base/utilities.css`) — the standard, expected shape for a
+sr-only utility, which by definition must survive being combined with
+any component class. This is the only `!important` introduced this
+phase; CLAUDE.md ch.7 permits it for exactly this kind of case.
+
+## Collapsible sidebar reuses the public site's existing off-canvas pattern, not a new one
+
+`static/js/components/menu.js` already implements the toggle-button +
+`is-open` class + close-on-outside-click shape for the public site's
+mobile nav. `static/js/cms/sidebar.js` is the same shape (plus Escape-to-
+close and a backdrop element, matching this project's existing Modal
+Component spec — CLAUDE.md ch.11 "Overlay Click, Escape Key" — since the
+CMS sidebar covers noticeably more of a narrow screen than the public
+nav does). `static/css/cms/shell.css` gained the `@media (max-width:
+992px)` block making `.cms-sidebar` a fixed, `translateX`-animated
+drawer anchored left (the public nav's equivalent is right-anchored,
+since that's where it normally sits) — same `z-index: 200` and
+`--transition-base` token the public nav uses, for consistency. New
+`.cms-topbar__menu-toggle` hamburger button, hidden above 992px, and a
+new `#cms-sidebar` id / `.cms-sidebar-backdrop` div in
+`templates/cms/base.html`.
+
+## Cascade-order pitfall: a media-scoped override placed *before* the base rule it's overriding still loses
+
+First draft of the `.editor` (News/Page editor two-column layout) mobile
+stack put the new `@media (max-width: 1200px) { .editor__sidebar {
+width: 100% } }` block directly under `.editor {}` at the top of
+`editor.css`, while the original un-guarded `.editor__sidebar { width:
+360px }` rule is defined later in the same file. Same selector
+specificity, so CSS resolves the tie by source order — the *later*,
+unconditional rule won regardless of viewport, silently no-opping the
+override. Caught by re-running the same Playwright measurement after the
+first round of fixes (still overflowing 392px vs 375px at mobile), not
+assumed correct after writing the CSS. Fixed by moving the whole media
+query to the end of the file, after every un-guarded rule it needs to
+beat. `.cms-panel-grid` (Dashboard's chart+distribution two-column row)
+had the same "not yet responsive" gap, found by the same re-run — it had
+simply never been exercised at a narrow enough width before now — and
+got the same treatment: a `@media (max-width: 576px)` collapsing it to a
+single column, alongside `.cms-stat-grid`, `.cms-filter-bar`, and
+`.media-dropzone` all gaining either responsive `grid-template-columns`
+steps or `flex-wrap: wrap`.
+
+## Verification
+
+Re-ran the same measurement script after every fix, not just once at the
+end — the two remaining bugs above (`.editor__sidebar` cascade order,
+`.cms-panel-grid`) were only found because of that second pass. Final
+state: all 12 CMS pages, all 4 viewport widths, zero horizontal overflow.
+Separately verified: hamburger hidden above 992px (no visual regression
+on desktop — screenshotted), visible and functional at 375px (toggle
+opens/closes, backdrop click closes, Escape closes, `aria-expanded`
+tracks state correctly). Zero console errors across every run.
+
+# Phase 14 (public nav bug + CKEditor text-wrap for images)
+
+## Public site: the mobile hamburger button was visible (and inert) on desktop — a pre-existing bug, same root cause pattern as Phase 13's `.visually-hidden` fix
+
+User reported the hamburger button showing on large screens and doing
+nothing when clicked. Root-caused with the same measurement approach as
+Phase 13 (Playwright, real computed styles, not reading CSS on paper):
+`components/header.html`'s toggle button carries both `.header-icon-btn`
+(`components/buttons.css`, `display: inline-flex`) and `.header-menu-
+toggle` (`layout/header.css`, `display: none`). `buttons.css` loads
+*after* `header.css` in every `base.html`, so with equal selector
+specificity the later rule wins regardless of viewport — the button
+was never actually hidden on desktop, it just happened to show the
+*correct* value below 992px by coincidence (both rules agree there).
+Clicking it did toggle `#primary-navigation`'s `is-open` class
+correctly (confirmed — the JS was never broken), but `.nav.is-open`'s
+positioning/transform rules only exist inside `@media (max-width:
+992px)`, so above that width the class toggle has nothing to visually
+react to.
+
+Fixed by bumping selector specificity (`button.header-menu-toggle`
+instead of `.header-menu-toggle`, in both `layout/header.css` and its
+`static/css/responsive/mobile.css` override) rather than reordering
+global stylesheet `<link>` order — reordering risks unrelated cascade
+assumptions elsewhere in two large, long-lived files; an element-type
+selector addition is a one-line, fully localized fix with no other
+surface area. Verified: hidden at 1440px, still visible and functional
+at 768px, same as before.
+
+## CKEditor images can now wrap article text — `imageStyle:alignLeft`/`alignRight`
+
+Phase 12 deliberately left `imageStyle` alignment off the image toolbar
+(`config/settings/base.py`), reasoning that the article body was a
+single fixed-width reading column with no floated-image precedent in any
+mockup. User explicitly asked for text-wrap-around-image after that,
+which is a straightforward reversal: added `'imageStyle:alignLeft'`,
+`'imageStyle:alignCenter'`, `'imageStyle:alignRight'` to `image.toolbar`.
+These are CKEditor5's *inline*-image alignment styles (as opposed to
+`alignBlockLeft`/`alignBlockRight`, which align without float) —
+confirmed which class names they actually produce by capturing real
+`editor.getData()` output in a browser rather than assuming from docs:
+`image-style-align-left` / `image-style-align-right`. `apps/core/utils.py`'s
+bleach sanitizer needed no change — `figure`'s `class` attribute was
+already allowed with any value from Phase 12. New CSS in `static/css/
+components/rich-text.css`: `float: left/right`, a margin on the far side
+only (matching the spacing convention in the editor's own bundled CSS,
+`django_ckeditor_5/dist/styles.css`, inspected directly for parity), and
+`max-width: 50%` so a floated image always leaves room for text to
+actually wrap next to it — `ImageResize` (already bundled, unchanged)
+lets an editor shrink it further via drag handles if they want narrower.
+
+## Video text-wrap is not possible without writing an actual CKEditor5 plugin — tried three approaches, verified each fails live before giving up
+
+User also asked for the same text-wrap behavior around inserted YouTube
+videos. Unlike Image, CKEditor5's `MediaEmbed` feature has no built-in
+alignment/float mechanism — there's no `mediaStyle` equivalent to
+`imageStyle`. Investigated whether the bundled, generic `Style` plugin
+(`@ckeditor/ckeditor5-style`, confirmed present in `django_ckeditor_5`'s
+webpack bundle) could fill the gap, since it's designed to let a config
+apply an arbitrary class to a selected element via a toolbar dropdown:
+
+- Configured `style.definitions` with `element: 'figure'` (the media
+  widget's outer wrapper tag) — the dropdown button was enabled and the
+  definitions worked correctly when an *image* figure was selected, but
+  stayed disabled specifically when a media/video figure was selected
+  (confirmed live: `.ck-disabled` class present on the button element
+  in that state, via Playwright, not inferred from a screenshot).
+- Tried `element: 'oembed'` instead (the media model's actual internal
+  element name, visible in `editor.config.get('mediaEmbed').elementName`)
+  in case the plugin matched by model name rather than tag — same
+  result, still disabled.
+- Concluded the Style command's enablement check only recognizes a
+  fixed set of built-in-supported schemas (image, table, …) and
+  MediaEmbed's widget isn't among them, regardless of which `element`
+  value is configured — this is a hardcoded plugin limitation, not a
+  config value to discover. Extending it for real would mean writing an
+  actual CKEditor5 `Plugin` subclass with its own schema/converter
+  registration in JavaScript, which in turn requires compiling a new
+  editor bundle — `django_ckeditor_5` ships a pre-built bundle
+  (`static/django_ckeditor_5/dist/bundle.js`) with no build pipeline in
+  this project to extend it from source. That's a materially different,
+  much larger scope than a config change, so it wasn't attempted without
+  the user weighing in first.
+
+Removed the non-functional `'style'` toolbar item and `style.definitions`
+config entirely rather than leaving a permanently-disabled button in the
+toolbar (CLAUDE.md ch.15 "no placeholder implementations, no unfinished
+code") — video embeds stay full-width/block-only for now.
+
+# Phase 15 (login hardening: hide the CMS entry point, brute-force lockout)
+
+## Public header no longer links to the login page
+
+`components/header.html` showed a person-icon link to `accounts:login`
+for every anonymous visitor. Removed outright — logged-in staff still
+see a logout icon (unchanged, `{% if request.user.is_authenticated %}`),
+but there's no `{% else %}` branch anymore for anonymous visitors. This
+is UI hygiene, not a security control by itself: `/accounts/login/`
+still resolves and is reachable by anyone who knows or guesses it — told
+the user this explicitly rather than let "the button's gone" be mistaken
+for "the attack surface is gone." The actual control is the lockout
+below.
+
+## Brute-force lockout — custom, cache-backed, not django-axes
+
+User chose the custom option after being asked (recommended, since Redis
+is already the project's configured cache backend, CLAUDE.md ch.13 — no
+new dependency needed, versus `django-axes`, which is a fine package but
+adds one anyway plus its own DB tables for a project this size).
+
+New `apps/accounts/services.py` functions — `is_login_locked_out`,
+`register_login_failure`, `clear_login_failures` — key the counter on
+`(IP, username)`, not IP alone or username alone: locks out one attacker
+grinding through passwords for one account from one machine, without
+that letting an attacker deny service to a real user logging in from a
+*different* IP, or to every account behind a shared office IP (both real
+failure modes of a naive single-key design). `LOGIN_ATTEMPT_LIMIT = 5`,
+`LOGIN_LOCKOUT_SECONDS = 15 * 60` — a fixed window from the first
+failure (not slid forward per attempt), the simpler of the two standard
+rate-limit shapes and enough for CLAUDE.md ch.12's "Temporary lockout".
+
+`apps/accounts/views.py`'s `LoginView.post()` checks the lockout
+*before* calling into Django's own auth backend at all — a locked-out
+pair never reaches password verification, not even to fail it again.
+`form_valid()` calls `clear_login_failures()` so a legitimate user who
+mistyped their password a few times isn't left throttled after finally
+getting it right. Every blocked attempt is also logged
+(`ActivityLog.Action.LOGIN_BLOCKED`, new choice — migration
+`apps/logs/migrations/0007_alter_activitylog_action.py`), alongside the
+existing `LOGIN_FAILED`/`LOGIN_SUCCESS` entries from Phase 7, so the
+Activity Log screen shows the whole picture without any new UI.
+
+Verified live (Playwright): 5 wrong-password submissions, 6th submission
+using the *correct* password still rejected with the lockout message
+(proves the check runs before auth, not after another failed attempt);
+a successful login clears the counter — logged back out and failed
+twice more, then logged in immediately after, no lockout. `ActivityLog`
+rows confirmed for both `LOGIN_FAILED` and `LOGIN_BLOCKED`.
+
+## Found while testing, fixed in the same pass: Django's default `invalid_login` error was still literal English
+
+Phase 7 localized `LoginForm`'s field *labels* but not
+`AuthenticationForm.error_messages['invalid_login']`/`'inactive'` —
+those still rendered Django's stock English text (same `USE_I18N =
+False` root cause as every other instance of this bug fixed so far).
+Caught because this phase's own Playwright pass exercises repeated
+failed logins and reads the error text on every one. Overridden in
+`LoginForm.error_messages` — deliberately *not* using Django's own
+`%(username)s` placeholder in the message, since that gets filled from
+the User model field's `verbose_name` ("username"), not this form's
+Azerbaijani label override, so it would've rendered literal English
+either way; hardcoded "istifadəçi adı" directly into the string instead.
+
+# Phase 16 (social links: fixed fields → flexible CRUD list)
+
+## Why this replaced, rather than extended, the Phase 8 fields
+
+`SiteSettings.social_facebook/instagram/twitter/youtube` (4 fixed
+`URLField`s, Phase 8) already displayed on the public site and were
+already editable in CMS Settings — functionally "done" by CLAUDE.md
+ch.9's letter. User asked specifically for add/edit/delete as three
+distinct actions on an open-ended set of platforms (Telegram, WhatsApp,
+etc.), confirmed via `AskUserQuestion` against the alternative of just
+adding 1-2 more fixed fields — a fixed set, however large, still needs a
+code change and a migration every time a newsroom wants a platform that
+isn't already listed, which is exactly the constraint being removed.
+
+## New `SocialLink` model, same shape as `Tag`
+
+`apps/settings_app/models.py`'s new `SocialLink(BaseModel)` follows
+`Tag`'s (`apps/tags/models.py`) precedent closely: flat list, no
+hierarchy, **hard delete** (not in CLAUDE.md ch.10's soft-delete list —
+a link is trivial to re-add, recovery machinery would be pure overhead).
+`platform` is a fixed `TextChoices`, not free text — deliberately, so
+the CMS never requires an editor to know or type a CSS icon class name
+(CLAUDE.md ch.9 "must never be designed for technical users only"). The
+11 choices (10 named platforms + `OTHER`) and their icon-class mapping
+were checked against the actually-bundled `static/vendors/bootstrap-
+icons/bootstrap-icons.css`, not assumed from the library's public docs —
+confirmed present: facebook, instagram, twitter-x, youtube, telegram,
+whatsapp, linkedin, tiktok, pinterest, threads, plus `link-45deg` as
+`OTHER`'s fallback so an unlisted platform still gets a sane icon
+instead of a broken one. `order` is a plain integer field editable in
+the form, not drag-and-drop — the list is short (a handful of rows in
+practice), so `Category`'s full DnD reorder machinery
+(`CategoryReorderView`) would be solving a problem this list doesn't
+have (CLAUDE.md ch.15 "avoid unnecessary abstraction").
+
+## Three-migration split for a clean field→model data move
+
+Doing "add `SocialLink`" and "remove the 4 old fields" as one migration
+would drop any existing URLs with no path to recover them. Split into
+three, in dependency order:
+1. `0003_add_social_link` — create the table (generated first, with the
+   4 old fields still in the model, then temporarily restored after a
+   premature edit removed them too early — worth noting only because it's
+   *why* the migration numbers aren't contiguous with a naive single-shot
+   generation).
+2. `0004_migrate_social_link_data` — hand-written `RunPython`, one
+   `SocialLink` row per non-blank old field, both forward and backward
+   (`migrate_social_links_backward` collapses back into the 4 fields, so
+   `migrate settings_app 0003` remains a real, working rollback target).
+3. `0005_remove_social_fields` — drops the 4 old columns, generated
+   last so it only runs after data has somewhere to land.
+
+Verified against the actual dev database (all 4 fields were empty at
+migration time, confirmed via shell before writing the data migration)
+— the logic itself doesn't depend on that emptiness and handles
+populated fields the same way; it just means this particular run had
+nothing to move.
+
+## CMS screen reachable from Settings, not a new sidebar item
+
+`apps/cms/views/social_link.py` — List/Create/Update/Delete, modeled on
+`apps/cms/views/tag.py` minus search/pagination (short list) and minus
+`Tag`'s usage-count delete warning (a `SocialLink` has no dependent rows
+anywhere in the schema, unlike a `Tag` with articles attached).
+`AdministratorRequiredMixin` — same access tier as `SettingsUpdateView`,
+since this is the same category of site-wide, sensitive configuration.
+
+CLAUDE.md ch.9's sidebar order is fairly fixed and doesn't list a social-
+links item — rather than add a new top-level entry for a small, rarely-
+touched feature, `templates/cms/settings.html`'s old 4-field "Sosial
+şəbəkələr" section became a link card pointing at `cms:social_link_list`
+(new `.cms-settings-card--link` modifier, `static/css/cms/settings.css`)
+— one click from the screen an admin would already be on for this kind
+of setting, no sidebar clutter.
+
+## Public rendering: one context-processor addition, not per-view plumbing
+
+`apps/core/context_processors.py`'s `site()` already injects
+`site_settings`/`main_categories` into every public page's context —
+added `social_links` (`SocialLink.objects.all()`, already ordered via
+`Meta.ordering`) there too, so `templates/components/footer.html`
+needed no view changes anywhere, just its own template logic: the old 4
+hardcoded `{% if site_settings.social_x %}` blocks collapsed into one
+`{% for link in social_links %}` loop rendering `link.icon_class`/
+`link.get_platform_display`.
+
+## Verification
+
+Playwright, logged in as Administrator: confirmed the old fields are
+gone from the Settings form and the new link card is present; created 3
+links (Facebook, Telegram, and one `OTHER` pointing at a made-up domain,
+specifically to exercise the fallback icon path) via the new CMS screen;
+edited one, deleted one; confirmed `ActivityLog` rows for all three
+action types. Public homepage footer inspected directly (Django test
+client, not just Playwright) — all three links rendered in `order`, with
+the correct icon classes, `OTHER` correctly falling back to
+`bi-link-45deg`. `manage.py check` and `makemigrations --check` clean
+throughout. Test rows and their activity-log entries removed afterward.
+
+# Phase 17 (contact form English leak, CKEditor image distortion, empty categories in nav, upload size hints)
+
+## Contact form: same `USE_I18N=False` English leak, fourth time found
+
+`apps/pages/forms.py`'s `ContactForm` had Azerbaijani field *labels* but
+no `error_messages` overrides, so Django's built-in validation text
+("This field is required.", "Enter a valid email address.") rendered as
+literal English — the same root cause as `LoginForm`/`PasswordResetForm`/
+`SetPasswordForm` (Phase 7) and `AuthenticationForm.error_messages`
+(Phase 15). Every field now gets an explicit override; a `_REQUIRED_
+MESSAGE`/`_MAX_LENGTH_MESSAGE` dict pair avoids repeating the same two
+strings across all four fields. At this point four separate forms have
+hit this exact bug independently — worth checking any *future* form
+against it up front rather than waiting for another report.
+
+## CKEditor inline images rendered squashed on the public site — root cause found by comparing editor vs. public rendering, not by reading CSS
+
+User reported a 1024×1024 upload displaying as roughly 257×1024 on an
+article page. Reproduced with a real synthetic 1024×1024 PNG (not
+assumed from the report) and checked the *same* image's rendered
+`getBoundingClientRect()` at three points: in the editor immediately
+after upload (593×593 — correct), in the editor after a save+reload
+(593×593 — still correct), and on the actual public article page
+(**780×1024 — wrong**). Only the public render was broken, which
+immediately ruled out the upload pipeline, CKEditor itself, and the
+saved HTML (all three already correct) and pointed at `static/css/
+components/rich-text.css` specifically.
+
+Root cause: `.rich-text-content figure.image img { width: 100%; }` had
+no `height` rule, relying on the `style="aspect-ratio: W/H"` CKEditor
+stamps on every inserted `<img>` to auto-compute height from the
+definite `width: 100%`. But that same `<img>` also carries literal
+`width="1024" height="1024"` *HTML attributes*, and browsers map an
+element's `height` attribute to a low-specificity implicit height
+style — since nothing in the stylesheet ever set `height` to override
+that mapped attribute, the computed height stayed a *second, separate*
+definite value (1024 real pixels) instead of `auto`. With both width
+and height already definite from two unrelated sources, `aspect-ratio`
+has nothing left to resolve and is silently ignored — the image renders
+at the container's width and the original's raw pixel height,
+independent of each other. Fixed with one line, `height: auto;`, which
+makes the computed height genuinely `auto` again so `aspect-ratio` can
+do its job. Verified with both a square (1024×1024 → renders 1.000
+ratio) and a 16:9 image (1600×900 → renders 1.778 ratio) side by side in
+the same article.
+
+## Categories with zero published articles no longer appear in the public nav
+
+`apps/core/context_processors.py`'s `site()` already builds
+`main_categories` for every public page's header — added an `Exists`
+subquery filter (not per-category `.exists()` calls, which would be a
+real N+1 across however many top-level categories exist) so a category
+only appears if it — or, for a top-level category, any of its
+subcategories — has at least one published article
+(`News.objects.published()`, the same queryset method `NewsQuerySet.
+in_category()` already uses for category pages, reused here rather than
+reimplemented). Applied at both levels: an empty top-level category is
+dropped entirely, and within a category that *does* qualify, its own
+empty subcategories are separately filtered out of the dropdown — a
+parent with one populated and one empty child shows only the populated
+one. Verified with two throwaway test categories (one empty top-level,
+one empty child under a real populated parent) confirming both cases,
+then removed.
+
+## Every image-upload field in the CMS now states its recommended size
+
+None of the six `media-picker` locations across the CMS (News cover
+image, News/Page OG image, Settings logo/favicon, Ad banner) told an
+editor what size to upload before this — some had a hint with no
+dimensions, most had no hint at all. Added a concrete recommendation to
+each, sized to how the image actually gets used rather than a generic
+number:
+- News cover image: 1200×675 (matches the picker's own configured
+  `data-aspect-ratio="1.7777777778"`, i.e. 16:9).
+- News/Page OG image: 1200×630, the standard Open Graph preview size.
+- Settings favicon: 512×512 (matches its `data-aspect-ratio="1"`).
+- Settings logo: no fixed ratio (none was ever enforced here), so a
+  qualitative recommendation instead — transparent PNG/SVG, ≥120px tall.
+- Ad banner: rather than hardcode a pixel size, the hint points at the
+  `position` field's own selection — `AdPosition.__str__` already
+  renders each dropdown option as `"Name (W×H)"`
+  (`apps/advertisements/models.py`), so the real number is always
+  correct even if new positions with different dimensions get added
+  later, instead of a hint that could silently go stale.
+- CKEditor inline body images (both News and Page): 1200px width,
+  next to the content field itself, since this upload path has no
+  single fixed aspect ratio to point at.
+
+# Phase 18 (CMS sidebar and Media Library folders now stay in view while scrolling)
+
+## Both were plain flex children with no scroll-independent positioning
+
+User reported two symptoms that turned out to share one root cause:
+the Media Library's folder panel scrolling out of view on a long file
+grid, and the "Tənzimləmələr" sidebar link ending up further down the
+page the longer that page got. `.cms-sidebar` (`static/css/cms/
+shell.css`) had no `position: sticky`/`fixed` at desktop widths — it's
+a plain flex sibling of `.cms-main` inside `.cms-shell`, so it stretches
+to match `.cms-main`'s height on any page taller than the viewport. Its
+bottom-pinned item (`.cms-sidebar__item--bottom`, `margin-top: auto`)
+is positioned relative to that *stretched* box, not the viewport — on
+a tall page the box itself extends far down, dragging the bottom-pinned
+link down with it. Same underlying issue, one level down, for
+`.media-folders` (`static/css/cms/media.css`): `align-self: stretch`
+matches it to `.media-main`'s height, but nothing kept its *visible*
+position anchored to the viewport while the page scrolled.
+
+## Fix: `position: sticky` on both, not a scroll-container restructure
+
+Added `position: sticky; top: 0; height: 100vh; overflow-y: auto;` to
+`.cms-sidebar` and the same shape (`max-height` instead of `height`,
+since its content is usually much shorter) to `.media-folders`. Kept
+the mobile off-canvas override (`position: fixed`, Phase 13) — a
+media-query rule with a matching condition still overrides an earlier
+unconditional `sticky` rule by ordinary cascade order, confirmed by
+re-testing the mobile drawer afterward, not assumed safe from reading
+the rule order.
+
+Verified by scripted scrolling (not just resizing the viewport and
+looking): logged in, scrolled a media-heavy page and a separately a
+plain News list 1500-2000px down, and confirmed via
+`getBoundingClientRect()` that the sidebar, the folders panel, and the
+"Tənzimləmələr" link all stayed within the viewport bounds after the
+scroll — the exact measurement that would have caught this bug before
+shipping it. Mobile off-canvas drawer re-checked afterward, unaffected.
+
+# Phase 19 (permanently deleting a news article now cleans up its media; one-time project data wipe)
+
+## Media attached to an article only gets deleted at permanent-delete time, never at soft-delete time
+
+News delete was already soft-delete-only (`is_deleted` + `NewsRestoreView`,
+CLAUDE.md ch.10 "Deleted records should remain recoverable") with no hard-delete
+path at all. The user wanted an article's attached media (cover image, OG
+image, and any image inserted inline into the CKEditor body) removed along
+with it — but doing that at soft-delete time would leave a later restore
+showing an article with broken images, since a soft-deleted row is meant to
+stay fully recoverable. Resolved by adding a genuine hard-delete action,
+reachable only from the "Silinənlər" (trash) tab, and hanging the media
+cleanup off that instead: `NewsPermanentDeleteView`
+(`apps/cms/views/news.py`) — `get_object_or_404(News, pk=pk, is_deleted=True)`
+so it can only ever fire on a row already in the trash.
+
+`apps/media_manager/services.py` gained three functions supporting this:
+- `collect_news_media_ids(article)` — called *before* the article is
+  deleted, returns every `MediaFile` id potentially exclusively owned by
+  it: `featured_image_id`, `og_image_id`, plus every inline `<img src="…">`
+  found in `article.content` via regex, matched back to `MediaFile` rows by
+  stripping `settings.MEDIA_URL` from the path (inline body images have no
+  FK — CKEditor just writes a `<img src>` URL into the stored HTML — so this
+  is the only way to find them).
+- `delete_unused_media(media_ids)` — after the article row is actually
+  gone, deletes every collected id whose `MediaFile.usage_count` (already
+  existing, checks News/Advertisement/SiteSettings references) is now zero.
+  A cover image shared by a second article, an ad banner, or the site logo
+  survives; only a truly orphaned file is removed.
+- `delete_media_file(media_file)` — extracted from the existing
+  `MediaDeleteView` (which now calls it too, instead of duplicating the
+  same delete-row-then-delete-files logic) so both the manual media-library
+  delete and this automatic cleanup path stay in sync.
+
+Logged as a new `ActivityLog.Action.ARTICLE_PURGED`, with the deleted media
+count appended to the description (e.g. `"Title (+ 2 media fayl)"`) when
+anything was actually removed.
+
+New UI: `templates/cms/news_confirm_permanent_delete.html` (a
+`.cms-confirm` page, same shape as every other confirm screen) reachable
+from a "Həmişəlik sil" button that now sits next to "Bərpa et" on each
+trash-tab row (`.cms-table__actions-group`, `static/css/cms/editor.css`).
+Needed a new `.btn--danger` (`static/css/components/buttons.css`) — the
+existing `.btn--secondary` is an outline style already used for "Bərpa et"
+here, and `--color-danger` happens to equal `--color-primary` in value, so
+a solid-fill variant was the only way to visually separate the "safe"
+action from the "destructive" one on the same row.
+
+Verified end-to-end with a real two-article scenario, not just by
+reasoning about the code: two articles sharing one cover image — purging
+the first left the image intact (second article still referenced it);
+purging the second then correctly deleted the now-unused `MediaFile` row
+*and* its on-disk file. Repeated separately for an inline body image
+(uploaded through the CKEditor toolbar, not the cover-image picker) to
+confirm the regex-based path also works, since that path has no FK to
+fall back on.
+
+## One-time project data wipe: all News, Folders and MediaFiles removed; four static pages left untouched
+
+Separate from the feature above — a one-time cleanup, not new
+functionality, so no management command was added for it (a permanent
+"wipe all content" command sitting in the codebase would be a standing
+footgun for a single use). Run directly via `manage.py shell`:
+`Advertisement.objects.all().delete()` (the only model with `on_delete=
+models.PROTECT` toward `MediaFile`, via `Advertisement.banner` — had to go
+first or every `MediaFile` delete below would raise `ProtectedError`;
+confirmed with the user this test ad should go too), then
+`News.objects.all().delete()` (a real hard delete — `News` has no custom
+manager overriding `.delete()`, `is_deleted` is only ever toggled from CMS
+views, so the plain queryset method deletes rows for real, trash included),
+then `Folder.objects.all().delete()`, then every `MediaFile` individually
+through `delete_media_file()` (not a bulk `.delete()`, which would drop the
+DB rows but leave the on-disk files behind).
+
+Checked before running, not assumed: every FK that can point at a
+`MediaFile` (`SEOFieldsMixin.og_image`, `SiteSettings.logo`/`favicon`,
+`News.featured_image`, `Advertisement.banner`) — all `SET_NULL` except the
+`Advertisement` one already handled above. Confirmed the four pages the
+user asked to preserve (Haqqımızda, Əlaqə/Contacts, İstifadə şərtləri,
+Məxfilik siyasəti) have zero exposure either way: three are plain `Page`
+rows with `og_image=None` and no inline content images, and Contacts isn't
+a `Page` row at all — `ContactView` is a bare `FormView` that only sends an
+email, no stored content to lose.
+
+Also removed a handful of files under `media/uploads/` and `media/temp/`
+that had no corresponding `MediaFile` row at all (leftover from
+staged-but-never-finalized uploads, predating this cleanup) — the bulk
+delete above only walks rows that exist in the database, so these needed a
+direct filesystem check to catch.
+
+Verified after: `Page`/`Category`/`Tag` counts unchanged; all four
+protected pages return 200 with correct content; `media/` contains nothing
+but the tracked `.gitkeep`; CMS News list and Media Library both render
+their empty states rather than erroring. One gap surfaced by testing
+against a fully empty database, out of scope for this cleanup and left
+as-is: the public homepage (`templates/news/home.html`) has no "no
+articles" empty state — `{% if hero %}` and `{% for section in
+category_sections %}` simply render nothing, leaving blank space instead
+of a message, which existing CLAUDE.md guidance calls for but which the
+homepage template was never actually built to do at zero-content.
+
+# Phase 20 (breaking-news ticker becomes a real marquee; active nav state; mobile social links; view counter surfaced)
+
+## View counter was tracked but never displayed
+
+`News.view_count` was already incremented correctly (session-deduped) and
+used to rank "Ən çox oxunan," but no template ever rendered the number —
+CLAUDE.md ch.11's "Standard News Card" spec requires it. Added to
+`components/news_card.html` (icon + count next to the timestamp) and
+`news/detail.html` (appended to the existing date/reading-time line).
+
+## Breaking ticker: single crossfading headline → true horizontal marquee
+
+The first version of the ticker (this phase started from) rotated one
+headline at a time via a JS `setInterval` swapping an `is-active` class.
+User asked for a continuous horizontal scroll instead, with a lightning
+icon per headline and no more static "TƏCİLİ"/"Canlı" badge text.
+
+Rebuilt as a CSS-only marquee: `templates/components/breaking_ticker.html`
+renders every breaking article **twice**, back to back, inside
+`.breaking-ticker__track`; `@keyframes breaking-ticker-scroll` animates
+`transform: translateX(0 → -50%)` on an infinite loop — since the two
+copies are identical, translating by exactly half the track's total
+width means the loop restarts with the visible content unchanged, no
+visible jump. Pausing on hover is plain CSS
+(`.breaking-ticker:hover .breaking-ticker__track { animation-play-state:
+paused; }`) — no JS needed for that part at all. `static/js/components/
+breaking-ticker.js` only sets `animation-duration` from a
+server-computed value (`apps/news/views.py`'s `HomeView` — `max(18,
+len(breaking_articles) * 6)` seconds), so scroll *speed* stays constant
+regardless of how many headlines are queued instead of a fixed duration
+making 2 headlines crawl and 8 whip past unreadably fast.
+
+Each headline gets a `bi-lightning-charge-fill` icon before the title.
+The duplicate second copy is `aria-hidden="true"` with `tabindex="-1"`
+links, so screen readers and keyboard navigation only ever see one real
+copy.
+
+One bug found and fixed mid-build: once every `.breaking-ticker__item`
+became `position: absolute` (for the crossfade version) or moved into a
+flex row (for the marquee), the wrapping elements had no normal-flow
+content left to size themselves against and collapsed to zero height —
+invisible to Playwright's actionability checks (and to real mouse
+hover, since a zero-height box can't be hovered) despite the text still
+painting. Fixed with an explicit `height: 100%` chain down from the
+ticker's own fixed `36px`.
+
+## Active navigation state
+
+Only "Ana səhifə" ever got an `is-active` class before this phase —
+category links, subcategory dropdown links, and the "Daha" static-page
+group never indicated the current section, leaving readers without any
+sense of where they were on the site.
+
+`apps/categories/views.py`'s `CategoryDetailView` and `apps/news/views.py`'s
+`NewsDetailView` now also set `context['nav_active_category']` (the
+category being browsed, or the current article's category).
+`templates/components/header.html` compares this against each nav
+category/subcategory (`nav_active_category.pk == category.pk` — or
+`.parent_id == category.pk`, so a subcategory page also highlights its
+parent). The four static pages ("Daha" dropdown) use a simpler check —
+`request.resolver_match.namespace == 'pages'` for the parent toggle, an
+exact `url_name`/`kwargs.slug` match for the specific link — since they're
+a small, fixed, known set already routed through one Django app
+namespace. `.nav__dropdown-link.is-active` is a new CSS rule
+(`static/css/components/dropdown.css`); `.nav__link.is-active` already
+existed and just needed to actually get applied.
+
+## Social icons no longer disappear on mobile
+
+`static/css/responsive/mobile.css` hid `.site-header__social` outright
+below 768px with no replacement — a direct violation of CLAUDE.md ch.6
+("Never hide critical functionality on smaller screens"), caught when
+asked to look at it, not something the user had to find. Fixed by
+duplicating the same links into the off-canvas mobile nav drawer
+(`.nav__social`, new markup in `components/header.html`), hidden by
+default (`static/css/layout/navigation.css`) and revealed only inside
+the same `max-width: 768px` block that hides the topbar copy — so
+exactly one copy is ever visible at any width.
+
+## Verification
+
+Playwright throughout: ticker duplication/scroll/pause/resume/click-
+through, nav `is-active` on category/subcategory/article/static pages,
+mobile menu open/closed social-link visibility toggling correctly
+against the same breakpoint the topbar hides at. All confirmed via
+scripted `getComputedStyle`/`getBoundingClientRect` checks, not visual
+inspection alone — the zero-height bug above would not have been obvious
+from a screenshot at a moment the animation happened to be mid-frame.
+
+# Phase 21 (a real automated test suite; prepared for GitHub → Hostinger VPS deployment)
+
+## Context
+
+Every one of the 19 prior phases was verified by hand — one-off
+Playwright scripts written to a scratch directory, run once, discarded.
+Every app's `tests.py` was still the untouched three-line Django stub.
+The project also wasn't a git repository at all. None of that is
+compatible with actually running this on a VPS: nobody re-verifies 19
+phases by hand before every deploy, and there's nothing to push to
+GitHub in the first place. This phase built a real, repeatable test
+suite across three layers and the full path from `git push` to a
+running production site.
+
+## Backend — pytest (107 tests, ~84% coverage of `apps/`)
+
+`requirements/development.txt` gained `pytest`, `pytest-django`,
+`pytest-cov`, `factory-boy`, `locust` (dev-only, never in
+`requirements/production.txt`). New `config/settings/test.py` (inherits
+`development.py`; fast password hasher; `MEDIA_ROOT` redirected to
+`test_media/` so upload-pipeline tests never write into the real
+`media/` folder this project already had to clean by hand once).
+`pytest.ini` at the repo root; root `conftest.py` holds the shared
+fixtures (`administrator`, `journalist`, `admin_client`,
+`category`/`subcategory`, `published_news`/`draft_news`,
+`sample_image_bytes`/`sample_image_file`, `media_file`).
+
+Per-app tests cover: CMS permission boundaries (every list/overview
+screen, parametrized — anonymous redirected, non-admin gets 403 on the
+Administrator-only screens, admin gets 200 everywhere); the News
+lifecycle and its permanent-delete media cleanup (the exact
+shared-vs-exclusive-media scenario manually verified in Phase 19, now
+locked in by a test instead of memory); category hierarchy and the
+empty-category nav-hiding logic; the upload pipeline's validation
+(size/type/corrupted-file rejection); `MediaFile.usage_count` across
+News/Advertisement/SiteSettings; one CRUD smoke test per CMS-managed
+model with an `ActivityLog` assertion; the public views (home, article,
+category pagination, search, sitemap, robots.txt); `ContactForm`'s
+Azerbaijani error messages.
+
+**Three real bugs found while writing these tests, all fixed**:
+
+1. **Slug generation could produce an empty or colliding slug.**
+   `News`/`Page`/`Category`/`Tag` all did `if not self.slug: self.slug =
+   az_slugify(...)` with no uniqueness check and no fallback for text
+   `az_slugify` can't transliterate (non-Azerbaijani/non-ASCII input
+   slugifies to `''`). Two articles with the same title crashed with an
+   unhandled `IntegrityError` at `INSERT` time — *after* `ModelForm`
+   validation had already passed, since the form validates the
+   still-blank slug field, not the value `save()` fills in afterward.
+   Fixed with one shared helper, `apps/core/utils.py`'s
+   `generate_unique_slug()` — appends `-2`, `-3`, ... on collision, falls
+   back to a random 8-char hex when slugify itself yields nothing — used
+   by all four models instead of the raw `az_slugify()` call each had.
+
+2. **A corrupted/fake image file crashed upload validation.**
+   `apps/media_manager/services.py`'s `_validate_upload()` called
+   `Image.open(uploaded_file)` with no exception handling around it — a
+   file with an image extension/content-type but bytes that aren't
+   actually a valid image raised an unhandled `PIL.UnidentifiedImageError`
+   (a real 500 to the user, violating CLAUDE.md ch.5/12 directly). Now
+   caught and re-raised as the same friendly `ValidationError` already
+   used for outright-disallowed formats.
+
+3. **`pytest.ini`'s own `python_files = test_*.py` silently excluded
+   every `tests.py`** (Django's own convention, used by six of this
+   project's apps) **from collection** — only the newer `test_*.py`
+   files inside `apps/news/tests/` and `apps/cms/tests/` ever ran.
+   40 of the first 107 tests written were never actually executing.
+   Fixed by adding `tests.py` to the pattern
+   (`python_files = test_*.py tests.py`) — caught by comparing the
+   suite's own reported test count against a manual tally, not assumed
+   correct because "pytest didn't error."
+
+## Frontend — Playwright (e2e/), a committed suite instead of scratch scripts
+
+New `e2e/` directory: `package.json` (`@playwright/test`, dev-only, never
+shipped), `playwright.config.js`, six spec files (`home`, `article`,
+`cms-auth`, `cms-news`, `contact-form`, `mobile-nav`).
+
+Runs against a **dedicated `config/settings/e2e.py`** — its own database
+(`news_db_e2e`, distinct name enforced by a safety check in the
+bootstrap command) and its own Redis logical DB (index 3, separate from
+development's index 1), never the developer's real `news_db`, which by
+this point holds genuine editorial content. `apps/core/management/
+commands/bootstrap_e2e_db.py` creates the database if missing (via a
+direct `psycopg` connection to Postgres' `postgres` maintenance
+database — `CREATE DATABASE` can't run inside Django's ORM/transactions),
+migrates, flushes, and reseeds one administrator
+(`e2e_admin`/`E2E-test-password-123`), one category, one social link.
+`e2e/global-setup.js` runs this once per `playwright test` invocation,
+so every run starts from the same known state. `playwright.config.js`'s
+`webServer` starts `manage.py runserver` under these settings
+automatically — `npx playwright test` is self-contained.
+`workers: 1` — every spec shares one server/database, so parallel
+workers would race each other's writes.
+
+**A genuine production bug found by the `cms-news.spec.js` restore test,
+unrelated to the test infrastructure itself**: `templates/cms/
+news_list.html`'s trash-tab "Bərpa et" (restore) button and the
+"Dublikat et" (duplicate) button were each wrapped in their own
+`<form>` — nested inside the *outer* `<form id="bulk-form">` that wraps
+the whole table for bulk-select actions. HTML forms cannot nest; browsers
+silently drop the inner `<form>` start tag per the HTML5 parsing
+algorithm, and the button ends up submitting the *outer* bulk-action
+form instead. The button appeared to work (page reloaded, no error) but
+never actually restored or duplicated anything — confirmed by querying
+the database directly after a "successful" test run and finding
+`is_deleted` still `True` and no `ARTICLE_RESTORED` entry in
+`ActivityLog` at all. This had been sitting unnoticed since Phase
+19/whenever bulk actions were added, because manual verification only
+ever checked that the button was *visible*, never that clicking it
+produced the expected end state. Fixed using the HTML5 `form="..."`
+attribute — each button now references a standalone `<form id="restore-
+form-{{ pk }}">`/`<form id="duplicate-form-{{ pk }}">` rendered *after*
+the bulk-form closes, associating the button with the right form
+regardless of DOM nesting. Checked every other CMS list template
+(`category_list.html`, `ad_list.html`, `user_list.html`, ...) for the
+same pattern — none of the others wrap their table in an outer form at
+all (only the news list has bulk actions), so this was an isolated bug,
+not a systemic one.
+
+Two smaller Playwright fixes along the way: `force: true` needed on
+hover/click actions targeting the continuously-animating ticker (its
+"element is stable" actionability check never passes on a moving
+target, same as a real mouse doesn't need that guarantee); a
+`waitForURL('**/xeberler/**')` glob matched the *current* URL before a
+redirect even happened (every relevant URL in that flow contains
+`/xeberler/`), so it resolved immediately instead of waiting — replaced
+with `Promise.all([waitForURL(precise-predicate), click()])` pairing
+everywhere a click triggers a redirect this suite depends on.
+
+## Load — Locust (stress_tests/locustfile.py)
+
+`ReaderUser` (weight 8 — the realistic majority of real traffic) never
+hardcodes a slug: each task loads the homepage and regex-extracts a
+real `/category/.../` or `/news/.../` link from what actually rendered,
+so the same file works against any host with any content instead of
+breaking the moment seed data changes. `CmsStaffUser` (weight 1) only
+performs a real login when `LOCUST_CMS_USERNAME`/`LOCUST_CMS_PASSWORD`
+are set in the environment — otherwise it just repeats the anonymous
+`/cms/` redirect, since a real login needs credentials for whatever
+specific host/account this is pointed at. Smoke-tested locally (5 users,
+12s) against a real dev server with real content: 0 failures, category/
+article links correctly discovered and hit.
+
+## Deployment — classic venv + systemd + Nginx (user's explicit choice over Docker)
+
+New `deploy/` directory: `gunicorn.service` (unix socket, not a TCP
+port — only Nginx ever talks to it), `celery-worker.service`,
+`nginx.conf` (static/media served directly by Nginx, `/media/temp/`
+explicitly denied per CLAUDE.md ch.12, HTTPS added afterward by
+`certbot --nginx` rather than hand-maintained here), `deploy.sh` (pull →
+install → migrate → collectstatic → restart both services → curl the
+homepage and fail loudly if it isn't 200). No `celery-beat.service` —
+confirmed via grep that nothing in the project defines
+`CELERY_BEAT_SCHEDULE` anywhere; scheduled publishing is a query-time
+filter (`News.objects.published()`), not a periodic task, so a Beat
+service would be infrastructure with nothing to run.
+
+`.github/workflows/ci.yml` runs pytest and the full Playwright suite
+(Postgres + Redis service containers) on every push/PR. Deployment
+itself stays manual — the user's explicit choice over auto-deploying via
+SSH from CI — so this workflow never touches the VPS and needs no
+deploy secrets.
+
+`docs/DEPLOYMENT.md` (VPS provisioning + update runbook), `docs/
+TESTING.md` (how to run all three test layers), root `README.md`
+(quickstart) are new. The project was `git init`'d for the first time
+this phase and pushed to `https://github.com/emineliyev/spress.git`.
+
+## Verification
+
+`pytest --cov=apps` — 107 passed, ~84% coverage. `npx playwright test`
+(e2e/) — 15 passed. Locust — 5 simulated users, 12s, 0 failures against
+a real dev server. `python manage.py check` and `makemigrations --check
+--dry-run` clean throughout (the slug-generation fix touched only
+Python logic, no schema change).

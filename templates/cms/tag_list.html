@@ -1,0 +1,71 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}Etiketlər{% endblock %}
+{% block page_title %}Etiketlər{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<div class="cms-list-toolbar">
+    <form method="get" class="cms-filter-bar">
+        <input type="search" name="q" class="form-input" placeholder="Ad ilə axtar..." value="{{ query }}">
+        <button type="submit" class="btn btn--secondary btn--sm">Axtar</button>
+    </form>
+
+    <a href="{% url 'cms:tag_create' %}" class="btn btn--primary">
+        <i class="bi bi-plus-lg" aria-hidden="true"></i> Yeni etiket
+    </a>
+</div>
+
+{% if tags %}
+<div class="cms-table-wrapper">
+    <table class="cms-table">
+        <thead>
+            <tr>
+                <th>Ad</th>
+                <th>Slug</th>
+                <th>Xəbər sayı</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tag in tags %}
+                <tr>
+                    <td>{{ tag.name }}</td>
+                    <td>#{{ tag.slug }}</td>
+                    <td>{{ tag.news_count }}</td>
+                    <td class="cms-table__actions">
+                        <div class="cms-row-menu">
+                            <button type="button" class="header-icon-btn" data-action="toggle-row-menu" aria-expanded="false">
+                                <i class="bi bi-three-dots" aria-hidden="true"></i>
+                            </button>
+                            <div class="cms-row-menu__panel" hidden>
+                                <a href="{% url 'cms:tag_edit' tag.pk %}">Redaktə</a>
+                                <a href="{% url 'cms:tag_merge' tag.pk %}">Birləşdir</a>
+                                <a href="{% url 'cms:tag_delete' tag.pk %}" class="cms-row-menu__danger">Sil</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% include "components/pagination.html" %}
+{% else %}
+    <div class="empty-state">
+        <i class="bi bi-tags empty-state__icon" aria-hidden="true"></i>
+        <p class="empty-state__title">{% if query %}Nəticə tapılmadı{% else %}Hələ etiket yoxdur{% endif %}</p>
+        {% if not query %}
+            <a href="{% url 'cms:tag_create' %}" class="btn btn--primary">İlk etiketi yarat</a>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+    <script defer src="{% static 'js/cms/news.js' %}"></script>
+{% endblock %}

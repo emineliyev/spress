@@ -1,0 +1,44 @@
+{% comment %}
+Reusable file grid — included by media_list.html. Kept as its own partial
+(CLAUDE.md ch.6 "If the same HTML appears twice, it should become a
+reusable component") since a future picker-from-library view can reuse it
+without duplicating card markup.
+{% endcomment %}
+{% if files %}
+<div class="media-grid">
+    {% for media_file in files %}
+        <div class="media-card" data-media-id="{{ media_file.pk }}">
+            <div class="media-card__thumb">
+                {% if media_file.thumbnail %}
+                    <img src="{{ media_file.thumbnail.url }}" alt="{{ media_file.alt_text }}" loading="lazy">
+                {% else %}
+                    <img src="{{ media_file.file.url }}" alt="{{ media_file.alt_text }}" loading="lazy">
+                {% endif %}
+                <span class="media-card__format media-card__format--{{ media_file.file_format }}">{{ media_file.get_file_format_display }}</span>
+
+                <div class="media-card__menu">
+                    <button type="button" class="header-icon-btn" data-action="toggle-row-menu" aria-expanded="false" aria-label="Fayl əməliyyatları">
+                        <i class="bi bi-three-dots" aria-hidden="true"></i>
+                    </button>
+                    <div class="cms-row-menu__panel" hidden>
+                        <button type="button" data-action="replace-media" data-media-id="{{ media_file.pk }}">Əvəz et</button>
+                        <a href="{% url 'cms:media_delete' media_file.pk %}" class="cms-row-menu__danger">Sil</a>
+                    </div>
+                </div>
+            </div>
+            <div class="media-card__body">
+                <div class="media-card__name" title="{{ media_file.original_filename }}">{{ media_file.original_filename }}</div>
+                <div class="media-card__meta">
+                    {% if media_file.width %}{{ media_file.width }}×{{ media_file.height }} · {% endif %}{{ media_file.file_size|filesizeformat }}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% include "components/pagination.html" %}
+{% else %}
+    <div class="empty-state">
+        <i class="bi bi-images empty-state__icon" aria-hidden="true"></i>
+        <p class="empty-state__title">Fayl tapılmadı</p>
+    </div>
+{% endif %}

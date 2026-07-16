@@ -1,0 +1,32 @@
+<nav class="breadcrumbs container" aria-label="Breadcrumb">
+    <a href="{% url 'news:home' %}" class="breadcrumbs__item">Ana səhifə</a>
+    {% for label, url in items %}
+        <i class="bi bi-chevron-right breadcrumbs__separator" aria-hidden="true"></i>
+        {% if url %}
+            <a href="{{ url }}" class="breadcrumbs__item">{{ label }}</a>
+        {% else %}
+            <span class="breadcrumbs__item breadcrumbs__item--current" aria-current="page">{{ label }}</span>
+        {% endif %}
+    {% endfor %}
+</nav>
+
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Ana səhifə",
+            "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'news:home' %}"
+        }{% for label, url in items %},
+        {
+            "@type": "ListItem",
+            "position": {{ forloop.counter|add:1 }},
+            "name": "{{ label|escapejs }}"{% if url %},
+            "item": "{{ request.scheme }}://{{ request.get_host }}{{ url }}"{% endif %}
+        }{% endfor %}
+    ]
+}
+</script>

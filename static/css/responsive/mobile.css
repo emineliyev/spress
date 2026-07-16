@@ -1,0 +1,184 @@
+/*
+ * Desktop-first responsive overrides (CLAUDE.md ch.7 breakpoints:
+ * Laptop 1200 / Tablet 992 / Mobile Large 768 / Mobile 576).
+ * The 12-column .grid (layout/grid.css) already collapses to 8 then 4
+ * columns on its own; these rules handle the flex-based layouts that
+ * the grid utility doesn't cover (header, hero, sidebar, article).
+ */
+
+@media (max-width: 992px) {
+    button.header-menu-toggle {
+        display: inline-flex;
+    }
+
+    /* .nav becomes the fixed off-canvas panel below, so the bar that
+       wraps it on desktop (static/css/layout/header.css) would just be
+       an empty double border with nothing visible inside it. */
+    .site-header__navbar {
+        border: none;
+        background: none;
+    }
+
+    .site-header__navbar .nav__list {
+        height: auto;
+    }
+
+    .nav {
+        position: fixed;
+        inset: 0 0 0 auto;
+        width: min(320px, 85vw);
+        height: 100vh;
+        background: #fff;
+        box-shadow: var(--shadow-lg);
+        padding: var(--space-16) var(--space-6) var(--space-6);
+        overflow-y: auto;
+        transform: translateX(100%);
+        transition: transform var(--transition-base);
+        z-index: 200;
+    }
+
+    .nav.is-open {
+        transform: translateX(0);
+    }
+
+    .nav__list {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+    }
+
+    .nav__item {
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .nav__link {
+        display: block;
+        height: auto;
+        padding: var(--space-4) 0;
+        border-bottom: none;
+    }
+
+    .nav__link.is-active {
+        border-bottom: none;
+    }
+
+    .nav__dropdown {
+        position: static;
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        box-shadow: none;
+        border: none;
+        display: none;
+        padding: 0 0 var(--space-3) var(--space-4);
+    }
+
+    .nav__item.is-open .nav__dropdown {
+        display: block;
+    }
+
+    .home-hero {
+        min-height: 360px;
+    }
+
+    .home-hero__content {
+        max-width: none;
+        padding: var(--space-6);
+    }
+
+    .home-body {
+        flex-direction: column;
+    }
+
+    .home-sidebar {
+        width: 100%;
+    }
+
+    .category-page__layout {
+        flex-direction: column;
+    }
+
+    .article__related {
+        margin-left: 0;
+    }
+
+    .contact-page {
+        flex-direction: column;
+        gap: var(--space-10);
+    }
+}
+
+@media (max-width: 768px) {
+    .site-header__topbar {
+        height: 64px;
+    }
+
+    .site-header__logo {
+        font-size: 18px;
+    }
+
+    .site-header__social,
+    .site-header__divider {
+        display: none;
+    }
+
+    /* Social links move into the off-canvas menu instead of just
+       disappearing (CLAUDE.md ch.6 "Never hide critical functionality on
+       smaller screens") — sits below the nav list, above the drawer's own
+       bottom edge. */
+    .nav__social {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        margin-top: var(--space-6);
+        padding-top: var(--space-6);
+        border-top: 1px solid var(--color-border);
+    }
+
+    .nav__social-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--color-text-primary);
+        color: #fff;
+        font-size: 15px;
+    }
+
+    .nav__social-link:hover {
+        background: var(--color-primary);
+    }
+
+    .home-hero__title {
+        font-size: 28px;
+    }
+
+    .article__title {
+        font-size: 28px;
+    }
+
+    .article__layout {
+        flex-direction: column;
+    }
+
+    .article__share {
+        flex-direction: row;
+    }
+
+    .category-page__title {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 576px) {
+    .home {
+        padding-top: var(--space-8);
+    }
+
+    .about-page__stats {
+        flex-wrap: wrap;
+        gap: var(--space-8);
+    }
+}

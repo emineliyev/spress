@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+<template id="__bundler_thumbnail" data-bg-color="#f4f3f1">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#f4f3f1"/>
+    <rect x="360" y="240" width="480" height="320" rx="8" fill="#ffffff" stroke="#e2211f" stroke-width="6"/>
+    <circle cx="600" cy="400" r="60" fill="#e2211f" opacity="0.9"/>
+    <path d="M540 430 L580 380 L620 410 L660 360" stroke="#ffffff" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</template>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style> body { margin: 0; background: #f4f3f1; } * { box-sizing: border-box; } </style>
+</helmet>
+
+<div style="width: 1440px; margin: 0 auto; background: #fff; font-family: 'Noto Sans', system-ui, sans-serif; color: oklch(18% 0.006 25); display: flex; min-height: 900px;">
+
+  <!-- SIDEBAR -->
+  <div style="width: 240px; flex: none; background: oklch(98% 0.003 25); border-right: 1px solid oklch(90% 0.004 25); padding: 24px 16px; display: flex; flex-direction: column; gap: 2px;">
+    <div style="font-size: 18px; font-weight: 800; padding: 0 10px; margin-bottom: 24px;">XƏBƏR<span style="color: oklch(54% 0.22 25);">CMS</span></div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: oklch(35% 0.006 25); font-size: 14px; font-weight: 600;"><i data-lucide="layout-dashboard" style="width: 18px; height: 18px;"></i>Dashboard</div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: oklch(35% 0.006 25); font-size: 14px; font-weight: 600;"><i data-lucide="newspaper" style="width: 18px; height: 18px;"></i>Xəbərlər</div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: oklch(35% 0.006 25); font-size: 14px; font-weight: 600;"><i data-lucide="folder-tree" style="width: 18px; height: 18px;"></i>Kateqoriyalar</div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: oklch(54% 0.22 25); color: #fff; border-radius: 4px; font-size: 14px; font-weight: 700;"><i data-lucide="image" style="width: 18px; height: 18px;"></i>Media</div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: oklch(35% 0.006 25); font-size: 14px; font-weight: 600;"><i data-lucide="message-square" style="width: 18px; height: 18px;"></i>Şərhlər</div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: oklch(35% 0.006 25); font-size: 14px; font-weight: 600;"><i data-lucide="users" style="width: 18px; height: 18px;"></i>İstifadəçilər</div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: oklch(35% 0.006 25); font-size: 14px; font-weight: 600;"><i data-lucide="megaphone" style="width: 18px; height: 18px;"></i>Reklam</div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: oklch(35% 0.006 25); font-size: 14px; font-weight: 600;"><i data-lucide="search-check" style="width: 18px; height: 18px;"></i>SEO</div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: oklch(35% 0.006 25); font-size: 14px; font-weight: 600;"><i data-lucide="history" style="width: 18px; height: 18px;"></i>Fəaliyyət jurnalı</div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: oklch(35% 0.006 25); font-size: 14px; font-weight: 600; margin-top: auto;"><i data-lucide="settings" style="width: 18px; height: 18px;"></i>Tənzimləmələr</div>
+  </div>
+
+  <!-- MAIN -->
+  <div style="flex: 1; display: flex; flex-direction: column;">
+    <div style="height: 64px; border-bottom: 1px solid oklch(90% 0.004 25); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; flex: none;">
+      <div style="font-size: 18px; font-weight: 800;">Media Menecer</div>
+      <div style="display: flex; align-items: center; gap: 20px;"><i data-lucide="bell" style="width: 20px; height: 20px;"></i><div style="width: 32px; height: 32px; border-radius: 50%; background: oklch(90% 0.004 25);"></div></div>
+    </div>
+
+    <div style="flex: 1; display: flex;">
+
+      <!-- FOLDERS -->
+      <div style="width: 220px; flex: none; border-right: 1px solid oklch(90% 0.004 25); padding: 24px 16px; display: flex; flex-direction: column; gap: 2px;">
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: oklch(40% 0.006 25); padding: 0 10px; margin-bottom: 10px;">Qovluqlar</div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 9px 10px; background: oklch(96% 0.03 25); color: oklch(46% 0.22 25); border-radius: 2px; font-size: 13px; font-weight: 700;"><i data-lucide="folder" style="width: 16px; height: 16px;"></i>Bütün fayllar<span style="margin-left: auto; font-weight: 600;">482</span></div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 9px 10px; color: oklch(35% 0.006 25); font-size: 13px; font-weight: 600;"><i data-lucide="folder" style="width: 16px; height: 16px;"></i>Xəbər şəkilləri<span style="margin-left: auto; color: oklch(40% 0.006 25);">312</span></div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 9px 10px; color: oklch(35% 0.006 25); font-size: 13px; font-weight: 600;"><i data-lucide="folder" style="width: 16px; height: 16px;"></i>Müəllif portretləri<span style="margin-left: auto; color: oklch(40% 0.006 25);">44</span></div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 9px 10px; color: oklch(35% 0.006 25); font-size: 13px; font-weight: 600;"><i data-lucide="folder" style="width: 16px; height: 16px;"></i>Reklam banner</div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 9px 10px; color: oklch(35% 0.006 25); font-size: 13px; font-weight: 600;"><i data-lucide="folder" style="width: 16px; height: 16px;"></i>Video kadrları</div>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 9px 10px; color: oklch(54% 0.22 25); font-size: 13px; font-weight: 700; margin-top: 8px;"><i data-lucide="folder-plus" style="width: 16px; height: 16px;"></i>Yeni qovluq</div>
+
+        <div style="margin-top: auto; padding: 12px 10px; border-top: 1px solid oklch(90% 0.004 25);">
+          <div style="font-size: 11px; color: oklch(40% 0.006 25); margin-bottom: 6px;">Yaddaş: 6.4 GB / 20 GB</div>
+          <div style="height: 6px; background: oklch(93% 0.004 25); border-radius: 4px;"><div style="width: 32%; height: 100%; background: oklch(54% 0.22 25); border-radius: 4px;"></div></div>
+        </div>
+      </div>
+
+      <!-- CONTENT -->
+      <div style="flex: 1; padding: 24px 28px; display: flex; flex-direction: column; gap: 24px;">
+
+        <!-- UPLOAD DROPZONE -->
+        <div style="border: 2px dashed oklch(85% 0.06 25); border-radius: 6px; padding: 28px; display: flex; align-items: center; gap: 20px; background: oklch(98% 0.015 25);">
+          <div style="width: 48px; height: 48px; border-radius: 50%; background: oklch(96% 0.03 25); display: flex; align-items: center; justify-content: center; flex: none;"><i data-lucide="upload-cloud" style="width: 24px; height: 24px; color: oklch(54% 0.22 25);"></i></div>
+          <div style="flex: 1;">
+            <div style="font-size: 15px; font-weight: 700;">Faylları bura sürüşdürün və ya seçin</div>
+            <div style="font-size: 12px; color: oklch(40% 0.006 25); margin-top: 4px;">JPG, PNG, WEBP, MP4 · maks. 25MB · avtomatik WebP-ə çevrilir</div>
+          </div>
+          <button style="font-family: inherit; font-weight: 700; font-size: 14px; padding: 11px 20px; background: oklch(54% 0.22 25); color: #fff; border: none; border-radius: 2px; flex: none;">Fayl seç</button>
+        </div>
+
+        <!-- SEARCH + FILTERS -->
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 8px; border: 1px solid oklch(90% 0.004 25); border-radius: 2px; padding: 9px 12px; width: 300px;"><i data-lucide="search" style="width: 16px; height: 16px; color: oklch(40% 0.006 25);"></i><span style="font-size: 13px; color: oklch(40% 0.006 25);">Fayl adı ilə axtar...</span></div>
+          <div style="display: flex; gap: 8px;">
+            <div style="font-size: 13px; font-weight: 700; padding: 8px 14px; background: oklch(18% 0.006 25); color: #fff; border-radius: 999px;">Hamısı</div>
+            <div style="font-size: 13px; font-weight: 700; padding: 8px 14px; border: 1px solid oklch(90% 0.004 25); border-radius: 999px; color: oklch(40% 0.006 25);">WebP</div>
+            <div style="font-size: 13px; font-weight: 700; padding: 8px 14px; border: 1px solid oklch(90% 0.004 25); border-radius: 999px; color: oklch(40% 0.006 25);">JPG</div>
+            <div style="font-size: 13px; font-weight: 700; padding: 8px 14px; border: 1px solid oklch(90% 0.004 25); border-radius: 999px; color: oklch(40% 0.006 25);">Video</div>
+          </div>
+        </div>
+
+        <!-- IMAGE CARDS GRID -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+          <div style="border: 1px solid oklch(90% 0.004 25); border-radius: 4px; overflow: hidden;">
+            <div style="height: 120px; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 8px, oklch(97% 0.003 25) 8px, oklch(97% 0.003 25) 16px); position: relative;"><span style="position: absolute; top: 8px; left: 8px; background: oklch(54% 0.15 145); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 2px;">WEBP</span></div>
+            <div style="padding: 10px 12px;"><div style="font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">budce-parlament.webp</div><div style="font-size: 11px; color: oklch(40% 0.006 25); margin-top: 4px;">1600×900 · 84 KB</div></div>
+          </div>
+          <div style="border: 1px solid oklch(90% 0.004 25); border-radius: 4px; overflow: hidden;">
+            <div style="height: 120px; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 8px, oklch(97% 0.003 25) 8px, oklch(97% 0.003 25) 16px); position: relative;"><span style="position: absolute; top: 8px; left: 8px; background: oklch(58% 0.15 85); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 2px;">JPG</span></div>
+            <div style="padding: 10px 12px;"><div style="font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">aygun-mammadova.jpg</div><div style="font-size: 11px; color: oklch(40% 0.006 25); margin-top: 4px;">800×800 · 210 KB</div></div>
+          </div>
+          <div style="border: 1px solid oklch(90% 0.004 25); border-radius: 4px; overflow: hidden;">
+            <div style="height: 120px; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 8px, oklch(97% 0.003 25) 8px, oklch(97% 0.003 25) 16px); position: relative; display: flex; align-items: center; justify-content: center;"><span style="position: absolute; top: 8px; left: 8px; background: oklch(48% 0.15 235); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 2px;">MP4</span><div style="width: 0; height: 0; border-top: 9px solid transparent; border-bottom: 9px solid transparent; border-left: 14px solid oklch(60% 0.006 25);"></div></div>
+            <div style="padding: 10px 12px;"><div style="font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">secki-reportaj.mp4</div><div style="font-size: 11px; color: oklch(40% 0.006 25); margin-top: 4px;">1920×1080 · 4.2 MB</div></div>
+          </div>
+          <div style="border: 2px solid oklch(54% 0.22 25); border-radius: 4px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.10);">
+            <div style="height: 120px; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 8px, oklch(97% 0.003 25) 8px, oklch(97% 0.003 25) 16px); position: relative;"><span style="position: absolute; top: 8px; left: 8px; background: oklch(54% 0.15 145); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 2px;">WEBP</span><span style="position: absolute; top: 8px; right: 8px; background: oklch(54% 0.22 25); color: #fff; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 2px;">SEÇİLİB</span></div>
+            <div style="padding: 10px 12px;"><div style="font-size: 12px; font-weight: 700;">nef-qiymetleri.webp</div><div style="font-size: 11px; color: oklch(40% 0.006 25); margin-top: 4px;">1600×900 · 76 KB</div></div>
+          </div>
+          <div style="border: 1px solid oklch(90% 0.004 25); border-radius: 4px; overflow: hidden;">
+            <div style="height: 120px; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 8px, oklch(97% 0.003 25) 8px, oklch(97% 0.003 25) 16px); position: relative;"><span style="position: absolute; top: 8px; left: 8px; background: oklch(54% 0.15 145); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 2px;">WEBP</span></div>
+            <div style="padding: 10px 12px;"><div style="font-size: 12px; font-weight: 700;">milli-komanda.webp</div><div style="font-size: 11px; color: oklch(40% 0.006 25); margin-top: 4px;">1600×900 · 91 KB</div></div>
+          </div>
+          <div style="border: 1px solid oklch(90% 0.004 25); border-radius: 4px; overflow: hidden;">
+            <div style="height: 120px; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 8px, oklch(97% 0.003 25) 8px, oklch(97% 0.003 25) 16px); position: relative;"><span style="position: absolute; top: 8px; left: 8px; background: oklch(58% 0.15 85); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 2px;">JPG</span></div>
+            <div style="padding: 10px 12px;"><div style="font-size: 12px; font-weight: 700;">elvin-quliyev.jpg</div><div style="font-size: 11px; color: oklch(40% 0.006 25); margin-top: 4px;">800×800 · 188 KB</div></div>
+          </div>
+          <div style="border: 1px solid oklch(90% 0.004 25); border-radius: 4px; overflow: hidden;">
+            <div style="height: 120px; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 8px, oklch(97% 0.003 25) 8px, oklch(97% 0.003 25) 16px); position: relative;"><span style="position: absolute; top: 8px; left: 8px; background: oklch(54% 0.15 145); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 2px;">WEBP</span></div>
+            <div style="padding: 10px 12px;"><div style="font-size: 12px; font-weight: 700;">enerji-sammiti.webp</div><div style="font-size: 11px; color: oklch(40% 0.006 25); margin-top: 4px;">1600×900 · 68 KB</div></div>
+          </div>
+          <div style="border: 1px solid oklch(90% 0.004 25); border-radius: 4px; overflow: hidden;">
+            <div style="height: 120px; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 8px, oklch(97% 0.003 25) 8px, oklch(97% 0.003 25) 16px); position: relative;"><span style="position: absolute; top: 8px; left: 8px; background: oklch(54% 0.15 145); color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 2px;">WEBP</span></div>
+            <div style="padding: 10px 12px;"><div style="font-size: 12px; font-weight: 700;">region-diplomatiya.webp</div><div style="font-size: 11px; color: oklch(40% 0.006 25); margin-top: 4px;">1600×900 · 79 KB</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CROPPER + PREVIEW PANEL -->
+      <div style="width: 360px; flex: none; border-left: 1px solid oklch(90% 0.004 25); padding: 24px; display: flex; flex-direction: column; gap: 20px; background: oklch(99% 0.002 25);">
+        <div style="display: flex; align-items: center; justify-content: space-between;"><div style="font-size: 14px; font-weight: 700;">Kadrlama (Crop)</div><i data-lucide="x" style="width: 16px; height: 16px; color: oklch(40% 0.006 25);"></i></div>
+
+        <div style="position: relative; height: 200px; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 8px, oklch(97% 0.003 25) 8px, oklch(97% 0.003 25) 16px); border-radius: 4px; overflow: hidden;">
+          <div style="position: absolute; top: 20px; left: 30px; right: 30px; bottom: 20px; border: 2px solid oklch(54% 0.22 25); box-shadow: 0 0 0 2000px rgba(0,0,0,0.35);">
+            <div style="position: absolute; width: 8px; height: 8px; background: #fff; border: 1.5px solid oklch(54% 0.22 25); top: -5px; left: -5px;"></div>
+            <div style="position: absolute; width: 8px; height: 8px; background: #fff; border: 1.5px solid oklch(54% 0.22 25); top: -5px; right: -5px;"></div>
+            <div style="position: absolute; width: 8px; height: 8px; background: #fff; border: 1.5px solid oklch(54% 0.22 25); bottom: -5px; left: -5px;"></div>
+            <div style="position: absolute; width: 8px; height: 8px; background: #fff; border: 1.5px solid oklch(54% 0.22 25); bottom: -5px; right: -5px;"></div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+          <div style="font-size: 12px; font-weight: 700; padding: 7px 12px; background: oklch(18% 0.006 25); color: #fff; border-radius: 2px;">16:9</div>
+          <div style="font-size: 12px; font-weight: 700; padding: 7px 12px; border: 1px solid oklch(90% 0.004 25); border-radius: 2px; color: oklch(40% 0.006 25);">4:3</div>
+          <div style="font-size: 12px; font-weight: 700; padding: 7px 12px; border: 1px solid oklch(90% 0.004 25); border-radius: 2px; color: oklch(40% 0.006 25);">1:1</div>
+          <div style="font-size: 12px; font-weight: 700; padding: 7px 12px; border: 1px solid oklch(90% 0.004 25); border-radius: 2px; color: oklch(40% 0.006 25);">Sərbəst</div>
+        </div>
+
+        <div>
+          <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: oklch(40% 0.006 25); margin-bottom: 10px;">Ön izləmə</div>
+          <div style="display: flex; gap: 10px;">
+            <div style="width: 96px; height: 54px; background: oklch(93% 0.004 25); border-radius: 2px; border: 1px solid oklch(90% 0.004 25);"></div>
+            <div style="width: 54px; height: 54px; background: oklch(93% 0.004 25); border-radius: 2px; border: 1px solid oklch(90% 0.004 25);"></div>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: oklch(40% 0.006 25); margin-bottom: 10px;">İxrac formatı</div>
+          <select style="width: 100%; font-family: inherit; font-size: 13px; padding: 9px 11px; border: 1px solid oklch(90% 0.004 25); border-radius: 2px;">
+            <option>WebP (tövsiyə olunur)</option><option>JPG</option><option>PNG</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 4px;">
+          <button style="flex: 1; font-family: inherit; font-weight: 700; font-size: 13px; padding: 11px; background: transparent; color: oklch(40% 0.006 25); border: 1px solid oklch(90% 0.004 25); border-radius: 2px;">Ləğv et</button>
+          <button style="flex: 1; font-family: inherit; font-weight: 700; font-size: 13px; padding: 11px; background: oklch(54% 0.22 25); color: #fff; border: none; border-radius: 2px;">Tətbiq et</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  componentDidMount() { if (window.lucide) window.lucide.createIcons(); }
+  componentDidUpdate() { if (window.lucide) window.lucide.createIcons(); }
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

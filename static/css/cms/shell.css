@@ -1,0 +1,202 @@
+body.cms {
+    background: var(--color-surface);
+}
+
+.cms-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.cms-sidebar {
+    width: 240px;
+    flex: none;
+    background: oklch(98% 0.003 25);
+    border-right: 1px solid var(--color-border);
+    padding: var(--space-6) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    /* Without this, .cms-sidebar is a plain flex sibling of .cms-main and
+       stretches to match its height — on a page taller than the
+       viewport, the sidebar (and .cms-sidebar__item--bottom's "Tənzimləmələr"
+       pinned to its bottom via margin-top:auto) just scrolls away/drifts
+       further down with the rest of the page instead of staying put. */
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+/* Off-canvas backdrop (mirrors static/css/responsive/mobile.css's public
+   nav drawer pattern) — inert and invisible above the tablet breakpoint,
+   where the sidebar is permanently visible (CLAUDE.md ch.9). */
+.cms-sidebar-backdrop {
+    display: none;
+}
+
+.cms-sidebar__logo {
+    font-size: 18px;
+    font-weight: 800;
+    padding: 0 var(--space-2);
+    margin-bottom: var(--space-6);
+}
+
+.cms-sidebar__logo span {
+    color: var(--color-primary);
+}
+
+.cms-sidebar__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.cms-sidebar__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 10px 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    border-radius: var(--radius-card);
+}
+
+.cms-sidebar__item:hover {
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    text-decoration: none;
+}
+
+.cms-sidebar__item.is-active {
+    background: var(--color-primary);
+    color: #fff;
+    font-weight: 700;
+}
+
+.cms-sidebar__item.is-active:hover {
+    background: var(--color-primary);
+    color: #fff;
+}
+
+.cms-sidebar__item.is-disabled {
+    color: var(--color-border-strong);
+    cursor: not-allowed;
+}
+
+.cms-sidebar__item.is-disabled:hover {
+    background: none;
+    color: var(--color-border-strong);
+}
+
+.cms-sidebar__item--bottom {
+    margin-top: auto;
+}
+
+.cms-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.cms-topbar {
+    height: 64px;
+    flex: none;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-8);
+}
+
+.cms-topbar__menu-toggle {
+    display: none;
+    flex: none;
+    margin-right: var(--space-2);
+}
+
+.cms-topbar__title {
+    flex: 1;
+    font-size: 18px;
+    font-weight: 800;
+    margin: 0;
+}
+
+.cms-topbar__user {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.cms-topbar__avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--color-border);
+}
+
+.cms-topbar__name {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.cms-topbar__role {
+    font-size: 11px;
+    color: var(--color-text-muted);
+}
+
+.cms-content {
+    padding: var(--space-8);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+}
+
+/* Collapsible sidebar (CLAUDE.md ch.9 "permanently visible on desktop...
+   on tablets and mobile devices it becomes collapsible") — same
+   off-canvas mechanics as the public site's mobile nav
+   (static/css/responsive/mobile.css's .nav), just anchored to the left
+   since the sidebar normally lives there instead of the right. */
+@media (max-width: 992px) {
+    .cms-topbar__menu-toggle {
+        display: inline-flex;
+    }
+
+    .cms-sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: min(280px, 85vw);
+        z-index: 200;
+        transform: translateX(-100%);
+        transition: transform var(--transition-base);
+        box-shadow: var(--shadow-lg);
+        overflow-y: auto;
+    }
+
+    .cms-sidebar.is-open {
+        transform: translateX(0);
+    }
+
+    .cms-sidebar-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgb(0 0 0 / 40%);
+        z-index: 199;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity var(--transition-base);
+    }
+
+    .cms-sidebar-backdrop.is-open {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+
+@media (max-width: 576px) {
+    .cms-topbar__identity {
+        display: none;
+    }
+}

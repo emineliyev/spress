@@ -1,0 +1,24 @@
+; systemd unit for the Celery worker — processes background tasks
+; (image optimization, scheduled-publish execution, contact-form emails;
+; CLAUDE.md ch.13 "Never execute heavy work during user requests").
+; Install: sudo cp deploy/celery-worker.service /etc/systemd/system/spress-celery-worker.service
+;          sudo systemctl daemon-reload && sudo systemctl enable --now spress-celery-worker
+
+[Unit]
+Description=SPress Celery worker
+After=network.target redis-server.service postgresql.service
+
+[Service]
+Type=simple
+User=spress
+Group=spress
+WorkingDirectory=/opt/spress
+EnvironmentFile=/opt/spress/.env
+ExecStart=/opt/spress/.venv/bin/celery -A config worker \
+    --loglevel=info \
+    --logfile=/opt/spress/logs/celery-worker.log
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

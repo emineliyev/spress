@@ -1,0 +1,23 @@
+.search-page {
+    padding-top: var(--space-16);
+    padding-bottom: var(--space-24);
+}
+
+.search-page__title {
+    font-size: 34px;
+    font-weight: 800;
+    margin-bottom: var(--space-4);
+}
+
+.search-page__summary {
+    font-size: 15px;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-8);
+}
+
+.search-results {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    max-width: 900px;
+}

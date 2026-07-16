@@ -1,0 +1,66 @@
+.badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px var(--space-2);
+    border-radius: var(--radius-badge);
+    color: #fff;
+    background: var(--color-text-muted);
+}
+
+.badge--tag {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px var(--space-4);
+    border-radius: 999px;
+    color: var(--color-text-secondary);
+    background: transparent;
+    border: 1px solid var(--color-border-strong);
+}
+
+.badge--tag:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+    text-decoration: none;
+}
+
+/* News.Status values (CMS tables — CLAUDE.md ch.11 "Status Badges") */
+.badge--status-published {
+    background: var(--color-success);
+}
+
+.badge--status-draft {
+    background: var(--color-border-strong);
+}
+
+.badge--status-pending_review {
+    background: var(--color-warning);
+}
+
+.badge--status-scheduled {
+    background: var(--color-info);
+}
+
+.badge--status-archived {
+    background: var(--color-text-muted);
+}
+
+/* User.is_active (CMS Users list) */
+.badge--status-active {
+    background: var(--color-success);
+}
+
+.badge--status-inactive {
+    background: var(--color-border-strong);
+}
+
+/* Advertisement.status (computed — CMS Ads list) */
+.badge--status-paused {
+    background: var(--color-border-strong);
+}
+
+.badge--status-expired {
+    background: var(--color-text-muted);
+}

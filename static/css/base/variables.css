@@ -1,0 +1,77 @@
+/*
+ * Design tokens — single source of truth for color, spacing, radius,
+ * shadow and breakpoint values (CLAUDE.md ch.7 "CSS Variables").
+ * Values transcribed 1:1 from design/Design System.dc.html — do not
+ * approximate, do not invent new values outside this palette.
+ */
+
+:root {
+    /* Brand — red */
+    --color-primary-tint: oklch(96% 0.03 25);
+    --color-primary-border-tint: oklch(88% 0.06 25);
+    --color-primary: oklch(54% 0.22 25);
+    --color-primary-hover: oklch(46% 0.22 25);
+    --color-primary-active: oklch(40% 0.20 25);
+
+    /* Neutrals (warm-neutral, for white backgrounds) */
+    --color-bg: oklch(99% 0.003 25);
+    --color-surface: oklch(97% 0.003 25);
+    --color-border: oklch(90% 0.004 25);
+    --color-border-strong: oklch(75% 0.005 25);
+    --color-text-muted: oklch(55% 0.006 25);
+    --color-text-secondary: oklch(40% 0.006 25);
+    --color-text-primary: oklch(18% 0.006 25);
+    --color-white: #ffffff;
+
+    /* Semantic */
+    --color-success: oklch(54% 0.15 145);
+    --color-info: oklch(54% 0.15 235);
+    --color-warning: oklch(58% 0.15 85);
+    --color-danger: oklch(54% 0.22 25);
+
+    /* Spacing — 8px base grid (4px half-step for tight inner spacing) */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-16: 64px;
+    --space-20: 80px;
+    --space-24: 96px;
+
+    /* Radius — minimal, near-sharp corners */
+    --radius-badge: 0px;
+    --radius-control: 2px;
+    --radius-card: 4px;
+    --radius-media: 8px;
+
+    /* Shadow — very subtle, hover/dropdown only */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.10);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.14);
+
+    /* Grid / container */
+    --container-max-width: 1280px;
+    --grid-columns: 12;
+    --gutter-desktop: 24px;
+    --gutter-mobile: 16px;
+
+    /* Transitions (CLAUDE.md ch.7 "Transitions" — 200-300ms, consistent) */
+    --transition-fast: 200ms ease;
+    --transition-base: 300ms ease;
+}
+
+/*
+ * Breakpoints (reference only — CSS custom properties cannot be used
+ * inside @media queries, so these document the values that
+ * responsive/*.css must use literally):
+ *   mobile        <640px
+ *   tablet        640px – 1024px
+ *   desktop       >1024px
+ *   laptop        1200px
+ *   desktop-large 1440px+
+ */

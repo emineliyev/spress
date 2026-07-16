@@ -1,0 +1,28 @@
+# Core framework
+Django==6.0.7
+
+# PostgreSQL driver
+psycopg[binary]==3.3.4
+
+# Environment variable management (secrets never hardcoded — CLAUDE.md ch.12)
+django-environ==0.14.0
+
+# Caching backend (Redis — CLAUDE.md ch.13)
+django-redis==7.0.0
+redis==8.0.1
+
+# Background task queue (CLAUDE.md ch.4/13)
+celery==5.6.3
+
+# Required for ImageField / future image processing pipeline (CLAUDE.md ch.3)
+Pillow==12.3.0
+
+# Rich text editor for the News editor (CLAUDE.md ch.3 "Rich Text Editor").
+# CKEditor 5, not django-ckeditor's bundled CKEditor 4 — CKEditor 4 is EOL
+# with unfixed security issues (Django itself warns about this on startup;
+# see docs/ARCHITECTURE.md Phase 4 for the reasoning).
+django-ckeditor-5==0.2.20
+
+# Sanitizes CKEditor HTML before it's stored (CLAUDE.md ch.12 "XSS Protection")
+bleach==6.4.0
+tinycss2==1.5.1

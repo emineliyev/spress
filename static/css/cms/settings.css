@@ -1,0 +1,60 @@
+/* Site Settings (templates/cms/settings.html) — a single-page form split
+   into labeled section cards. */
+
+.cms-settings-form {
+    max-width: 780px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+}
+
+.cms-settings-section__title {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 var(--space-4);
+}
+
+.cms-settings-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    padding: var(--space-5);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+}
+
+.cms-settings-card .form-field {
+    margin-bottom: 0;
+}
+
+.cms-settings-card__field--wide {
+    grid-column: span 2;
+}
+
+.cms-settings-card--media {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+}
+
+/* Points to a separate CRUD screen instead of holding fields directly
+   (templates/cms/social_link_list.html) — plain text + one button, not
+   the 2-column field grid the base card uses. */
+.cms-settings-card--link {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+}
+
+.cms-settings-card--link p {
+    color: var(--color-text-secondary);
+    font-size: 14px;
+}
+
+/* Favicon is a square icon, not a 16:9 cover image — overrides the
+   .editor__cover-preview / .media-picker__choose aspect ratio those
+   classes otherwise share with the News cover picker. */
+.media-picker--square .editor__cover-preview,
+.media-picker--square .media-picker__choose {
+    aspect-ratio: 1 / 1;
+}

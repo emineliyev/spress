@@ -1,0 +1,135 @@
+.cms-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: var(--space-5);
+}
+
+@media (max-width: 1200px) {
+    .cms-stat-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .cms-stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.cms-stat-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    padding: var(--space-5);
+}
+
+.cms-stat-card__label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-2);
+}
+
+.cms-stat-card__value {
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.cms-panel-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: var(--space-5);
+}
+
+.cms-panel-grid--wide {
+    grid-template-columns: 1.6fr 1fr;
+}
+
+@media (max-width: 576px) {
+    .cms-panel-grid,
+    .cms-panel-grid--wide {
+        grid-template-columns: 1fr;
+    }
+}
+
+.cms-panel {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    padding: var(--space-6);
+}
+
+.cms-panel--table {
+    padding: 0;
+    overflow: hidden;
+}
+
+.cms-panel--table .cms-panel__title {
+    padding: var(--space-4) var(--space-5);
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.cms-panel__title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: var(--space-5);
+}
+
+.cms-panel__empty {
+    font-size: 13px;
+    color: var(--color-text-muted);
+}
+
+.cms-panel__axis {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-top: var(--space-2);
+}
+
+.cms-panel__link {
+    display: inline-block;
+    margin-top: var(--space-4);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.cms-distribution {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.cms-distribution__label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.cms-distribution__track {
+    height: 8px;
+    background: var(--color-surface);
+    border-radius: var(--radius-card);
+}
+
+.cms-distribution__fill {
+    height: 100%;
+    background: var(--color-primary);
+    border-radius: var(--radius-card);
+}
+
+.cms-activity-feed {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    font-size: 13px;
+}
+
+.cms-activity-feed__time {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-top: 2px;
+}

@@ -1,0 +1,136 @@
+{% extends "cms/base.html" %}
+{% load static az_dates %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cms/dashboard.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<div class="cms-quick-actions">
+    <a href="{% url 'cms:news_create' %}" class="btn btn--primary">
+        <i class="bi bi-plus-lg" aria-hidden="true"></i> Yeni xəbər
+    </a>
+    <a href="{% url 'cms:news_list' %}" class="btn btn--secondary">Bütün xəbərlər</a>
+</div>
+
+<div class="cms-stat-grid">
+    <div class="cms-stat-card">
+        <div class="cms-stat-card__label">Ümumi xəbər</div>
+        <div class="cms-stat-card__value">{{ stats.total_articles }}</div>
+    </div>
+    <div class="cms-stat-card">
+        <div class="cms-stat-card__label">Dərc olunub</div>
+        <div class="cms-stat-card__value">{{ stats.published_articles }}</div>
+    </div>
+    <div class="cms-stat-card">
+        <div class="cms-stat-card__label">Draft</div>
+        <div class="cms-stat-card__value">{{ stats.draft_articles }}</div>
+    </div>
+    <div class="cms-stat-card">
+        <div class="cms-stat-card__label">Planlaşdırılıb</div>
+        <div class="cms-stat-card__value">{{ stats.scheduled_articles }}</div>
+    </div>
+    <div class="cms-stat-card">
+        <div class="cms-stat-card__label">Kateqoriyalar</div>
+        <div class="cms-stat-card__value">{{ stats.categories }}</div>
+    </div>
+    <div class="cms-stat-card">
+        <div class="cms-stat-card__label">İstifadəçilər</div>
+        <div class="cms-stat-card__value">{{ stats.users }}</div>
+    </div>
+</div>
+
+<div class="cms-panel-grid">
+    <div class="cms-panel">
+        <div class="cms-panel__title">Son 7 gün — dərc olunan xəbər</div>
+        {% if publish_trend.total %}
+            <svg width="100%" height="{{ publish_trend.height }}" viewBox="0 0 {{ publish_trend.width }} {{ publish_trend.height }}" preserveAspectRatio="none">
+                <polyline points="{{ publish_trend.points }}" fill="none" stroke="var(--color-primary)" stroke-width="3" />
+            </svg>
+            <div class="cms-panel__axis">
+                {% for label in publish_trend.labels %}<span>{{ label }}</span>{% endfor %}
+            </div>
+        {% else %}
+            <p class="cms-panel__empty">Son 7 gündə dərc olunan xəbər yoxdur.</p>
+        {% endif %}
+    </div>
+
+    <div class="cms-panel">
+        <div class="cms-panel__title">Kateqoriya üzrə paylanma</div>
+        {% if category_distribution %}
+            <div class="cms-distribution">
+                {% for row in category_distribution %}
+                    <div class="cms-distribution__row">
+                        <div class="cms-distribution__label">
+                            <span>{{ row.category.name }}</span>
+                            <span>{{ row.percentage }}%</span>
+                        </div>
+                        <div class="cms-distribution__track">
+                            <div class="cms-distribution__fill" style="width: {{ row.percentage }}%;"></div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="cms-panel__empty">Kateqoriya yoxdur.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="cms-panel-grid cms-panel-grid--wide">
+    <div class="cms-panel cms-panel--table">
+        <div class="cms-panel__title">Son xəbərlər</div>
+        {% if recent_articles %}
+            <table class="cms-table">
+                <thead>
+                    <tr>
+                        <th>Başlıq</th>
+                        <th>Kateqoriya</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for article in recent_articles %}
+                        <tr>
+                            <td><a href="{% url 'cms:news_edit' article.pk %}">{{ article.title }}</a></td>
+                            <td>{{ article.category.name }}</td>
+                            <td><span class="badge badge--status-{{ article.status }}">{{ article.get_status_display }}</span></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-state">
+                <i class="bi bi-newspaper empty-state__icon" aria-hidden="true"></i>
+                <p class="empty-state__title">Hələ xəbər yoxdur</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="cms-panel">
+        <div class="cms-panel__title">Son fəaliyyət</div>
+        {% if recent_activity %}
+            <ul class="cms-activity-feed">
+                {% for entry in recent_activity %}
+                    <li class="cms-activity-feed__item">
+                        <div>
+                            <b>{% if entry.actor %}{{ entry.actor.get_full_name|default:entry.actor.username }}{% else %}Naməlum{% endif %}</b>
+                            {{ entry.get_action_display }}{% if entry.description %} — {{ entry.description }}{% endif %}
+                        </div>
+                        <div class="cms-activity-feed__time">{{ entry.created_at|az_timesince }}</div>
+                    </li>
+                {% endfor %}
+            </ul>
+            <a href="{% url 'cms:activity_log' %}" class="cms-panel__link">Bütün jurnalı gör →</a>
+        {% else %}
+            <div class="empty-state">
+                <i class="bi bi-clock-history empty-state__icon" aria-hidden="true"></i>
+                <p class="empty-state__title">Hələ fəaliyyət qeydə alınmayıb</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

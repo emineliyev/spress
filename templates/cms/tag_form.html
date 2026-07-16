@@ -1,0 +1,44 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Redaktə{% else %}Yeni etiket{% endif %}{% endblock %}
+
+{% block page_title %}
+    <a href="{% url 'cms:tag_list' %}" class="cms-topbar__crumb">Etiketlər</a>
+    <i class="bi bi-chevron-right cms-topbar__crumb-sep" aria-hidden="true"></i>
+    {% if form.instance.pk %}Redaktə{% else %}Yeni etiket{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<form method="post" class="cms-simple-form" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div class="alert alert--danger">
+            {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="form-field{% if form.name.errors %} form-field--error{% endif %}">
+        <label for="{{ form.name.id_for_label }}">Ad</label>
+        {{ form.name }}
+        {% for error in form.name.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-field{% if form.slug.errors %} form-field--error{% endif %}">
+        <label for="{{ form.slug.id_for_label }}">URL slug</label>
+        {{ form.slug }}
+        {% for error in form.slug.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <button type="submit" class="btn btn--primary">Yadda saxla</button>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+    <script defer src="{% static 'js/cms/editor.js' %}"></script>
+{% endblock %}

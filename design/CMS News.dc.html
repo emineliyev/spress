@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style> body { margin: 0; background: #f4f3f1; } * { box-sizing: border-box; } </style>
+</helmet>
+
+<div style="width: 1440px; margin: 0 auto; background: #fff; font-family: 'Noto Sans', system-ui, sans-serif; color: oklch(18% 0.006 25); display: flex; min-height: 900px;">
+  <div style="width: 240px; flex: none; background: oklch(98% 0.003 25); border-right: 1px solid oklch(90% 0.004 25); padding: 24px 16px; display: flex; flex-direction: column; gap: 2px;">
+    <div style="font-size: 18px; font-weight: 800; padding: 0 10px; margin-bottom: 24px;">XƏBƏR<span style="color: oklch(54% 0.22 25);">CMS</span></div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: oklch(35% 0.006 25); font-size: 14px; font-weight: 600;"><i data-lucide="layout-dashboard" style="width: 18px; height: 18px;"></i>Dashboard</div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: oklch(54% 0.22 25); color: #fff; border-radius: 4px; font-size: 14px; font-weight: 700;"><i data-lucide="newspaper" style="width: 18px; height: 18px;"></i>Xəbərlər</div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: oklch(35% 0.006 25); font-size: 14px; font-weight: 600;"><i data-lucide="folder-tree" style="width: 18px; height: 18px;"></i>Kateqoriyalar</div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: oklch(35% 0.006 25); font-size: 14px; font-weight: 600;"><i data-lucide="image" style="width: 18px; height: 18px;"></i>Media</div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: oklch(35% 0.006 25); font-size: 14px; font-weight: 600;"><i data-lucide="message-square" style="width: 18px; height: 18px;"></i>Şərhlər</div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: oklch(35% 0.006 25); font-size: 14px; font-weight: 600;"><i data-lucide="users" style="width: 18px; height: 18px;"></i>İstifadəçilər</div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: oklch(35% 0.006 25); font-size: 14px; font-weight: 600;"><i data-lucide="megaphone" style="width: 18px; height: 18px;"></i>Reklam</div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: oklch(35% 0.006 25); font-size: 14px; font-weight: 600;"><i data-lucide="search-check" style="width: 18px; height: 18px;"></i>SEO</div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: oklch(35% 0.006 25); font-size: 14px; font-weight: 600;"><i data-lucide="history" style="width: 18px; height: 18px;"></i>Fəaliyyət jurnalı</div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: oklch(35% 0.006 25); font-size: 14px; font-weight: 600; margin-top: auto;"><i data-lucide="settings" style="width: 18px; height: 18px;"></i>Tənzimləmələr</div>
+  </div>
+
+  <div style="flex: 1; display: flex; flex-direction: column;">
+    <div style="height: 64px; border-bottom: 1px solid oklch(90% 0.004 25); display: flex; align-items: center; justify-content: space-between; padding: 0 32px;">
+      <div style="font-size: 18px; font-weight: 800;">Xəbərlər</div>
+      <div style="display: flex; align-items: center; gap: 20px;">
+        <div style="display: flex; align-items: center; gap: 8px; border: 1px solid oklch(90% 0.004 25); border-radius: 2px; padding: 8px 12px; width: 240px;"><i data-lucide="search" style="width: 16px; height: 16px; color: oklch(40% 0.006 25);"></i><span style="font-size: 13px; color: oklch(40% 0.006 25);">Axtar...</span></div>
+        <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
+        <div style="width: 32px; height: 32px; border-radius: 50%; background: oklch(90% 0.004 25);"></div>
+      </div>
+    </div>
+
+    <div style="padding: 32px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div style="display: flex; gap: 10px;">
+          <div style="font-size: 13px; font-weight: 700; padding: 8px 14px; border: 1px solid oklch(90% 0.004 25); border-radius: 2px; display: flex; align-items: center; gap: 8px;">Kateqoriya<i data-lucide="chevron-down" style="width: 14px; height: 14px;"></i></div>
+          <div style="font-size: 13px; font-weight: 700; padding: 8px 14px; border: 1px solid oklch(90% 0.004 25); border-radius: 2px; display: flex; align-items: center; gap: 8px;">Status<i data-lucide="chevron-down" style="width: 14px; height: 14px;"></i></div>
+        </div>
+        <button style="display: flex; align-items: center; gap: 8px; font-family: inherit; font-weight: 700; font-size: 14px; padding: 11px 18px; background: oklch(54% 0.22 25); color: #fff; border: none; border-radius: 2px;"><i data-lucide="plus" style="width: 16px; height: 16px;"></i>Yeni xəbər</button>
+      </div>
+      <div style="border: 1px solid oklch(90% 0.004 25); border-radius: 4px; overflow: hidden;">
+        <div style="display: grid; grid-template-columns: 2.4fr 1fr 1fr 1fr 0.6fr; background: oklch(97% 0.003 25); padding: 12px 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; color: oklch(40% 0.006 25);"><div>Başlıq</div><div>Müəllif</div><div>Kateqoriya</div><div>Status</div><div></div></div>
+        <div style="display: grid; grid-template-columns: 2.4fr 1fr 1fr 1fr 0.6fr; padding: 14px 20px; font-size: 14px; border-top: 1px solid oklch(90% 0.004 25); align-items: center;"><div>Parlament yeni büdcə paketini müzakirəyə çıxardı</div><div style="color: oklch(40% 0.006 25);">Aygün M.</div><div style="color: oklch(40% 0.006 25);">Siyasət</div><div><span style="background: oklch(54% 0.15 145); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 2px;">Dərc olunub</span></div><div><i data-lucide="more-horizontal" style="width: 18px; height: 18px; color: oklch(40% 0.006 25);"></i></div></div>
+        <div style="display: grid; grid-template-columns: 2.4fr 1fr 1fr 1fr 0.6fr; padding: 14px 20px; font-size: 14px; border-top: 1px solid oklch(90% 0.004 25); align-items: center; background: oklch(97% 0.003 25);"><div>Neft qiymətləri üç aylıq zirvəyə çatdı</div><div style="color: oklch(40% 0.006 25);">Elvin Q.</div><div style="color: oklch(40% 0.006 25);">İqtisadiyyat</div><div><span style="background: oklch(58% 0.15 85); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 2px;">Gözləyir</span></div><div><i data-lucide="more-horizontal" style="width: 18px; height: 18px; color: oklch(40% 0.006 25);"></i></div></div>
+        <div style="display: grid; grid-template-columns: 2.4fr 1fr 1fr 1fr 0.6fr; padding: 14px 20px; font-size: 14px; border-top: 1px solid oklch(90% 0.004 25); align-items: center;"><div>Milli komanda final mərhələsinə yüksəldi</div><div style="color: oklch(40% 0.006 25);">Nərmin Ə.</div><div style="color: oklch(40% 0.006 25);">İdman</div><div><span style="background: oklch(75% 0.005 25); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 2px;">Draft</span></div><div><i data-lucide="more-horizontal" style="width: 18px; height: 18px; color: oklch(40% 0.006 25);"></i></div></div>
+        <div style="display: grid; grid-template-columns: 2.4fr 1fr 1fr 1fr 0.6fr; padding: 14px 20px; font-size: 14px; border-top: 1px solid oklch(90% 0.004 25); align-items: center; background: oklch(97% 0.003 25);"><div>Region diplomatiyasında yeni mərhələ</div><div style="color: oklch(40% 0.006 25);">Aygün M.</div><div style="color: oklch(40% 0.006 25);">Dünya</div><div><span style="background: oklch(54% 0.15 145); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 2px;">Dərc olunub</span></div><div><i data-lucide="more-horizontal" style="width: 18px; height: 18px; color: oklch(40% 0.006 25);"></i></div></div>
+      </div>
+      <div style="display: flex; gap: 8px; justify-content: center; margin-top: 24px;">
+        <div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: oklch(54% 0.22 25); color: #fff; border-radius: 2px; font-size: 13px; font-weight: 700;">1</div>
+        <div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid oklch(90% 0.004 25); border-radius: 2px; font-size: 13px;">2</div>
+        <div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid oklch(90% 0.004 25); border-radius: 2px; font-size: 13px;">3</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  componentDidMount() { if (window.lucide) window.lucide.createIcons(); }
+  componentDidUpdate() { if (window.lucide) window.lucide.createIcons(); }
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

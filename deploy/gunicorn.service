@@ -1,0 +1,32 @@
+; systemd unit for the Django application server.
+; Install: sudo cp deploy/gunicorn.service /etc/systemd/system/spress-gunicorn.service
+;          sudo systemctl daemon-reload && sudo systemctl enable --now spress-gunicorn
+;
+; Runs Gunicorn against a unix socket (not a TCP port) — Nginx is the only
+; thing that ever talks to it directly (deploy/nginx.conf), so there is no
+; reason to expose it on the network at all.
+
+[Unit]
+Description=SPress Gunicorn application server
+After=network.target postgresql.service redis-server.service
+
+[Service]
+Type=simple
+User=spress
+Group=spress
+WorkingDirectory=/opt/spress
+EnvironmentFile=/opt/spress/.env
+RuntimeDirectory=spress
+ExecStart=/opt/spress/.venv/bin/gunicorn \
+    config.wsgi:application \
+    --bind unix:/run/spress/gunicorn.sock \
+    --workers 3 \
+    --timeout 60 \
+    --access-logfile /opt/spress/logs/gunicorn-access.log \
+    --error-logfile /opt/spress/logs/gunicorn-error.log
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

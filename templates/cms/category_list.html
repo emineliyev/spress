@@ -1,0 +1,112 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}Kateqoriyalar{% endblock %}
+{% block page_title %}Kateqoriyalar{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<div class="cms-list-toolbar">
+    <div class="cms-list-tabs">
+        <a href="?" class="cms-list-tabs__item{% if not show_deleted %} is-active{% endif %}">Kateqoriyalar</a>
+        <a href="?deleted=1" class="cms-list-tabs__item{% if show_deleted %} is-active{% endif %}">
+            <i class="bi bi-trash3" aria-hidden="true"></i> Silinənlər
+        </a>
+    </div>
+    {% if not show_deleted %}
+        <a href="{% url 'cms:category_create' %}" class="btn btn--primary">
+            <i class="bi bi-plus-lg" aria-hidden="true"></i> Yeni kateqoriya
+        </a>
+    {% endif %}
+</div>
+
+{% if categories %}
+<div class="cms-table-wrapper">
+    <table class="cms-table" data-role="category-table" data-reorder-url="{% url 'cms:category_reorder' %}">
+        <thead>
+            <tr>
+                <th>Ad</th>
+                <th>Slug</th>
+                <th>Xəbər sayı</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for category in categories %}
+                <tr class="cms-table__row"{% if not show_deleted %} draggable="true"{% endif %} data-category-id="{{ category.pk }}" data-parent="">
+                    <td>
+                        {% if not show_deleted %}<i class="bi bi-grip-vertical cms-table__drag-handle" aria-hidden="true"></i>{% endif %}
+                        {{ category.name }}
+                        {% if not category.is_active %}<span class="badge badge--status-archived">Deaktiv</span>{% endif %}
+                    </td>
+                    <td>/{{ category.slug }}</td>
+                    <td>{{ category.news_count }}</td>
+                    <td class="cms-table__actions">
+                        {% if show_deleted %}
+                            <form method="post" action="{% url 'cms:category_restore' category.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn--sm btn--secondary">Bərpa et</button>
+                            </form>
+                        {% else %}
+                            <div class="cms-row-menu">
+                                <button type="button" class="header-icon-btn" data-action="toggle-row-menu" aria-expanded="false">
+                                    <i class="bi bi-three-dots" aria-hidden="true"></i>
+                                </button>
+                                <div class="cms-row-menu__panel" hidden>
+                                    <a href="{% url 'cms:category_edit' category.pk %}">Redaktə</a>
+                                    <a href="{% url 'cms:category_delete' category.pk %}" class="cms-row-menu__danger">Sil</a>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% for child in category.visible_children %}
+                    <tr class="cms-table__row cms-table__row--child"{% if not show_deleted %} draggable="true"{% endif %} data-category-id="{{ child.pk }}" data-parent="{{ category.pk }}">
+                        <td class="cms-table__cell--indent">
+                            ↳ {{ child.name }}
+                            {% if not child.is_active %}<span class="badge badge--status-archived">Deaktiv</span>{% endif %}
+                        </td>
+                        <td>/{{ category.slug }}/{{ child.slug }}</td>
+                        <td>{{ child.news_count }}</td>
+                        <td class="cms-table__actions">
+                            {% if show_deleted %}
+                                <form method="post" action="{% url 'cms:category_restore' child.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn--sm btn--secondary">Bərpa et</button>
+                                </form>
+                            {% else %}
+                                <div class="cms-row-menu">
+                                    <button type="button" class="header-icon-btn" data-action="toggle-row-menu" aria-expanded="false">
+                                        <i class="bi bi-three-dots" aria-hidden="true"></i>
+                                    </button>
+                                    <div class="cms-row-menu__panel" hidden>
+                                        <a href="{% url 'cms:category_edit' child.pk %}">Redaktə</a>
+                                        <a href="{% url 'cms:category_delete' child.pk %}" class="cms-row-menu__danger">Sil</a>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+    <div class="empty-state">
+        <i class="bi bi-diagram-3 empty-state__icon" aria-hidden="true"></i>
+        <p class="empty-state__title">{% if show_deleted %}Silinmiş kateqoriya yoxdur{% else %}Hələ kateqoriya yoxdur{% endif %}</p>
+        {% if not show_deleted %}
+            <a href="{% url 'cms:category_create' %}" class="btn btn--primary">İlk kateqoriyanı yarat</a>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+    <script defer src="{% static 'js/cms/news.js' %}"></script>
+    <script defer src="{% static 'js/cms/categories.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load static az_dates ads %}
+
+{% block title %}{{ site_settings.site_name }} — Son xəbərlər{% endblock %}
+{% block meta_description %}{{ site_settings.footer_text }}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/pages/home.css' %}">
+{% endblock %}
+
+{% block ticker %}{% include "components/breaking_ticker.html" %}{% endblock %}
+
+{% block content %}
+<div class="container home">
+
+    {% if hero %}
+    <section class="home-hero">
+        <a href="{{ hero.get_absolute_url }}" class="home-hero__image-link">
+            {% if hero.featured_image %}
+                <img src="{{ hero.featured_image.file.url }}" alt="{{ hero.featured_image.alt_text|default:hero.title }}" class="home-hero__image">
+            {% else %}
+                <span class="home-hero__image home-hero__image--placeholder" aria-hidden="true"></span>
+            {% endif %}
+        </a>
+        <div class="home-hero__overlay" aria-hidden="true"></div>
+        <div class="home-hero__content">
+            <span class="home-hero__badge">Seçilmiş xəbər</span>
+            <h1 class="home-hero__title"><a href="{{ hero.get_absolute_url }}">{{ hero.title }}</a></h1>
+            <p class="type-body-lg home-hero__excerpt">{{ hero.short_description }}</p>
+            <div class="home-hero__meta">
+                <i class="bi bi-clock" aria-hidden="true"></i> {{ hero.published_at|az_full_date }}
+            </div>
+            <a href="{{ hero.get_absolute_url }}" class="btn btn--primary home-hero__cta">
+                Ətraflı oxu <i class="bi bi-arrow-right" aria-hidden="true"></i>
+            </a>
+        </div>
+    </section>
+    {% endif %}
+
+    <div class="home-body">
+        <div class="home-main">
+            {% for section in category_sections %}
+            <section class="home-section">
+                <div class="home-section__header">
+                    <h2 class="home-section__title">{{ section.category.name }}</h2>
+                    <a href="{{ section.category.get_absolute_url }}" class="home-section__link">Hamısına bax →</a>
+                </div>
+                <div class="grid">
+                    {% for article in section.articles %}
+                        <div class="col-span-4">
+                            {% include "components/news_card.html" with article=article layout="vertical" %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endfor %}
+        </div>
+
+        <aside class="home-sidebar">
+            {% if popular_news %}
+            <div class="sidebar-block">
+                <h2 class="sidebar-block__title">Ən çox oxunan</h2>
+                <ol class="popular-list">
+                    {% for article in popular_news %}
+                        <li class="popular-list__item">
+                            <span class="popular-list__rank">{{ forloop.counter|stringformat:"02d" }}</span>
+                            <a href="{{ article.get_absolute_url }}" class="popular-list__title">{{ article.title }}</a>
+                        </li>
+                    {% endfor %}
+                </ol>
+            </div>
+            {% endif %}
+
+            {% ad_slot "home-sidebar-1" %}
+        </aside>
+    </div>
+</div>
+{% endblock %}

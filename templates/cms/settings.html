@@ -1,0 +1,132 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}Tənzimləmələr{% endblock %}
+{% block page_title %}Sayt Tənzimləmələri{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'vendors/cropperjs/cropper.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cms/media.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cms/settings.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<form method="post" class="cms-settings-form" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div class="alert alert--danger">
+            {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <section class="cms-settings-section">
+        <h2 class="cms-settings-section__title">Ümumi</h2>
+        <div class="cms-settings-card">
+            <div class="form-field{% if form.site_name.errors %} form-field--error{% endif %}">
+                <label for="{{ form.site_name.id_for_label }}">Sayt adı</label>
+                {{ form.site_name }}
+                {% for error in form.site_name.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="form-field">
+                <label for="cms-settings-language">Dil</label>
+                <select id="cms-settings-language" class="form-input" disabled>
+                    <option>Azərbaycan</option>
+                </select>
+            </div>
+
+            <div class="form-field cms-settings-card__field--wide{% if form.footer_text.errors %} form-field--error{% endif %}">
+                <label for="{{ form.footer_text.id_for_label }}">Alt yazı (footer)</label>
+                {{ form.footer_text }}
+                {% for error in form.footer_text.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="form-field cms-settings-card__field--wide{% if form.contact_email.errors %} form-field--error{% endif %}">
+                <label for="{{ form.contact_email.id_for_label }}">Əlaqə e-poçtu</label>
+                {{ form.contact_email }}
+                {% for error in form.contact_email.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="cms-settings-section">
+        <h2 class="cms-settings-section__title">Media</h2>
+        <div class="cms-settings-card cms-settings-card--media">
+            <div class="form-field">
+                <label>Loqo</label>
+                <div class="media-picker" data-role="image-picker">
+                    <div class="media-picker__preview" data-role="picker-preview"{% if not object.logo %} hidden{% endif %}>
+                        <img src="{% if object.logo.thumbnail %}{{ object.logo.thumbnail.url }}{% elif object.logo %}{{ object.logo.file.url }}{% endif %}" alt="" class="editor__cover-preview" data-role="picker-preview-image">
+                        <button type="button" class="media-picker__remove" data-action="remove-image" aria-label="Loqonu sil">
+                            <i class="bi bi-x-lg" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <button type="button" class="media-picker__choose" data-action="choose-image"{% if object.logo %} hidden{% endif %}>
+                        <i class="bi bi-image" aria-hidden="true"></i> Loqo seçin
+                    </button>
+                    <input type="file" data-role="picker-file-input" accept="image/jpeg,image/png,image/webp,image/svg+xml" hidden>
+                    {{ form.logo }}
+                </div>
+                <p class="editor__hint">Tərcihən şəffaf fonlu PNG və ya SVG, hündürlük ən azı 120px.</p>
+            </div>
+
+            <div class="form-field">
+                <label>Favicon</label>
+                <div class="media-picker media-picker--square" data-role="image-picker" data-aspect-ratio="1">
+                    <div class="media-picker__preview" data-role="picker-preview"{% if not object.favicon %} hidden{% endif %}>
+                        <img src="{% if object.favicon.thumbnail %}{{ object.favicon.thumbnail.url }}{% elif object.favicon %}{{ object.favicon.file.url }}{% endif %}" alt="" class="editor__cover-preview" data-role="picker-preview-image">
+                        <button type="button" class="media-picker__remove" data-action="remove-image" aria-label="Favicon-u sil">
+                            <i class="bi bi-x-lg" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <button type="button" class="media-picker__choose" data-action="choose-image"{% if object.favicon %} hidden{% endif %}>
+                        <i class="bi bi-image" aria-hidden="true"></i> Favicon seçin
+                    </button>
+                    <input type="file" data-role="picker-file-input" accept="image/jpeg,image/png,image/webp,image/svg+xml" hidden>
+                    {{ form.favicon }}
+                </div>
+                <p class="editor__hint">Kvadrat şəkil, tövsiyə olunan ölçü: 512×512px.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="cms-settings-section">
+        <h2 class="cms-settings-section__title">Əlaqə məlumatları</h2>
+        <div class="cms-settings-card">
+            <div class="form-field{% if form.contact_phone.errors %} form-field--error{% endif %}">
+                <label for="{{ form.contact_phone.id_for_label }}">Telefon</label>
+                {{ form.contact_phone }}
+                {% for error in form.contact_phone.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="form-field{% if form.contact_address.errors %} form-field--error{% endif %}">
+                <label for="{{ form.contact_address.id_for_label }}">Ünvan</label>
+                {{ form.contact_address }}
+                {% for error in form.contact_address.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="cms-settings-section">
+        <h2 class="cms-settings-section__title">Sosial şəbəkələr</h2>
+        <div class="cms-settings-card cms-settings-card--link">
+            <p>Sosial şəbəkə keçidləri (Facebook, Instagram, Telegram və s.) ayrıca bölmədən idarə olunur — istənilən sayda platforma əlavə edə bilərsiniz.</p>
+            <a href="{% url 'cms:social_link_list' %}" class="btn btn--secondary">
+                <i class="bi bi-share" aria-hidden="true"></i> Sosial şəbəkələri idarə et
+            </a>
+        </div>
+    </section>
+
+    <button type="submit" class="btn btn--primary">Yadda saxla</button>
+</form>
+
+{% include "cms/partials/media_crop_modal.html" %}
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'vendors/cropperjs/cropper.min.js' %}"></script>
+    <script defer src="{% static 'js/cms/media-uploader.js' %}"></script>
+    <script defer src="{% static 'js/cms/image-pickers.js' %}"></script>
+{% endblock %}

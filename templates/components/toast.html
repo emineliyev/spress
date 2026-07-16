@@ -1,0 +1,8 @@
+{% if messages %}
+<ul class="toast-source" hidden>
+    {% for message in messages %}
+        <li data-toast-type="{{ message.tags|default:'info' }}">{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+<div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; background: #ffffff; }
+    * { box-sizing: border-box; }
+  </style>
+</helmet>
+
+<div style="font-family: 'Courier New', Consolas, monospace; background: #ffffff; color: #111111; padding: 48px 56px 120px; max-width: 1400px; margin: 0 auto; line-height: 1.55; font-size: 15px;">
+
+  <div style="border-bottom: 3px solid #111; padding-bottom: 16px; margin-bottom: 8px;">
+    <div style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: #555;">Structure Document — Design yoxdur / No visual design</div>
+    <h1 style="font-size: 28px; font-weight: 700; margin: 6px 0 4px;">Azərbaycan Xəbər Portalı — Sayt Strukturu (Sitemap)</h1>
+    <div style="font-size: 13px; color: #555;">Stack: Django + HTML/CSS/JS (без React) · Dil: yalnız Azərbaycan · İki hissə: Publik sayt + CMS (Admin panel)</div>
+  </div>
+
+  <!-- ============ ARCHITECTURE OVERVIEW ============ -->
+  <h2 style="font-size: 17px; font-weight: 700; margin: 36px 0 12px; text-transform: uppercase; letter-spacing: 0.04em;">0. Sistem Arxitekturası (yüksək səviyyə)</h2>
+  <div style="display: flex; align-items: stretch; gap: 0; flex-wrap: wrap;">
+    <div style="border: 2px solid #111; padding: 14px 18px; min-width: 220px;">
+      <div style="font-weight: 700;">CMS / Admin Panel</div>
+      <div style="font-size: 12px; color: #555; margin-top: 4px;">Django Admin (custom) + templates</div>
+      <div style="font-size: 12px; color: #555;">Redaktor, Jurnalist, Moderator, Admin</div>
+    </div>
+    <div style="display: flex; align-items: center; padding: 0 14px; font-size: 20px; color: #444;">──write──▶</div>
+    <div style="border: 2px solid #111; padding: 14px 18px; min-width: 220px;">
+      <div style="font-weight: 700;">Verilənlər bazası</div>
+      <div style="font-size: 12px; color: #555; margin-top: 4px;">PostgreSQL (Django ORM)</div>
+      <div style="font-size: 12px; color: #555;">+ Redis (cache, opsional)</div>
+    </div>
+    <div style="display: flex; align-items: center; padding: 0 14px; font-size: 20px; color: #444;">──read──▶</div>
+    <div style="border: 2px solid #111; padding: 14px 18px; min-width: 220px;">
+      <div style="font-weight: 700;">Publik Sayt</div>
+      <div style="font-size: 12px; color: #555; margin-top: 4px;">Django views + HTML/CSS/JS</div>
+      <div style="font-size: 12px; color: #555;">Server-side render, SEO-friendly</div>
+    </div>
+  </div>
+  <div style="font-size: 12px; color: #666; margin-top: 10px;">Qeyd: CMS heç vaxt birbaşa publik şablonlara yazmır — bütün əlaqə DB vasitəsilə. Publik sayt yalnız "published" statuslu məzmunu oxuyur.</div>
+
+  <!-- ============ PUBLIC SITEMAP ============ -->
+  <h2 style="font-size: 17px; font-weight: 700; margin: 44px 0 4px; text-transform: uppercase; letter-spacing: 0.04em;">1. Publik Hissə — Sitemap</h2>
+  <div style="font-size: 12px; color: #666; margin-bottom: 14px;">Bütün URL nümunələri şərtidir. Struktur BBC / Reuters / Bloomberg / CNN best-practice-lərinə əsaslanır: kateqoriya → məqalə iyerarxiyası, ayrıca video/foto bölmələri, uzun-format analitika, tag-based kəşfiyyat.</div>
+
+  <pre style="white-space: pre; font-size: 14px; margin: 0; overflow-x: auto; background: #fafafa; border: 1px solid #ddd; padding: 20px 24px;">Ana səhifə  (/)
+├── Breaking news lenti (homepage-də üst blok, real-time)
+├── Xəbərlər  (/xeberler/)
+│   ├── Kateqoriya səhifəsi  (/xeberler/&lt;kateqoriya&gt;/)
+│   │   └── Məqalə səhifəsi  (/xeberler/&lt;kateqoriya&gt;/&lt;slug&gt;/)
+│   │       ├── Şərhlər bloku
+│   │       ├── "Oxşar xəbərlər" bloku
+│   │       ├── Müəllif kartı → Müəllif profilinə keçid
+│   │       └── Paylaş / Çap et / PDF
+│   ├── Siyasət · İqtisadiyyat · Dünya · Region
+│   ├── Cəmiyyət · Mədəniyyət · İdman
+│   └── Texnologiya · Sağlamlıq · Elm
+├── Analitika / Rəy  (/analitika/)
+│   └── Analitik məqalə səhifəsi (uzun format, imzalı müəllif)
+├── Xüsusi Layihələr / Longread  (/layiheler/)
+│   └── Layihə səhifəsi (custom scroll-şablon, multimedia)
+├── Video  (/video/)
+│   ├── Video kateqoriyaları
+│   └── Video izləmə səhifəsi (player + transkript)
+├── Foto Qalereya  (/foto/)
+│   └── Qalereya səhifəsi (lightbox)
+├── Mövzular / Etiketlər  (/movzu/&lt;tag&gt;/)          — bir mövzu üzrə bütün format (xəbər+video+analitika)
+├── Müəllif Profili  (/muellif/&lt;slug&gt;/)            — bio + bütün yazıları
+├── Axtarış Nəticələri  (/axtaris/?q=)
+├── Arxiv  (/arxiv/&lt;il&gt;/&lt;ay&gt;/&lt;gun&gt;/)         — tarix üzrə göz atma
+├── İstifadəçi Hesabı  (opsional membership qatı)
+│   ├── Giriş / Qeydiyyat  (/hesab/giris/, /hesab/qeydiyyat/)
+│   ├── Seçilmiş xəbərlər  (/hesab/secilmisler/)
+│   └── Bildiriş tənzimləmələri
+├── Newsletter Abunəliyi  (footer-də inline form + /abunelik/)
+├── Haqqımızda  (/haqqimizda/)
+├── Əlaqə  (/elaqe/)
+├── Reklam  (/reklam/)                                — "Advertise with us"
+├── Hüquqi Səhifələr
+│   ├── Məxfilik Siyasəti  (/mexfilik/)
+│   ├── İstifadə Şərtləri  (/sertler/)
+│   └── Redaksiya Siyasəti / Düzəlişlər  (/redaksiya-siyaseti/)
+├── RSS Lentləri  (/rss/, /rss/&lt;kateqoriya&gt;/)
+└── 404 / Xəta Səhifəsi</pre>
+
+  <!-- ============ CMS SITEMAP ============ -->
+  <h2 style="font-size: 17px; font-weight: 700; margin: 44px 0 4px; text-transform: uppercase; letter-spacing: 0.04em;">2. CMS / Admin Panel — Sitemap</h2>
+  <div style="font-size: 12px; color: #666; margin-bottom: 14px;">Rol-əsaslı giriş: Admin (tam giriş) · Redaktor (nəşr/rədd) · Jurnalist (yalnız öz məzmunu, draft) · Moderator (yalnız şərhlər).</div>
+
+  <pre style="white-space: pre; font-size: 14px; margin: 0; overflow-x: auto; background: #fafafa; border: 1px solid #ddd; padding: 20px 24px;">Giriş  (/admin/login/)
+└── Dashboard  (/admin/)                        — statistika, son fəaliyyət, tapşırıqlar, xəbərdarlıqlar
+    ├── Məzmun İdarəetməsi
+    │   ├── Xəbərlər
+    │   │   ├── Bütün xəbərlər  — siyahı + filtr (status: draft / gözləyir / dərc olunub)
+    │   │   ├── Yeni xəbər  — WYSIWYG redaktor, SEO bloku, media, planlaşdırılmış nəşr
+    │   │   └── Xəbər redaktəsi  — versiya tarixçəsi, "kim nə vaxt dəyişdi"
+    │   ├── Kateqoriyalar  — CRUD, sıralama, menyu strukturu
+    │   ├── Etiketlər  — CRUD
+    │   ├── Media Kitabxanası  — şəkil/video yükləmə, crop, alt-text (SEO)
+    │   ├── Video İdarəetməsi
+    │   ├── Xüsusi Layihələr / Longread Builder
+    │   └── Breaking News / Ticker İdarəetməsi  — homepage üst zolağı
+    ├── Baş Səhifə Düzülüşü  — bloklərin əl ilə düzülməsi (manual curation)
+    ├── Şərhlər Moderasiyası  — təsdiq / rədd / spam, istifadəçi bloklama
+    ├── İstifadəçilər və Rollar
+    │   ├── Jurnalistlər / Müəlliflər  — profil, bio, imza
+    │   ├── Redaktorlar
+    │   ├── Moderatorlar
+    │   └── Rol və İcazələr  — permission matrix
+    ├── Abunəçilər / Newsletter İdarəetməsi  — siyahı, kampaniya göndərişi
+    ├── Reklam İdarəetməsi  — banner yerləşdirmə, kampaniya, klik statistikası
+    ├── SEO və Analitika
+    │   ├── Meta teqlər, sitemap.xml generasiyası
+    │   └── Trafik statistikası (GA inteqrasiyası)
+    ├── Sayt Tənzimləmələri
+    │   ├── Ümumi  — loqo, sayt adı, əlaqə məlumatı
+    │   ├── Menyu İdarəetməsi
+    │   └── Footer Linkləri
+    ├── Bildirişlər  — push/email tənzimləmələri
+    └── Fəaliyyət Jurnalı (Audit Log)  — kim, nə vaxt, nə etdi</pre>
+
+  <!-- ============ READER USER FLOW ============ -->
+  <h2 style="font-size: 17px; font-weight: 700; margin: 44px 0 4px; text-transform: uppercase; letter-spacing: 0.04em;">3. User Flow — Oxucu (Publik Sayt)</h2>
+  <div style="font-size: 12px; color: #666; margin-bottom: 14px;">Əsas ssenari + alternativ giriş nöqtələri (axtarış, breaking news, e-poçt) və məqalə səhifəsindəki çıxış qolları.</div>
+  <pre style="white-space: pre; font-size: 14px; margin: 0; overflow-x: auto; background: #fafafa; border: 1px solid #ddd; padding: 20px 24px;">                     [Giriş nöqtələri]
+     Ana səhifə     Axtarış (Google/daxili)     Breaking ticker     E-poçt / Sosial media linki
+          │                    │                        │                       │
+          └────────────────────┴───────────┬────────────┴───────────────────────┘
+                                            ▼
+                              Kateqoriya seçimi (menyu / kart klik)
+                                            │
+                                            ▼
+                              Kateqoriya Səhifəsi  (məs. Siyasət)
+                                            │
+                                            ▼
+                              Alt-kateqoriya / filtr / sıralama  (opsional)
+                                            │
+                                            ▼
+                              ┌─────────────────────────────┐
+                              │      Xəbər (Məqalə) Səhifəsi │
+                              └─────────────────────────────┘
+                                            │
+        ┌───────────────┬───────────────────┼───────────────────┬──────────────────┐
+        ▼               ▼                   ▼                   ▼                  ▼
+   Şərh yazır       Paylaşır          "Oxşar Xəbərlər"     Müəllif adına klik   Etiketə klik
+        │               │              blokuna klik              │                  │
+        ▼               ▼                   ▼                   ▼                  ▼
+  Şərhlər bölməsi  Sosial media /     Başqa Məqalə səhifəsi  Müəllif Profili    Mövzu Səhifəsi
+                   link kopyalama     (dövrə təkrarlanır)    → digər yazıları   → əlaqəli bütün
+                                                                                  format (xəbər/
+                                                                                  video/analitika)
+
+                                            │
+                                            ▼
+                        Çıxış: Newsletter abunə ol  /  Sayt tərk  /  Yeni axtarış</pre>
+
+  <!-- ============ ADMIN / CMS USER FLOW ============ -->
+  <h2 style="font-size: 17px; font-weight: 700; margin: 44px 0 4px; text-transform: uppercase; letter-spacing: 0.04em;">4. User Flow — CMS (Jurnalist → Redaktor → Nəşr)</h2>
+  <div style="font-size: 12px; color: #666; margin-bottom: 14px;">Redaksiya prosesi review addımı ilə: Jurnalist yazır, Redaktor təsdiqləyir, sonra dərc olunur. Ayrıca Moderator qolu şərhlər üçün.</div>
+  <pre style="white-space: pre; font-size: 14px; margin: 0; overflow-x: auto; background: #fafafa; border: 1px solid #ddd; padding: 20px 24px;">Giriş (login)
+     │
+     ▼
+Rol yoxlanışı  (Admin / Redaktor / Jurnalist / Moderator)
+     │
+     ▼
+Dashboard
+     │
+     ▼
+Xəbərlər bölməsi  →  "Yeni xəbər" düyməsi
+     │
+     ▼
+Redaktor (WYSIWYG + media + SEO bloku + kateqoriya/etiket)
+     │
+     ▼
+Saxla (Draft)
+     │
+     ▼
+Jurnalist → "Redaktora göndər" (review sorğusu)
+     │
+     ▼
+Redaktor baxışı ──── Rədd (qeyd ilə) ──▶ geri Jurnalistə (Draft-a düzəliş)
+     │
+     ▼ Təsdiq
+Nəşr planlaşdırma  (indi dərc et / gələcək tarixə planla)
+     │
+     ▼
+Dərc olunur  (status: published)
+     │
+     ▼
+Publik saytda avtomatik görünür  →  Dashboard statistikası yenilənir
+     │
+     ▼
+Post-publish: səhv aşkarlansa → Redaktə → "Fəaliyyət jurnalı"na qeyd olunur
+
+
+Paralel qol — Moderator:
+Giriş → Dashboard → Şərhlər Moderasiyası → Təsdiq / Rədd / Spam olaraq işarələ</pre>
+
+  <div style="margin-top: 44px; padding-top: 16px; border-top: 1px solid #ccc; font-size: 12px; color: #777;">
+    Növbəti addım: bu strukturu təsdiqlə → sonra wireframe (aşağı fidelity) səhifə düzülüşlərinə keçə bilərik, dizayn olmadan.
+  </div>
+
+</div>
+
+</x-dc>
+</body>
+</html>

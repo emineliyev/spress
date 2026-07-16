@@ -1,0 +1,88 @@
+{% load static %}
+<header class="site-header">
+    <div class="container site-header__topbar">
+        <button type="button" class="header-icon-btn header-menu-toggle" data-action="toggle-menu" aria-expanded="false" aria-controls="primary-navigation">
+            <i class="bi bi-list" aria-hidden="true"></i>
+            <span class="visually-hidden">Menyu</span>
+        </button>
+
+        <a href="{% url 'news:home' %}" class="site-header__logo">
+            {% if site_settings.logo %}
+                <img src="{{ site_settings.logo.file.url }}" alt="{{ site_settings.site_name }}" class="site-header__logo-image">
+            {% else %}
+                <span class="site-header__logo-accent">{{ site_settings.site_name|slice:':1' }}</span>{{ site_settings.site_name|slice:'1:' }}
+            {% endif %}
+        </a>
+
+        <div class="site-header__actions">
+            {% if social_links %}
+                <div class="site-header__social">
+                    {% for link in social_links %}
+                        <a href="{{ link.url }}" class="site-header__social-link" target="_blank" rel="noopener" aria-label="{{ link.get_platform_display }}">
+                            <i class="bi {{ link.icon_class }}" aria-hidden="true"></i>
+                        </a>
+                    {% endfor %}
+                </div>
+                <span class="site-header__divider" aria-hidden="true"></span>
+            {% endif %}
+            <button type="button" class="header-icon-btn" data-action="toggle-search" aria-expanded="false" aria-controls="header-search-form">
+                <i class="bi bi-search" aria-hidden="true"></i>
+                <span class="visually-hidden">Axtarış</span>
+            </button>
+            {% if request.user.is_authenticated %}
+                <form method="post" action="{% url 'accounts:logout' %}" class="header-logout-form">
+                    {% csrf_token %}
+                    <button type="submit" class="header-icon-btn" title="Çıxış">
+                        <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
+                        <span class="visually-hidden">Hesabdan çıxış</span>
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="site-header__navbar">
+        <div class="container">
+            <nav class="nav" id="primary-navigation" aria-label="Əsas naviqasiya">
+                <ul class="nav__list">
+                    <li class="nav__item">
+                        <a href="{% url 'news:home' %}" class="nav__link{% if request.resolver_match.url_name == 'home' %} is-active{% endif %}">Ana səhifə</a>
+                    </li>
+                    {% for category in main_categories %}
+                        <li class="nav__item{% if category.children.all %} nav__item--has-dropdown{% endif %}">
+                            <a href="{{ category.get_absolute_url }}" class="nav__link{% if nav_active_category.pk == category.pk or nav_active_category.parent_id == category.pk %} is-active{% endif %}">{{ category.name }}</a>
+                            {% if category.children.all %}
+                                <ul class="nav__dropdown">
+                                    {% for subcategory in category.children.all %}
+                                        <li><a href="{{ subcategory.get_absolute_url }}" class="nav__dropdown-link{% if nav_active_category.pk == subcategory.pk %} is-active{% endif %}">{{ subcategory.name }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                    <li class="nav__item nav__item--has-dropdown">
+                        <button type="button" class="nav__link{% if request.resolver_match.namespace == 'pages' %} is-active{% endif %}">Daha</button>
+                        <ul class="nav__dropdown">
+                            <li><a href="{% url 'pages:about' %}" class="nav__dropdown-link{% if request.resolver_match.url_name == 'about' %} is-active{% endif %}">Haqqımızda</a></li>
+                            <li><a href="{% url 'pages:contact' %}" class="nav__dropdown-link{% if request.resolver_match.url_name == 'contact' %} is-active{% endif %}">Əlaqə</a></li>
+                            <li><a href="{% url 'pages:detail' slug='privacy-policy' %}" class="nav__dropdown-link{% if request.resolver_match.kwargs.slug == 'privacy-policy' %} is-active{% endif %}">Məxfilik siyasəti</a></li>
+                            <li><a href="{% url 'pages:detail' slug='terms-of-use' %}" class="nav__dropdown-link{% if request.resolver_match.kwargs.slug == 'terms-of-use' %} is-active{% endif %}">İstifadə şərtləri</a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                {% if social_links %}
+                    <div class="nav__social">
+                        {% for link in social_links %}
+                            <a href="{{ link.url }}" class="nav__social-link" target="_blank" rel="noopener" aria-label="{{ link.get_platform_display }}">
+                                <i class="bi {{ link.icon_class }}" aria-hidden="true"></i>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </nav>
+        </div>
+    </div>
+
+    {% include "components/search_form.html" %}
+</header>

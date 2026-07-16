@@ -1,0 +1,102 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Redaktə{% else %}Yeni kampaniya{% endif %}{% endblock %}
+
+{% block page_title %}
+    <a href="{% url 'cms:ad_list' %}" class="cms-topbar__crumb">Reklam</a>
+    <i class="bi bi-chevron-right cms-topbar__crumb-sep" aria-hidden="true"></i>
+    {% if form.instance.pk %}Redaktə{% else %}Yeni kampaniya{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'vendors/cropperjs/cropper.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cms/media.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<form method="post" class="cms-simple-form" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div class="alert alert--danger">
+            {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="form-field{% if form.title.errors %} form-field--error{% endif %}">
+        <label for="{{ form.title.id_for_label }}">Kampaniya adı</label>
+        {{ form.title }}
+        {% for error in form.title.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-field{% if form.position.errors %} form-field--error{% endif %}">
+        <label for="{{ form.position.id_for_label }}">Yerləşmə</label>
+        {{ form.position }}
+        {% for error in form.position.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-field">
+        <label>Banner</label>
+        <div class="media-picker" data-role="image-picker">
+            <div class="media-picker__preview" data-role="picker-preview"{% if not form.instance.banner %} hidden{% endif %}>
+                <img src="{% if form.instance.banner %}{{ form.instance.banner.file.url }}{% endif %}" alt="" class="editor__cover-preview" data-role="picker-preview-image">
+                <button type="button" class="media-picker__remove" data-action="remove-image" aria-label="Banneri sil">
+                    <i class="bi bi-x-lg" aria-hidden="true"></i>
+                </button>
+            </div>
+            <button type="button" class="media-picker__choose" data-action="choose-image"{% if form.instance.banner %} hidden{% endif %}>
+                <i class="bi bi-image" aria-hidden="true"></i> Banner seçin
+            </button>
+            <input type="file" data-role="picker-file-input" accept="image/jpeg,image/png,image/webp,image/svg+xml" hidden>
+            {{ form.banner }}
+        </div>
+        <p class="editor__hint">Banner ölçüsü yuxarıda seçdiyiniz mövqenin ölçüsünə (en×hündürlük) uyğun olmalıdır.</p>
+        {% for error in form.banner.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-field{% if form.target_url.errors %} form-field--error{% endif %}">
+        <label for="{{ form.target_url.id_for_label }}">Hədəf keçid (URL)</label>
+        {{ form.target_url }}
+        {% for error in form.target_url.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-field">
+        <label for="{{ form.client_name.id_for_label }}">Müştəri</label>
+        {{ form.client_name }}
+    </div>
+
+    <div class="form-field">
+        <label for="{{ form.price.id_for_label }}">Qiymət (₼)</label>
+        {{ form.price }}
+    </div>
+
+    <div class="form-field{% if form.start_date.errors %} form-field--error{% endif %}">
+        <label for="{{ form.start_date.id_for_label }}">Başlama tarixi</label>
+        {{ form.start_date }}
+        {% for error in form.start_date.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-field{% if form.end_date.errors %} form-field--error{% endif %}">
+        <label for="{{ form.end_date.id_for_label }}">Bitmə tarixi</label>
+        {{ form.end_date }}
+        <p class="editor__hint">Boş buraxsanız, kampaniya müddətsiz davam edəcək.</p>
+        {% for error in form.end_date.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-field">
+        <label class="cms-checkbox">{{ form.is_active }} Aktiv</label>
+    </div>
+
+    <button type="submit" class="btn btn--primary">Yadda saxla</button>
+</form>
+
+{% include "cms/partials/media_crop_modal.html" %}
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'vendors/cropperjs/cropper.min.js' %}"></script>
+    <script defer src="{% static 'js/cms/media-uploader.js' %}"></script>
+    <script defer src="{% static 'js/cms/image-pickers.js' %}"></script>
+{% endblock %}

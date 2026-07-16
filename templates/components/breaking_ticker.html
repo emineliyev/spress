@@ -1,0 +1,26 @@
+{% if breaking_articles %}
+<div class="breaking-ticker" data-component="breaking-ticker">
+    <div class="container breaking-ticker__inner">
+        <div class="breaking-ticker__viewport">
+            <div class="breaking-ticker__track" data-duration="{{ breaking_ticker_duration }}">
+                <div class="breaking-ticker__group">
+                    {% for article in breaking_articles %}
+                        <a href="{{ article.get_absolute_url }}" class="breaking-ticker__item">
+                            <i class="bi bi-lightning-charge-fill breaking-ticker__icon" aria-hidden="true"></i>
+                            {{ article.title }}
+                        </a>
+                    {% endfor %}
+                </div>
+                <div class="breaking-ticker__group" aria-hidden="true">
+                    {% for article in breaking_articles %}
+                        <a href="{{ article.get_absolute_url }}" class="breaking-ticker__item" tabindex="-1">
+                            <i class="bi bi-lightning-charge-fill breaking-ticker__icon" aria-hidden="true"></i>
+                            {{ article.title }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

@@ -1,0 +1,70 @@
+/**
+ * Shared styling for CKEditor-produced rich text — used by both the
+ * article body (.article__content, templates/news/detail.html) and
+ * static-page prose (.about-page__prose, templates/pages/page_detail.html,
+ * templates/pages/about.html) via a common .rich-text-content marker
+ * class, so figure/image/video-embed styling isn't duplicated per page
+ * type (CLAUDE.md ch.7 "component-based architecture").
+ */
+
+.rich-text-content figure.image {
+    margin: 0;
+}
+
+.rich-text-content figure.image img {
+    width: 100%;
+    /* Without this, the browser keeps the natural pixel height from the
+       img's `height="…"` attribute (CKEditor stamps both width/height
+       attributes and a matching `style="aspect-ratio:…"` on every
+       inserted image) as a *definite* value alongside the definite
+       `width: 100%` above — two definite values from different sources
+       means `aspect-ratio` has nothing left to resolve and is silently
+       ignored, stretching/squashing the image to the container's width
+       at its original pixel height instead of scaling proportionally. */
+    height: auto;
+    border-radius: var(--radius-media);
+    display: block;
+}
+
+.rich-text-content figcaption {
+    margin-top: var(--space-3);
+    font-size: 13px;
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
+.rich-text-content .media-embed {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--radius-media);
+    overflow: hidden;
+}
+
+.rich-text-content .media-embed iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+/* Text-wrap image styles — CKEditor5's own ImageStyle classes
+   (imageStyle:alignLeft/alignRight, config/settings/base.py). Matches
+   CKEditor's own editor-side spacing convention (float + margin on the
+   far side only). No video equivalent — see the long comment on
+   CKEDITOR_5_CONFIGS['default']['image'] for why MediaEmbed can't do
+   this without writing a custom CKEditor5 plugin. */
+.rich-text-content figure.image-style-align-left {
+    float: left;
+    margin: 0 var(--space-6) var(--space-3) 0;
+}
+
+.rich-text-content figure.image-style-align-right {
+    float: right;
+    margin: 0 0 var(--space-3) var(--space-6);
+}
+
+.rich-text-content figure.image-style-align-left,
+.rich-text-content figure.image-style-align-right {
+    max-width: 50%;
+}

@@ -1,0 +1,122 @@
+name: CI
+
+# Tests only — deployment stays a manual step (docs/DEPLOYMENT.md), run
+# by hand from a developer machine once a change is ready to go live.
+# This workflow never touches the VPS and needs no deploy secrets.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+env:
+  DJANGO_SECRET_KEY: ci-only-secret-key-not-used-anywhere-real
+  DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+  DATABASE_URL: postgres://postgres:postgres@localhost:5432/news_db
+  E2E_DATABASE_URL: postgres://postgres:postgres@localhost:5432/news_db_e2e
+  REDIS_URL: redis://localhost:6379/1
+  E2E_REDIS_URL: redis://localhost:6379/3
+  CELERY_BROKER_URL: redis://localhost:6379/2
+  CELERY_RESULT_BACKEND: redis://localhost:6379/2
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: news_db
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Install dependencies
+        run: pip install -r requirements/development.txt
+
+      - name: Run migrations check
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Run pytest with coverage
+        run: pytest --cov=apps --cov-report=term-missing
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    needs: backend-tests
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: news_db
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Install Python dependencies
+        run: pip install -r requirements/development.txt
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install e2e dependencies
+        working-directory: e2e
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: e2e
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright suite
+        working-directory: e2e
+        env:
+          # e2e/global-setup.js shells out to the venv's python by path —
+          # in CI there's no venv, just the runner's own interpreter.
+          PLAYWRIGHT_PYTHON_BIN: python
+        run: npx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 14

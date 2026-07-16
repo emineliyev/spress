@@ -1,0 +1,40 @@
+<footer class="site-footer">
+    <div class="container site-footer__inner">
+        <div class="site-footer__col site-footer__col--brand">
+            <div class="site-footer__logo">{{ site_settings.site_name }}</div>
+            <p class="site-footer__tagline">{{ site_settings.footer_text }}</p>
+            {% if social_links %}
+                <div class="site-footer__social">
+                    {% for link in social_links %}
+                        <a href="{{ link.url }}" class="site-footer__social-link" target="_blank" rel="noopener" aria-label="{{ link.get_platform_display }}">
+                            <i class="bi {{ link.icon_class }}" aria-hidden="true"></i>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="site-footer__col">
+            <div class="site-footer__heading">Bölmələr</div>
+            {% for category in main_categories %}
+                <a href="{{ category.get_absolute_url }}" class="site-footer__link">{{ category.name }}</a>
+            {% endfor %}
+        </div>
+
+        <div class="site-footer__col">
+            <div class="site-footer__heading">Şirkət</div>
+            <a href="{% url 'pages:about' %}" class="site-footer__link">Haqqımızda</a>
+            <a href="{% url 'pages:contact' %}" class="site-footer__link">Əlaqə</a>
+        </div>
+
+        <div class="site-footer__col">
+            <div class="site-footer__heading">Hüquqi</div>
+            <a href="{% url 'pages:detail' slug='privacy-policy' %}" class="site-footer__link">Məxfilik siyasəti</a>
+            <a href="{% url 'pages:detail' slug='terms-of-use' %}" class="site-footer__link">İstifadə şərtləri</a>
+        </div>
+    </div>
+
+    <div class="container site-footer__bottom">
+        &copy; {% now "Y" %} {{ site_settings.site_name }}. Bütün hüquqlar qorunur.
+    </div>
+</footer>

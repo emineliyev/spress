@@ -1,0 +1,20 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}Giriş qadağandır{% endblock %}
+{% block page_title %}Giriş qadağandır{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<div class="cms-confirm">
+    <i class="bi bi-shield-lock cms-confirm__icon" aria-hidden="true"></i>
+    <h2 class="cms-confirm__title">Bu bölməyə giriş icazəniz yoxdur</h2>
+    <p class="cms-confirm__description">
+        Bu bölmə yalnız administratorlar üçün əlçatandır. Əlavə icazə lazımdırsa, administratorunuzla əlaqə saxlayın.
+    </p>
+    <a href="{% url 'cms:dashboard' %}" class="btn btn--primary">Dashboard-a qayıt</a>
+</div>
+{% endblock %}

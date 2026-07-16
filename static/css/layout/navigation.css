@@ -1,0 +1,51 @@
+.nav__list {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+}
+
+.nav__item {
+    position: relative;
+}
+
+.nav__link {
+    display: inline-flex;
+    align-items: center;
+    height: 52px;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--color-text-primary);
+    border-bottom: 2px solid transparent;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.nav__link:hover {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+.nav__link.is-active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+}
+
+.nav__item--has-dropdown > .nav__link::after {
+    content: '';
+    display: inline-block;
+    margin-left: 4px;
+    width: 6px;
+    height: 6px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: translateY(-2px) rotate(45deg);
+}
+
+/* Duplicate of .site-header__social (layout/header.css), shown only
+   inside the mobile off-canvas drawer (responsive/mobile.css) — hidden
+   here so it doesn't also appear in the desktop dropdown navbar. */
+.nav__social {
+    display: none;
+}

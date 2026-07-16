@@ -1,0 +1,200 @@
+.breaking-ticker {
+    background: var(--color-primary);
+    height: 36px;
+    display: flex;
+    align-items: center;
+}
+
+.breaking-ticker__inner {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+}
+
+.breaking-ticker__viewport {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Holds two identical copies of the headline list back to back
+   (templates/components/breaking_ticker.html) — animating from 0 to
+   -50% scrolls exactly one copy's width off-screen, so the moment the
+   loop restarts at 0% the visible content is unchanged and the scroll
+   reads as continuous rather than resetting with a visible jump. */
+.breaking-ticker__track {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    width: max-content;
+    animation: breaking-ticker-scroll linear infinite;
+    animation-duration: 20s;
+}
+
+.breaking-ticker:hover .breaking-ticker__track {
+    animation-play-state: paused;
+}
+
+.breaking-ticker__group {
+    display: flex;
+    align-items: center;
+    flex: none;
+}
+
+.breaking-ticker__item {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    padding-right: var(--space-10);
+}
+
+.breaking-ticker__item:hover {
+    text-decoration: underline;
+}
+
+.breaking-ticker__icon {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+@keyframes breaking-ticker-scroll {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+/* Scrolling text is exactly the kind of motion CLAUDE.md's accessibility
+   rules single out — freeze on the first copy and hide its decorative
+   duplicate (aria-hidden in the template) instead of animating it. */
+@media (prefers-reduced-motion: reduce) {
+    .breaking-ticker__track {
+        animation: none;
+    }
+
+    .breaking-ticker__group:last-child {
+        display: none;
+    }
+}
+
+.site-header {
+    position: relative;
+}
+
+.site-header__topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-6);
+    height: 80px;
+}
+
+.site-header__logo {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+}
+
+.site-header__logo-accent {
+    color: var(--color-primary);
+}
+
+.site-header__logo-image {
+    max-height: 36px;
+    width: auto;
+}
+
+.site-header__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.site-header__social {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.site-header__social-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--color-text-primary);
+    color: #fff;
+    font-size: 14px;
+}
+
+.site-header__social-link:hover {
+    background: var(--color-primary);
+}
+
+.site-header__divider {
+    width: 1px;
+    height: 24px;
+    background: var(--color-border);
+}
+
+.site-header__navbar {
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
+}
+
+.site-header__navbar .nav__list {
+    height: 52px;
+}
+
+/* button.header-menu-toggle (element+class), not just .header-menu-toggle
+   — this button also carries .header-icon-btn (components/buttons.css,
+   `display: inline-flex`), which loads AFTER this file in every base.html
+   and wins equal-specificity ties by source order, leaving the toggle
+   visible on desktop where it should be hidden. The extra element-type
+   selector bumps specificity just enough to win regardless of load
+   order, without an !important or reordering global stylesheet links. */
+button.header-menu-toggle {
+    display: none;
+}
+
+.header-search {
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+    padding: var(--space-4) 0;
+}
+
+.header-search__form {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.header-search__icon {
+    color: var(--color-text-muted);
+    font-size: 18px;
+}
+
+.header-search__input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 16px;
+    color: var(--color-text-primary);
+}

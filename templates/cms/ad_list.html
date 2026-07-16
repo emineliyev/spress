@@ -1,0 +1,103 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}Reklam{% endblock %}
+{% block page_title %}Reklam{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cms/dashboard.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<div class="cms-stat-grid">
+    <div class="cms-stat-card">
+        <div class="cms-stat-card__label">Aktiv kampaniya</div>
+        <div class="cms-stat-card__value">{{ active_count }}</div>
+    </div>
+    <div class="cms-stat-card">
+        <div class="cms-stat-card__label">Bu ay klik sayı</div>
+        <div class="cms-stat-card__value">{{ clicks_this_month }}</div>
+    </div>
+    <div class="cms-stat-card">
+        <div class="cms-stat-card__label">Gəlir (bu ay)</div>
+        <div class="cms-stat-card__value">₼{{ revenue_this_month }}</div>
+    </div>
+</div>
+
+<div class="cms-list-toolbar">
+    <div class="cms-list-tabs">
+        <a href="?" class="cms-list-tabs__item{% if not show_deleted %} is-active{% endif %}">Kampaniyalar</a>
+        <a href="?deleted=1" class="cms-list-tabs__item{% if show_deleted %} is-active{% endif %}">
+            <i class="bi bi-trash3" aria-hidden="true"></i> Silinənlər
+        </a>
+    </div>
+    <form method="get" class="cms-filter-bar">
+        {% if show_deleted %}<input type="hidden" name="deleted" value="1">{% endif %}
+        <input type="search" name="q" class="form-input" placeholder="Kampaniya adı ilə axtar..." value="{{ query }}">
+        <button type="submit" class="btn btn--secondary btn--sm">Axtar</button>
+    </form>
+    {% if not show_deleted %}
+        <a href="{% url 'cms:ad_create' %}" class="btn btn--primary">
+            <i class="bi bi-plus-lg" aria-hidden="true"></i> Yeni kampaniya
+        </a>
+    {% endif %}
+</div>
+
+{% if ads %}
+<div class="cms-table-wrapper">
+    <table class="cms-table">
+        <thead>
+            <tr>
+                <th>Kampaniya</th>
+                <th>Yerləşmə</th>
+                <th>Klik</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ad in ads %}
+                <tr>
+                    <td>{{ ad.title }}</td>
+                    <td>{{ ad.position.name }}</td>
+                    <td>{{ ad.click_count }}</td>
+                    <td><span class="badge badge--status-{{ ad.status }}">{{ ad.get_status_display }}</span></td>
+                    <td class="cms-table__actions">
+                        {% if show_deleted %}
+                            <form method="post" action="{% url 'cms:ad_restore' ad.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn--sm btn--secondary">Bərpa et</button>
+                            </form>
+                        {% else %}
+                            <div class="cms-row-menu">
+                                <button type="button" class="header-icon-btn" data-action="toggle-row-menu" aria-expanded="false">
+                                    <i class="bi bi-three-dots" aria-hidden="true"></i>
+                                </button>
+                                <div class="cms-row-menu__panel" hidden>
+                                    <a href="{% url 'cms:ad_edit' ad.pk %}">Redaktə</a>
+                                    <a href="{% url 'cms:ad_delete' ad.pk %}" class="cms-row-menu__danger">Sil</a>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% include "components/pagination.html" %}
+{% else %}
+    <div class="empty-state">
+        <i class="bi bi-megaphone empty-state__icon" aria-hidden="true"></i>
+        <p class="empty-state__title">{% if show_deleted %}Silinmiş kampaniya yoxdur{% else %}Hələ kampaniya yoxdur{% endif %}</p>
+        {% if not show_deleted %}
+            <a href="{% url 'cms:ad_create' %}" class="btn btn--primary">İlk kampaniyanı yarat</a>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+    <script defer src="{% static 'js/cms/news.js' %}"></script>
+{% endblock %}

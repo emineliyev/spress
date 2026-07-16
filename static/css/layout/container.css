@@ -1,0 +1,14 @@
+/* Page container (CLAUDE.md ch.7 "Grid System" — 1320px baseline, ch.11 uses 1280px content max-width). */
+
+.container {
+    width: 100%;
+    max-width: var(--container-max-width);
+    margin-inline: auto;
+    padding-inline: var(--space-6);
+}
+
+@media (max-width: 640px) {
+    .container {
+        padding-inline: var(--space-4);
+    }
+}

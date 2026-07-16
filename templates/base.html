@@ -1,0 +1,86 @@
+{% load static %}<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{{ site_settings.site_name }}{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}{{ site_settings.footer_text }}{% endblock %}">
+    <meta name="robots" content="{% block robots %}index, follow{% endblock %}">
+    <link rel="canonical" href="{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}">
+
+    <meta property="og:site_name" content="{{ site_settings.site_name }}">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}{{ site_settings.site_name }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ site_settings.footer_text }}{% endblock %}">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    {% block og_image %}{% endblock %}
+    <meta name="twitter:card" content="summary_large_image">
+    {% block extra_meta %}{% endblock %}
+
+    {% if site_settings.favicon %}
+        <link rel="icon" href="{{ site_settings.favicon.file.url }}">
+    {% endif %}
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "Organization",
+                "name": "{{ site_settings.site_name|default:'XəbərPortal'|escapejs }}",
+                "url": "{{ request.scheme }}://{{ request.get_host }}/"{% if site_settings.logo %},
+                "logo": "{{ request.scheme }}://{{ request.get_host }}{{ site_settings.logo.file.url }}"{% endif %}
+            },
+            {
+                "@type": "WebSite",
+                "name": "{{ site_settings.site_name|default:'XəbərPortal'|escapejs }}",
+                "url": "{{ request.scheme }}://{{ request.get_host }}/"
+            }
+        ]
+    }
+    </script>
+    {% block structured_data %}{% endblock %}
+
+    <link rel="stylesheet" href="{% static 'vendors/bootstrap-icons/bootstrap-icons.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base/reset.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base/variables.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base/typography.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base/utilities.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout/container.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout/grid.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout/navigation.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout/header.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout/footer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout/sidebar.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/buttons.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/forms.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/cards.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/badges.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/breadcrumbs.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/pagination.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/dropdown.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/alerts.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/toast.css' %}">
+    {% block extra_css %}{% endblock %}
+    <link rel="stylesheet" href="{% static 'css/responsive/mobile.css' %}">
+</head>
+<body>
+    {% block ticker %}{% endblock %}
+    {% include "components/header.html" %}
+
+    <main id="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include "components/footer.html" %}
+    {% include "components/toast.html" %}
+
+    <script defer src="{% static 'js/components/breaking-ticker.js' %}"></script>
+    <script defer src="{% static 'js/components/dropdown.js' %}"></script>
+    <script defer src="{% static 'js/components/menu.js' %}"></script>
+    <script defer src="{% static 'js/components/search.js' %}"></script>
+    <script defer src="{% static 'js/components/toast.js' %}"></script>
+    <script defer src="{% static 'js/core/app.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

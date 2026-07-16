@@ -1,0 +1,39 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}Birləşdir{% endblock %}
+{% block page_title %}Etiketləri birləşdir{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<div class="cms-confirm">
+    <i class="bi bi-signpost-split cms-confirm__icon" aria-hidden="true"></i>
+    <h2 class="cms-confirm__title">"{{ tag.name }}" hansı etiketə birləşdirilsin?</h2>
+    <p class="cms-confirm__description">
+        {% if news_count %}
+            "{{ tag.name }}" etiketini daşıyan <strong>{{ news_count }}</strong> xəbər seçdiyiniz etiketə keçiriləcək,
+        {% endif %}
+        sonra "{{ tag.name }}" silinəcək. Bu əməliyyat geri qaytarıla bilməz.
+    </p>
+
+    <form method="post" class="cms-confirm__form">
+        {% csrf_token %}
+        <div class="form-field">
+            <label for="id_target" class="visually-hidden">Hədəf etiket</label>
+            <select name="target" id="id_target" class="form-input" required>
+                <option value="">Etiket seçin...</option>
+                {% for choice in target_choices %}
+                    <option value="{{ choice.pk }}">{{ choice.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="cms-confirm__actions">
+            <a href="{% url 'cms:tag_list' %}" class="btn btn--secondary">Ləğv et</a>
+            <button type="submit" class="btn btn--primary">Birləşdir</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

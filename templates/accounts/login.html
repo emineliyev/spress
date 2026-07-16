@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Daxil ol — {{ site_settings.site_name }}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/pages/login.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container login-page">
+    <form class="login-page__form" method="post" novalidate>
+        {% csrf_token %}
+        <h1 class="login-page__title">Daxil ol</h1>
+
+        {% if form.non_field_errors %}
+            <div class="alert alert--danger">
+                {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+            </div>
+        {% endif %}
+
+        {% for field in form %}
+            <div class="form-field{% if field.errors %} form-field--error{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% for error in field.errors %}
+                    <p class="form-field__error">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn--primary btn--block">Daxil ol</button>
+        <a href="{% url 'accounts:password_reset' %}" class="login-page__forgot-link">Şifrənizi unutmusunuz?</a>
+    </form>
+</div>
+{% endblock %}

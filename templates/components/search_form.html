@@ -1,0 +1,17 @@
+{% load static %}
+<div class="header-search" id="header-search-form" hidden>
+    <form class="header-search__form container" action="{% url 'news:search' %}" method="get" role="search">
+        <i class="bi bi-search header-search__icon" aria-hidden="true"></i>
+        <label for="header-search-input" class="visually-hidden">Axtarış</label>
+        <input
+            type="search"
+            id="header-search-input"
+            name="q"
+            class="header-search__input"
+            placeholder="Xəbərlərdə axtar..."
+            value="{{ query|default:'' }}"
+            autocomplete="off"
+        >
+        <button type="submit" class="btn btn--primary btn--sm">Axtar</button>
+    </form>
+</div>

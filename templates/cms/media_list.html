@@ -1,0 +1,101 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}Media Kitabxanası{% endblock %}
+{% block page_title %}Media Kitabxanası{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'vendors/cropperjs/cropper.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cms/media.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<div class="media-layout">
+    <aside class="media-folders">
+        <div class="media-folders__label">Qovluqlar</div>
+
+        <a href="?" class="media-folders__item{% if not selected_folder %} is-active{% endif %}">
+            <i class="bi bi-folder" aria-hidden="true"></i> Bütün fayllar
+            <span class="media-folders__count">{{ all_files_count }}</span>
+        </a>
+        {% for folder in folders %}
+            <div class="media-folders__row">
+                <a href="?folder={{ folder.pk }}" class="media-folders__item{% if selected_folder == folder.pk|stringformat:'s' %} is-active{% endif %}">
+                    <i class="bi bi-folder" aria-hidden="true"></i> {{ folder.name }}
+                    <span class="media-folders__count">{{ folder.files_count }}</span>
+                </a>
+                <div class="media-folders__row-actions">
+                    <button type="button" class="media-folders__action" data-action="rename-folder" aria-label="Adını dəyiş">
+                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                    </button>
+                    <a href="{% url 'cms:folder_delete' folder.pk %}" class="media-folders__action" aria-label="Qovluğu sil">
+                        <i class="bi bi-trash3" aria-hidden="true"></i>
+                    </a>
+                </div>
+            </div>
+            <form method="post" action="{% url 'cms:folder_update' folder.pk %}" class="media-folders__rename-form" data-role="folder-rename-form" hidden>
+                {% csrf_token %}
+                <input type="text" name="name" class="form-input" value="{{ folder.name }}" required maxlength="100">
+                <button type="submit" class="header-icon-btn" aria-label="Saxla">
+                    <i class="bi bi-check-lg" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="header-icon-btn" data-action="cancel-rename" aria-label="Ləğv et">
+                    <i class="bi bi-x" aria-hidden="true"></i>
+                </button>
+            </form>
+        {% endfor %}
+
+        <button type="button" class="media-folders__new" data-action="open-folder-form">
+            <i class="bi bi-folder-plus" aria-hidden="true"></i> Yeni qovluq
+        </button>
+        <form method="post" action="{% url 'cms:folder_create' %}" class="media-folders__new-form" data-role="folder-form" hidden>
+            {% csrf_token %}
+            <input type="text" name="name" class="form-input" placeholder="Qovluq adı" required maxlength="100">
+            <button type="submit" class="btn btn--sm btn--primary">Yarat</button>
+        </form>
+
+        <div class="media-folders__storage">
+            <div class="media-folders__storage-label">Yaddaş: {{ total_storage_mb }} MB</div>
+        </div>
+    </aside>
+
+    <div class="media-main">
+        <div class="media-dropzone" data-role="dropzone">
+            <div class="media-dropzone__icon"><i class="bi bi-cloud-upload" aria-hidden="true"></i></div>
+            <div class="media-dropzone__text">
+                <div class="media-dropzone__title">Faylları bura sürüşdürün və ya seçin</div>
+                <div class="media-dropzone__hint">JPG, PNG, WEBP, SVG · maks. 15MB · JPEG/PNG avtomatik WebP-ə çevrilir</div>
+            </div>
+            <button type="button" class="btn btn--primary" data-action="choose-file">Fayl seç</button>
+            <input type="file" id="media-upload-input" accept="image/jpeg,image/png,image/webp,image/svg+xml" hidden>
+        </div>
+
+        <div class="media-toolbar">
+            <form method="get" class="media-search">
+                {% if selected_folder %}<input type="hidden" name="folder" value="{{ selected_folder }}">{% endif %}
+                <i class="bi bi-search" aria-hidden="true"></i>
+                <input type="search" name="q" placeholder="Fayl adı ilə axtar..." value="{{ query }}">
+            </form>
+            <div class="media-filters">
+                <a href="?{% if selected_folder %}folder={{ selected_folder }}{% endif %}" class="media-filter-pill{% if not selected_format %} is-active{% endif %}">Hamısı</a>
+                {% for value, label in format_choices %}
+                    <a href="?format={{ value }}{% if selected_folder %}&folder={{ selected_folder }}{% endif %}" class="media-filter-pill{% if selected_format == value %} is-active{% endif %}">{{ label }}</a>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% include "cms/partials/media_grid.html" %}
+    </div>
+</div>
+
+<input type="file" id="media-replace-input" accept="image/jpeg,image/png,image/webp,image/svg+xml" hidden>
+{% include "cms/partials/media_crop_modal.html" %}
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'vendors/cropperjs/cropper.min.js' %}"></script>
+    <script defer src="{% static 'js/cms/news.js' %}"></script>
+    <script defer src="{% static 'js/cms/media-uploader.js' %}"></script>
+    <script defer src="{% static 'js/cms/media-library.js' %}"></script>
+{% endblock %}

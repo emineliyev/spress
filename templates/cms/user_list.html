@@ -1,0 +1,95 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}İstifadəçilər{% endblock %}
+{% block page_title %}İstifadəçilər{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<div class="cms-list-toolbar">
+    <form method="get" class="cms-filter-bar">
+        <input type="search" name="q" class="form-input" placeholder="Ad, istifadəçi adı və ya e-poçt ilə axtar..." value="{{ query }}">
+        <button type="submit" class="btn btn--secondary btn--sm">Axtar</button>
+    </form>
+
+    <a href="{% url 'cms:user_create' %}" class="btn btn--primary">
+        <i class="bi bi-person-plus" aria-hidden="true"></i> Yeni istifadəçi
+    </a>
+</div>
+
+{% if users %}
+<div class="cms-table-wrapper">
+    <table class="cms-table">
+        <thead>
+            <tr>
+                <th>Ad</th>
+                <th>E-poçt</th>
+                <th>Rol</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for member in users %}
+                <tr>
+                    <td>
+                        <div class="cms-user-cell">
+                            <span class="cms-user-cell__avatar" aria-hidden="true"></span>
+                            {{ member.get_full_name|default:member.username }}
+                        </div>
+                    </td>
+                    <td>{{ member.email|default:"—" }}</td>
+                    <td>{{ member.get_role_display }}</td>
+                    <td>
+                        {% if member.is_active %}
+                            <span class="badge badge--status-active">Aktiv</span>
+                        {% else %}
+                            <span class="badge badge--status-inactive">Deaktiv</span>
+                        {% endif %}
+                    </td>
+                    <td class="cms-table__actions">
+                        <div class="cms-row-menu">
+                            <button type="button" class="header-icon-btn" data-action="toggle-row-menu" aria-expanded="false">
+                                <i class="bi bi-three-dots" aria-hidden="true"></i>
+                            </button>
+                            <div class="cms-row-menu__panel" hidden>
+                                <a href="{% url 'cms:user_edit' member.pk %}">Redaktə</a>
+                                <a href="{% url 'cms:activity_log' %}?user={{ member.pk }}">Fəaliyyətə bax</a>
+                                <form method="post" action="{% url 'cms:user_reset_password' member.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit">Şifrəni sıfırla</button>
+                                </form>
+                                {% if member.is_active %}
+                                    <a href="{% url 'cms:user_deactivate' member.pk %}" class="cms-row-menu__danger">Deaktiv et</a>
+                                {% else %}
+                                    <form method="post" action="{% url 'cms:user_activate' member.pk %}">
+                                        {% csrf_token %}
+                                        <button type="submit">Aktivləşdir</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% include "components/pagination.html" %}
+{% else %}
+    <div class="empty-state">
+        <i class="bi bi-people empty-state__icon" aria-hidden="true"></i>
+        <p class="empty-state__title">{% if query %}Nəticə tapılmadı{% else %}Hələ istifadəçi yoxdur{% endif %}</p>
+        {% if not query %}
+            <a href="{% url 'cms:user_create' %}" class="btn btn--primary">İlk istifadəçini yarat</a>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+    <script defer src="{% static 'js/cms/news.js' %}"></script>
+{% endblock %}

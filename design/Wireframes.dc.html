@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <style>
+    body { margin: 0; background: #eeeeec; font-family: system-ui, -apple-system, Segoe UI, sans-serif; }
+    * { box-sizing: border-box; }
+  </style>
+</helmet>
+
+<div style="padding: 48px; max-width: none;">
+
+  <div style="margin-bottom: 32px;">
+    <div style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #777;">Wireframe — struktur yalnız, rəng yoxdur, şəkil yoxdur</div>
+    <h1 style="font-size: 26px; font-weight: 700; color: #111; margin: 6px 0 0;">Azərbaycan Xəbər Portalı — Bütün Səhifələrin Wireframe-i</h1>
+  </div>
+
+  <!-- ============================================================ -->
+  <div style="font-size: 13px; font-weight: 700; color: #333; text-transform: uppercase; letter-spacing: 0.06em; margin: 40px 0 16px; border-bottom: 2px solid #333; padding-bottom: 6px;">Publik Sayt</div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start;">
+
+    <!-- 1. Ana səhifə -->
+    <div data-screen-label="P1 Ana səhifə">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">1. Ana səhifə</div>
+      <div style="width: 720px; border: 2px solid #222; background: #fff;">
+        <div style="height: 26px; background: #444; display: flex; align-items: center; padding: 0 16px;"><div style="width: 220px; height: 8px; background: #ccc;"></div></div>
+        <div style="height: 56px; border-bottom: 2px solid #222; display: flex; align-items: center; justify-content: space-between; padding: 0 20px;">
+          <div style="width: 84px; height: 20px; background: #333;"></div>
+          <div style="display: flex; gap: 14px;">
+            <div style="width: 44px; height: 8px; background: #999;"></div><div style="width: 44px; height: 8px; background: #999;"></div><div style="width: 44px; height: 8px; background: #999;"></div><div style="width: 44px; height: 8px; background: #999;"></div><div style="width: 44px; height: 8px; background: #999;"></div>
+          </div>
+          <div style="width: 20px; height: 20px; border: 2px solid #999; border-radius: 50%;"></div>
+        </div>
+        <div style="display: flex; gap: 16px; padding: 20px;">
+          <div style="flex: 2;">
+            <div style="height: 240px; background: #d8d8d8;"></div>
+            <div style="height: 14px; width: 90%; background: #333; margin-top: 12px;"></div>
+            <div style="height: 14px; width: 60%; background: #333; margin-top: 6px;"></div>
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; gap: 8px;"><div style="width: 64px; height: 48px; background: #ccc; flex: none;"></div><div style="flex:1; display:flex; flex-direction:column; gap:6px; justify-content:center;"><div style="height: 8px; width: 100%; background: #555;"></div><div style="height: 8px; width: 70%; background: #999;"></div></div></div>
+            <div style="display: flex; gap: 8px;"><div style="width: 64px; height: 48px; background: #ccc; flex: none;"></div><div style="flex:1; display:flex; flex-direction:column; gap:6px; justify-content:center;"><div style="height: 8px; width: 100%; background: #555;"></div><div style="height: 8px; width: 70%; background: #999;"></div></div></div>
+            <div style="display: flex; gap: 8px;"><div style="width: 64px; height: 48px; background: #ccc; flex: none;"></div><div style="flex:1; display:flex; flex-direction:column; gap:6px; justify-content:center;"><div style="height: 8px; width: 100%; background: #555;"></div><div style="height: 8px; width: 70%; background: #999;"></div></div></div>
+          </div>
+        </div>
+        <div style="padding: 0 20px 20px;">
+          <div style="height: 10px; width: 140px; background: #333; margin-bottom: 12px;"></div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+            <div><div style="height: 90px; background: #e3e3e3;"></div><div style="height: 8px; width: 90%; background: #666; margin-top: 8px;"></div><div style="height: 8px; width: 60%; background: #aaa; margin-top: 4px;"></div></div>
+            <div><div style="height: 90px; background: #e3e3e3;"></div><div style="height: 8px; width: 90%; background: #666; margin-top: 8px;"></div><div style="height: 8px; width: 60%; background: #aaa; margin-top: 4px;"></div></div>
+            <div><div style="height: 90px; background: #e3e3e3;"></div><div style="height: 8px; width: 90%; background: #666; margin-top: 8px;"></div><div style="height: 8px; width: 60%; background: #aaa; margin-top: 4px;"></div></div>
+            <div><div style="height: 90px; background: #e3e3e3;"></div><div style="height: 8px; width: 90%; background: #666; margin-top: 8px;"></div><div style="height: 8px; width: 60%; background: #aaa; margin-top: 4px;"></div></div>
+          </div>
+        </div>
+        <div style="border-top: 2px solid #222; display: flex; gap: 32px; padding: 20px;">
+          <div><div style="width: 70px; height: 8px; background: #555; margin-bottom: 8px;"></div><div style="width: 50px; height: 6px; background: #ccc; margin-bottom: 4px;"></div><div style="width: 50px; height: 6px; background: #ccc; margin-bottom: 4px;"></div></div>
+          <div><div style="width: 70px; height: 8px; background: #555; margin-bottom: 8px;"></div><div style="width: 50px; height: 6px; background: #ccc; margin-bottom: 4px;"></div><div style="width: 50px; height: 6px; background: #ccc; margin-bottom: 4px;"></div></div>
+          <div><div style="width: 70px; height: 8px; background: #555; margin-bottom: 8px;"></div><div style="width: 50px; height: 6px; background: #ccc; margin-bottom: 4px;"></div><div style="width: 50px; height: 6px; background: #ccc; margin-bottom: 4px;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Kateqoriya səhifəsi -->
+    <div data-screen-label="P2 Kateqoriya">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">2. Kateqoriya səhifəsi</div>
+      <div style="width: 720px; border: 2px solid #222; background: #fff;">
+        <div style="height: 56px; border-bottom: 2px solid #222; display: flex; align-items: center; justify-content: space-between; padding: 0 20px;">
+          <div style="width: 84px; height: 20px; background: #333;"></div>
+          <div style="display: flex; gap: 14px;"><div style="width: 44px; height: 8px; background: #999;"></div><div style="width: 44px; height: 8px; background: #999;"></div><div style="width: 44px; height: 8px; background: #999;"></div></div>
+        </div>
+        <div style="padding: 16px 20px 0; display:flex; gap:6px; align-items:center;"><div style="width:40px;height:7px;background:#bbb;"></div><div style="width:8px;height:7px;background:#bbb;"></div><div style="width:70px;height:7px;background:#bbb;"></div></div>
+        <div style="padding: 12px 20px;"><div style="height: 20px; width: 220px; background: #222;"></div></div>
+        <div style="padding: 0 20px 12px; display: flex; justify-content: flex-end; gap: 10px;">
+          <div style="width: 90px; height: 22px; border: 1px solid #999;"></div>
+          <div style="width: 90px; height: 22px; border: 1px solid #999;"></div>
+        </div>
+        <div style="padding: 0 20px 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+          <div><div style="height: 110px; background: #dcdcdc;"></div><div style="height: 9px; width: 95%; background: #444; margin-top: 8px;"></div><div style="height: 9px; width: 70%; background: #444; margin-top: 4px;"></div><div style="height: 7px; width: 40%; background: #aaa; margin-top: 6px;"></div></div>
+          <div><div style="height: 110px; background: #dcdcdc;"></div><div style="height: 9px; width: 95%; background: #444; margin-top: 8px;"></div><div style="height: 9px; width: 70%; background: #444; margin-top: 4px;"></div><div style="height: 7px; width: 40%; background: #aaa; margin-top: 6px;"></div></div>
+          <div><div style="height: 110px; background: #dcdcdc;"></div><div style="height: 9px; width: 95%; background: #444; margin-top: 8px;"></div><div style="height: 9px; width: 70%; background: #444; margin-top: 4px;"></div><div style="height: 7px; width: 40%; background: #aaa; margin-top: 6px;"></div></div>
+          <div><div style="height: 110px; background: #dcdcdc;"></div><div style="height: 9px; width: 95%; background: #444; margin-top: 8px;"></div><div style="height: 9px; width: 70%; background: #444; margin-top: 4px;"></div><div style="height: 7px; width: 40%; background: #aaa; margin-top: 6px;"></div></div>
+          <div><div style="height: 110px; background: #dcdcdc;"></div><div style="height: 9px; width: 95%; background: #444; margin-top: 8px;"></div><div style="height: 9px; width: 70%; background: #444; margin-top: 4px;"></div><div style="height: 7px; width: 40%; background: #aaa; margin-top: 6px;"></div></div>
+          <div><div style="height: 110px; background: #dcdcdc;"></div><div style="height: 9px; width: 95%; background: #444; margin-top: 8px;"></div><div style="height: 9px; width: 70%; background: #444; margin-top: 4px;"></div><div style="height: 7px; width: 40%; background: #aaa; margin-top: 6px;"></div></div>
+        </div>
+        <div style="padding: 0 20px 20px; display: flex; justify-content: center; gap: 8px;">
+          <div style="width: 22px; height: 22px; border: 1px solid #999;"></div><div style="width: 22px; height: 22px; background: #333;"></div><div style="width: 22px; height: 22px; border: 1px solid #999;"></div><div style="width: 22px; height: 22px; border: 1px solid #999;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Məqalə səhifəsi -->
+    <div data-screen-label="P3 Xəbər səhifəsi">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">3. Xəbər (məqalə) səhifəsi</div>
+      <div style="width: 720px; border: 2px solid #222; background: #fff;">
+        <div style="height: 56px; border-bottom: 2px solid #222; display: flex; align-items: center; justify-content: space-between; padding: 0 20px;">
+          <div style="width: 84px; height: 20px; background: #333;"></div>
+          <div style="display: flex; gap: 14px;"><div style="width: 44px; height: 8px; background: #999;"></div><div style="width: 44px; height: 8px; background: #999;"></div></div>
+        </div>
+        <div style="padding: 16px 20px 0; display:flex; gap:6px;"><div style="width:40px;height:7px;background:#bbb;"></div><div style="width:8px;height:7px;background:#bbb;"></div><div style="width:60px;height:7px;background:#bbb;"></div><div style="width:8px;height:7px;background:#bbb;"></div><div style="width:100px;height:7px;background:#bbb;"></div></div>
+        <div style="padding: 14px 20px 0;">
+          <div style="height: 16px; width: 95%; background: #222; margin-bottom: 6px;"></div>
+          <div style="height: 16px; width: 65%; background: #222; margin-bottom: 12px;"></div>
+          <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 14px;">
+            <div style="width: 26px; height: 26px; border-radius: 50%; background: #ccc;"></div>
+            <div style="width: 90px; height: 7px; background: #888;"></div>
+            <div style="width: 60px; height: 7px; background: #ccc;"></div>
+          </div>
+        </div>
+        <div style="padding: 0 20px; display: flex; gap: 16px;">
+          <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 6px;">
+            <div style="width: 26px; height: 26px; border: 1px solid #999;"></div>
+            <div style="width: 26px; height: 26px; border: 1px solid #999;"></div>
+            <div style="width: 26px; height: 26px; border: 1px solid #999;"></div>
+          </div>
+          <div style="flex: 1;">
+            <div style="height: 220px; background: #d8d8d8; margin-bottom: 14px;"></div>
+            <div style="display: flex; flex-direction: column; gap: 7px;">
+              <div style="height: 8px; width: 100%; background: #ccc;"></div><div style="height: 8px; width: 100%; background: #ccc;"></div><div style="height: 8px; width: 90%; background: #ccc;"></div><div style="height: 8px; width: 100%; background: #ccc;"></div><div style="height: 8px; width: 70%; background: #ccc;"></div>
+            </div>
+          </div>
+        </div>
+        <div style="padding: 20px;">
+          <div style="height: 10px; width: 160px; background: #333; margin-bottom: 12px;"></div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+            <div><div style="height: 60px; background: #e3e3e3;"></div><div style="height: 6px; width: 90%; background: #999; margin-top: 6px;"></div></div>
+            <div><div style="height: 60px; background: #e3e3e3;"></div><div style="height: 6px; width: 90%; background: #999; margin-top: 6px;"></div></div>
+            <div><div style="height: 60px; background: #e3e3e3;"></div><div style="height: 6px; width: 90%; background: #999; margin-top: 6px;"></div></div>
+            <div><div style="height: 60px; background: #e3e3e3;"></div><div style="height: 6px; width: 90%; background: #999; margin-top: 6px;"></div></div>
+          </div>
+        </div>
+        <div style="border-top: 2px solid #222; padding: 20px;">
+          <div style="height: 10px; width: 100px; background: #333; margin-bottom: 12px;"></div>
+          <div style="height: 44px; border: 1px solid #999; margin-bottom: 12px;"></div>
+          <div style="display: flex; gap: 10px; margin-bottom: 10px;"><div style="width: 24px; height: 24px; border-radius: 50%; background: #ccc;"></div><div style="flex:1;"><div style="height: 7px; width: 60%; background: #888; margin-bottom: 5px;"></div><div style="height: 7px; width: 90%; background: #ddd;"></div></div></div>
+          <div style="display: flex; gap: 10px;"><div style="width: 24px; height: 24px; border-radius: 50%; background: #ccc;"></div><div style="flex:1;"><div style="height: 7px; width: 60%; background: #888; margin-bottom: 5px;"></div><div style="height: 7px; width: 80%; background: #ddd;"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Analitika / Longread -->
+    <div data-screen-label="P4 Analitika Longread">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">4. Analitika / Longread səhifəsi</div>
+      <div style="width: 720px; border: 2px solid #222; background: #fff;">
+        <div style="height: 56px; border-bottom: 2px solid #222; display: flex; align-items: center; justify-content: space-between; padding: 0 20px;">
+          <div style="width: 84px; height: 20px; background: #333;"></div><div style="display: flex; gap: 14px;"><div style="width: 44px; height: 8px; background: #999;"></div></div>
+        </div>
+        <div style="height: 300px; background: #c9c9c9; position: relative; display: flex; align-items: flex-end; padding: 24px;">
+          <div style="background: rgba(255,255,255,0.0);">
+            <div style="height: 20px; width: 380px; background: #222; margin-bottom: 8px;"></div>
+            <div style="height: 20px; width: 260px; background: #222;"></div>
+          </div>
+        </div>
+        <div style="padding: 24px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="height: 8px; width: 100%; background: #ccc;"></div><div style="height: 8px; width: 100%; background: #ccc;"></div><div style="height: 8px; width: 80%; background: #ccc;"></div>
+          <div style="border-left: 3px solid #333; padding-left: 16px; margin: 14px 0;"><div style="height: 12px; width: 90%; background: #555;"></div><div style="height: 12px; width: 60%; background: #555; margin-top: 6px;"></div></div>
+          <div style="height: 8px; width: 100%; background: #ccc;"></div><div style="height: 8px; width: 95%; background: #ccc;"></div><div style="height: 8px; width: 70%; background: #ccc;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Video səhifəsi -->
+    <div data-screen-label="P5 Video">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">5. Video səhifəsi</div>
+      <div style="width: 720px; border: 2px solid #222; background: #fff;">
+        <div style="height: 56px; border-bottom: 2px solid #222; display: flex; align-items: center; justify-content: space-between; padding: 0 20px;">
+          <div style="width: 84px; height: 20px; background: #333;"></div><div style="display: flex; gap: 14px;"><div style="width: 44px; height: 8px; background: #999;"></div></div>
+        </div>
+        <div style="padding: 16px 20px 0; display: flex; gap: 10px;">
+          <div style="width: 70px; height: 22px; background: #333;"></div><div style="width: 70px; height: 22px; border: 1px solid #999;"></div><div style="width: 70px; height: 22px; border: 1px solid #999;"></div>
+        </div>
+        <div style="padding: 16px 20px 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+          <div><div style="height: 100px; background: #d0d0d0; position: relative; display:flex; align-items:center; justify-content:center;"><div style="width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-left: 16px solid #777;"></div></div><div style="height: 8px; width: 95%; background: #444; margin-top: 8px;"></div></div>
+          <div><div style="height: 100px; background: #d0d0d0; position: relative; display:flex; align-items:center; justify-content:center;"><div style="width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-left: 16px solid #777;"></div></div><div style="height: 8px; width: 95%; background: #444; margin-top: 8px;"></div></div>
+          <div><div style="height: 100px; background: #d0d0d0; position: relative; display:flex; align-items:center; justify-content:center;"><div style="width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-left: 16px solid #777;"></div></div><div style="height: 8px; width: 95%; background: #444; margin-top: 8px;"></div></div>
+          <div><div style="height: 100px; background: #d0d0d0; position: relative; display:flex; align-items:center; justify-content:center;"><div style="width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-left: 16px solid #777;"></div></div><div style="height: 8px; width: 95%; background: #444; margin-top: 8px;"></div></div>
+          <div><div style="height: 100px; background: #d0d0d0; position: relative; display:flex; align-items:center; justify-content:center;"><div style="width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-left: 16px solid #777;"></div></div><div style="height: 8px; width: 95%; background: #444; margin-top: 8px;"></div></div>
+          <div><div style="height: 100px; background: #d0d0d0; position: relative; display:flex; align-items:center; justify-content:center;"><div style="width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-left: 16px solid #777;"></div></div><div style="height: 8px; width: 95%; background: #444; margin-top: 8px;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. Foto qalereya -->
+    <div data-screen-label="P6 Foto qalereya">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">6. Foto qalereya səhifəsi</div>
+      <div style="width: 720px; border: 2px solid #222; background: #fff;">
+        <div style="height: 56px; border-bottom: 2px solid #222; display: flex; align-items: center; justify-content: space-between; padding: 0 20px;">
+          <div style="width: 84px; height: 20px; background: #333;"></div><div style="display: flex; gap: 14px;"><div style="width: 44px; height: 8px; background: #999;"></div></div>
+        </div>
+        <div style="padding: 20px; display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 80px; gap: 10px;">
+          <div style="background: #d6d6d6; grid-column: span 2; grid-row: span 2;"></div>
+          <div style="background: #dcdcdc;"></div>
+          <div style="background: #dcdcdc;"></div>
+          <div style="background: #dcdcdc;"></div>
+          <div style="background: #dcdcdc;"></div>
+          <div style="background: #dcdcdc; grid-column: span 2;"></div>
+          <div style="background: #dcdcdc;"></div>
+          <div style="background: #dcdcdc;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. Mövzu / Etiket səhifəsi -->
+    <div data-screen-label="P7 Movzu Etiket">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">7. Mövzu / Etiket səhifəsi</div>
+      <div style="width: 720px; border: 2px solid #222; background: #fff;">
+        <div style="height: 56px; border-bottom: 2px solid #222; display: flex; align-items: center; justify-content: space-between; padding: 0 20px;">
+          <div style="width: 84px; height: 20px; background: #333;"></div><div style="display: flex; gap: 14px;"><div style="width: 44px; height: 8px; background: #999;"></div></div>
+        </div>
+        <div style="padding: 20px 20px 0;"><div style="height: 20px; width: 200px; background: #222;"></div></div>
+        <div style="padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; gap: 12px;"><div style="width: 100px; height: 66px; background: #d6d6d6; flex: none;"></div><div style="flex:1;"><div style="height: 9px; width: 80%; background: #333; margin-bottom: 6px;"></div><div style="height: 9px; width: 60%; background: #333; margin-bottom: 6px;"></div><div style="height: 7px; width: 40%; background: #aaa;"></div></div></div>
+          <div style="display: flex; gap: 12px;"><div style="width: 100px; height: 66px; background: #d6d6d6; flex: none;"></div><div style="flex:1;"><div style="height: 9px; width: 80%; background: #333; margin-bottom: 6px;"></div><div style="height: 9px; width: 60%; background: #333; margin-bottom: 6px;"></div><div style="height: 7px; width: 40%; background: #aaa;"></div></div></div>
+          <div style="display: flex; gap: 12px;"><div style="width: 100px; height: 66px; background: #d6d6d6; flex: none;"></div><div style="flex:1;"><div style="height: 9px; width: 80%; background: #333; margin-bottom: 6px;"></div><div style="height: 9px; width: 60%; background: #333; margin-bottom: 6px;"></div><div style="height: 7px; width: 40%; background: #aaa;"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. Müəllif profili -->
+    <div data-screen-label="P8 Muellif profili">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">8. Müəllif profili</div>
+      <div style="width: 720px; border: 2px solid #222; background: #fff;">
+        <div style="height: 56px; border-bottom: 2px solid #222; display: flex; align-items: center; justify-content: space-between; padding: 0 20px;">
+          <div style="width: 84px; height: 20px; background: #333;"></div><div style="display: flex; gap: 14px;"><div style="width: 44px; height: 8px; background: #999;"></div></div>
+        </div>
+        <div style="padding: 24px; display: flex; gap: 16px; align-items: center; border-bottom: 1px solid #ddd;">
+          <div style="width: 64px; height: 64px; border-radius: 50%; background: #ccc; flex: none;"></div>
+          <div style="flex: 1;"><div style="height: 14px; width: 160px; background: #222; margin-bottom: 8px;"></div><div style="height: 8px; width: 90%; background: #ccc; margin-bottom: 4px;"></div><div style="height: 8px; width: 70%; background: #ccc;"></div></div>
+        </div>
+        <div style="padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; gap: 10px;"><div style="height: 9px; width: 80%; background: #333;"></div></div>
+          <div style="display: flex; gap: 10px;"><div style="height: 9px; width: 70%; background: #333;"></div></div>
+          <div style="display: flex; gap: 10px;"><div style="height: 9px; width: 85%; background: #333;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. Axtarış nəticələri -->
+    <div data-screen-label="P9 Axtaris">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">9. Axtarış nəticələri</div>
+      <div style="width: 720px; border: 2px solid #222; background: #fff;">
+        <div style="height: 56px; border-bottom: 2px solid #222; display: flex; align-items: center; justify-content: space-between; padding: 0 20px;">
+          <div style="width: 84px; height: 20px; background: #333;"></div><div style="display: flex; gap: 14px;"><div style="width: 44px; height: 8px; background: #999;"></div></div>
+        </div>
+        <div style="padding: 20px;"><div style="height: 40px; border: 2px solid #333;"></div></div>
+        <div style="padding: 0 20px 12px; display: flex; gap: 8px;"><div style="width: 70px; height: 20px; border: 1px solid #999;"></div><div style="width: 70px; height: 20px; border: 1px solid #999;"></div><div style="width: 70px; height: 20px; border: 1px solid #999;"></div></div>
+        <div style="padding: 0 20px 20px; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; gap: 12px;"><div style="width: 90px; height: 60px; background: #d6d6d6; flex: none;"></div><div style="flex:1;"><div style="height: 9px; width: 90%; background: #333; margin-bottom: 6px;"></div><div style="height: 7px; width: 100%; background: #ccc; margin-bottom: 4px;"></div><div style="height: 7px; width: 60%; background: #ccc;"></div></div></div>
+          <div style="display: flex; gap: 12px;"><div style="width: 90px; height: 60px; background: #d6d6d6; flex: none;"></div><div style="flex:1;"><div style="height: 9px; width: 90%; background: #333; margin-bottom: 6px;"></div><div style="height: 7px; width: 100%; background: #ccc; margin-bottom: 4px;"></div><div style="height: 7px; width: 60%; background: #ccc;"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10. Arxiv -->
+    <div data-screen-label="P10 Arxiv">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">10. Arxiv səhifəsi</div>
+      <div style="width: 720px; border: 2px solid #222; background: #fff;">
+        <div style="height: 56px; border-bottom: 2px solid #222; display: flex; align-items: center; justify-content: space-between; padding: 0 20px;">
+          <div style="width: 84px; height: 20px; background: #333;"></div><div style="display: flex; gap: 14px;"><div style="width: 44px; height: 8px; background: #999;"></div></div>
+        </div>
+        <div style="padding: 20px; display: flex; gap: 10px;"><div style="width: 90px; height: 26px; border: 1px solid #999;"></div><div style="width: 90px; height: 26px; border: 1px solid #999;"></div><div style="width: 90px; height: 26px; border: 1px solid #999;"></div></div>
+        <div style="padding: 0 20px 20px;">
+          <div style="height: 10px; width: 100px; background: #333; margin: 10px 0;"></div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="height: 8px; width: 90%; background: #ccc;"></div><div style="height: 8px; width: 80%; background: #ccc;"></div><div style="height: 8px; width: 85%; background: #ccc;"></div>
+          </div>
+          <div style="height: 10px; width: 100px; background: #333; margin: 14px 0 10px;"></div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="height: 8px; width: 90%; background: #ccc;"></div><div style="height: 8px; width: 80%; background: #ccc;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 11. Haqqımızda / Əlaqə -->
+    <div data-screen-label="P11 Haqqimizda Elage">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">11. Haqqımızda / Əlaqə (statik səhifə)</div>
+      <div style="width: 720px; border: 2px solid #222; background: #fff;">
+        <div style="height: 56px; border-bottom: 2px solid #222; display: flex; align-items: center; justify-content: space-between; padding: 0 20px;">
+          <div style="width: 84px; height: 20px; background: #333;"></div><div style="display: flex; gap: 14px;"><div style="width: 44px; height: 8px; background: #999;"></div></div>
+        </div>
+        <div style="padding: 24px;">
+          <div style="height: 18px; width: 220px; background: #222; margin-bottom: 14px;"></div>
+          <div style="display: flex; flex-direction: column; gap: 7px; margin-bottom: 20px;"><div style="height: 8px; width: 100%; background: #ccc;"></div><div style="height: 8px; width: 95%; background: #ccc;"></div><div style="height: 8px; width: 70%; background: #ccc;"></div></div>
+          <div style="display: flex; flex-direction: column; gap: 10px; max-width: 320px;">
+            <div style="height: 32px; border: 1px solid #999;"></div><div style="height: 32px; border: 1px solid #999;"></div><div style="height: 70px; border: 1px solid #999;"></div>
+            <div style="height: 32px; width: 120px; background: #333;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 12. Giriş / Qeydiyyat -->
+    <div data-screen-label="P12 Giris Qeydiyyat">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">12. İstifadəçi Girişi / Qeydiyyatı</div>
+      <div style="width: 400px; border: 2px solid #222; background: #fff; display: flex; flex-direction: column; align-items: center; padding: 40px 30px;">
+        <div style="width: 84px; height: 20px; background: #333; margin-bottom: 24px;"></div>
+        <div style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
+          <div style="height: 34px; border: 1px solid #999;"></div>
+          <div style="height: 34px; border: 1px solid #999;"></div>
+          <div style="height: 34px; background: #333;"></div>
+          <div style="height: 8px; width: 60%; background: #ccc; margin: 6px auto 0;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 13. 404 -->
+    <div data-screen-label="P13 404">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">13. 404 / Xəta səhifəsi</div>
+      <div style="width: 400px; height: 320px; border: 2px solid #222; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;">
+        <div style="height: 40px; width: 120px; background: #333;"></div>
+        <div style="height: 9px; width: 220px; background: #ccc;"></div>
+        <div style="height: 32px; width: 140px; background: #333; margin-top: 8px;"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================================================ -->
+  <div style="font-size: 13px; font-weight: 700; color: #333; text-transform: uppercase; letter-spacing: 0.06em; margin: 56px 0 16px; border-bottom: 2px solid #333; padding-bottom: 6px;">CMS / Admin Panel</div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start;">
+
+    <!-- 14. CMS Giriş -->
+    <div data-screen-label="C1 CMS Giris">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">14. CMS Giriş</div>
+      <div style="width: 400px; border: 2px solid #222; background: #fff; display: flex; flex-direction: column; align-items: center; padding: 40px 30px;">
+        <div style="width: 84px; height: 20px; background: #333; margin-bottom: 24px;"></div>
+        <div style="width: 100%; display: flex; flex-direction: column; gap: 12px;">
+          <div style="height: 34px; border: 1px solid #999;"></div>
+          <div style="height: 34px; border: 1px solid #999;"></div>
+          <div style="height: 34px; background: #333;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 15. Dashboard -->
+    <div data-screen-label="C2 Dashboard">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">15. Dashboard</div>
+      <div style="width: 760px; border: 2px solid #222; background: #fff; display: flex;">
+        <div style="width: 160px; border-right: 2px solid #222; padding: 16px; display: flex; flex-direction: column; gap: 14px; flex: none;">
+          <div style="width: 70px; height: 16px; background: #333;"></div>
+          <div style="height: 8px; width: 90%; background: #666;"></div><div style="height: 8px; width: 70%; background: #999;"></div><div style="height: 8px; width: 80%; background: #999;"></div><div style="height: 8px; width: 60%; background: #999;"></div><div style="height: 8px; width: 75%; background: #999;"></div>
+        </div>
+        <div style="flex: 1;">
+          <div style="height: 44px; border-bottom: 2px solid #222; display: flex; align-items: center; justify-content: flex-end; padding: 0 16px;"><div style="width: 26px; height: 26px; border-radius: 50%; background: #ccc;"></div></div>
+          <div style="padding: 20px;">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
+              <div style="height: 60px; background: #e6e6e6;"></div><div style="height: 60px; background: #e6e6e6;"></div><div style="height: 60px; background: #e6e6e6;"></div><div style="height: 60px; background: #e6e6e6;"></div>
+            </div>
+            <div style="height: 140px; background: #ececec; margin-bottom: 16px;"></div>
+            <div style="height: 10px; width: 140px; background: #333; margin-bottom: 10px;"></div>
+            <div style="display: flex; flex-direction: column; gap: 6px;"><div style="height: 8px; width: 95%; background: #ccc;"></div><div style="height: 8px; width: 90%; background: #ccc;"></div><div style="height: 8px; width: 85%; background: #ccc;"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 16. Xəbərlər siyahısı -->
+    <div data-screen-label="C3 Xeberler siyahisi">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">16. Xəbərlər siyahısı</div>
+      <div style="width: 760px; border: 2px solid #222; background: #fff; display: flex;">
+        <div style="width: 160px; border-right: 2px solid #222; padding: 16px; display: flex; flex-direction: column; gap: 14px; flex: none;">
+          <div style="width: 70px; height: 16px; background: #333;"></div>
+          <div style="height: 8px; width: 90%; background: #999;"></div><div style="height: 8px; width: 70%; background: #666;"></div><div style="height: 8px; width: 80%; background: #999;"></div>
+        </div>
+        <div style="flex: 1; padding: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <div style="height: 34px; width: 220px; border: 1px solid #999;"></div>
+            <div style="height: 34px; width: 110px; background: #333;"></div>
+          </div>
+          <div style="border: 1px solid #ccc;">
+            <div style="display: flex; background: #eee; padding: 8px 10px; gap: 10px;"><div style="height: 8px; width: 40%; background: #666;"></div><div style="height: 8px; width: 20%; background: #666;"></div><div style="height: 8px; width: 15%; background: #666;"></div><div style="height: 8px; width: 15%; background: #666;"></div></div>
+            <div style="display: flex; padding: 10px; gap: 10px; border-top: 1px solid #ddd;"><div style="height: 8px; width: 40%; background: #ccc;"></div><div style="height: 8px; width: 20%; background: #ccc;"></div><div style="width: 50px; height: 16px; background: #ddd;"></div><div style="height: 8px; width: 15%; background: #ccc;"></div></div>
+            <div style="display: flex; padding: 10px; gap: 10px; border-top: 1px solid #ddd;"><div style="height: 8px; width: 40%; background: #ccc;"></div><div style="height: 8px; width: 20%; background: #ccc;"></div><div style="width: 50px; height: 16px; background: #ddd;"></div><div style="height: 8px; width: 15%; background: #ccc;"></div></div>
+            <div style="display: flex; padding: 10px; gap: 10px; border-top: 1px solid #ddd;"><div style="height: 8px; width: 40%; background: #ccc;"></div><div style="height: 8px; width: 20%; background: #ccc;"></div><div style="width: 50px; height: 16px; background: #ddd;"></div><div style="height: 8px; width: 15%; background: #ccc;"></div></div>
+            <div style="display: flex; padding: 10px; gap: 10px; border-top: 1px solid #ddd;"><div style="height: 8px; width: 40%; background: #ccc;"></div><div style="height: 8px; width: 20%; background: #ccc;"></div><div style="width: 50px; height: 16px; background: #ddd;"></div><div style="height: 8px; width: 15%; background: #ccc;"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 17. Yeni xəbər / Redaktə -->
+    <div data-screen-label="C4 Xeber redaktoru">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">17. Yeni Xəbər / Redaktə</div>
+      <div style="width: 760px; border: 2px solid #222; background: #fff; display: flex;">
+        <div style="width: 160px; border-right: 2px solid #222; padding: 16px; display: flex; flex-direction: column; gap: 14px; flex: none;">
+          <div style="width: 70px; height: 16px; background: #333;"></div>
+          <div style="height: 8px; width: 90%; background: #666;"></div><div style="height: 8px; width: 70%; background: #999;"></div>
+        </div>
+        <div style="flex: 1; padding: 20px; display: flex; gap: 16px;">
+          <div style="flex: 2; display: flex; flex-direction: column; gap: 10px;">
+            <div style="height: 34px; border: 1px solid #999;"></div>
+            <div style="height: 160px; border: 1px solid #999;"></div>
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+            <div style="height: 30px; width: 120px; background: #333;"></div>
+            <div style="height: 28px; border: 1px solid #999;"></div>
+            <div style="height: 28px; border: 1px solid #999;"></div>
+            <div style="height: 60px; background: #e6e6e6;"></div>
+            <div style="height: 28px; border: 1px solid #999;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 18. Media kitabxanası -->
+    <div data-screen-label="C5 Media kitabxanasi">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">18. Media Kitabxanası</div>
+      <div style="width: 760px; border: 2px solid #222; background: #fff; display: flex;">
+        <div style="width: 160px; border-right: 2px solid #222; padding: 16px; flex: none;"><div style="width: 70px; height: 16px; background: #333;"></div></div>
+        <div style="flex: 1; padding: 20px;">
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 14px;"><div style="height: 30px; width: 120px; background: #333;"></div></div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+            <div style="height: 70px; background: #dcdcdc;"></div><div style="height: 70px; background: #dcdcdc;"></div><div style="height: 70px; background: #dcdcdc;"></div><div style="height: 70px; background: #dcdcdc;"></div>
+            <div style="height: 70px; background: #dcdcdc;"></div><div style="height: 70px; background: #dcdcdc;"></div><div style="height: 70px; background: #dcdcdc;"></div><div style="height: 70px; background: #dcdcdc;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 19. Şərhlər moderasiyası -->
+    <div data-screen-label="C6 Serhler moderasiyasi">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">19. Şərhlər Moderasiyası</div>
+      <div style="width: 760px; border: 2px solid #222; background: #fff; display: flex;">
+        <div style="width: 160px; border-right: 2px solid #222; padding: 16px; flex: none;"><div style="width: 70px; height: 16px; background: #333;"></div></div>
+        <div style="flex: 1; padding: 20px;">
+          <div style="display: flex; gap: 8px; margin-bottom: 14px;"><div style="height: 24px; width: 90px; background: #333;"></div><div style="height: 24px; width: 90px; border: 1px solid #999;"></div><div style="height: 24px; width: 90px; border: 1px solid #999;"></div></div>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px; border: 1px solid #ddd; padding: 10px;"><div style="width: 20px; height: 20px; border-radius: 50%; background: #ccc;"></div><div style="flex:1;"><div style="height: 7px; width: 40%; background: #888; margin-bottom: 4px;"></div><div style="height: 7px; width: 80%; background: #ddd;"></div></div><div style="width: 24px; height: 24px; border: 1px solid #999;"></div><div style="width: 24px; height: 24px; border: 1px solid #999;"></div></div>
+            <div style="display: flex; align-items: center; gap: 10px; border: 1px solid #ddd; padding: 10px;"><div style="width: 20px; height: 20px; border-radius: 50%; background: #ccc;"></div><div style="flex:1;"><div style="height: 7px; width: 40%; background: #888; margin-bottom: 4px;"></div><div style="height: 7px; width: 70%; background: #ddd;"></div></div><div style="width: 24px; height: 24px; border: 1px solid #999;"></div><div style="width: 24px; height: 24px; border: 1px solid #999;"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 20. İstifadəçilər / Rollar -->
+    <div data-screen-label="C7 Istifadeciler Rollar">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">20. İstifadəçilər / Rollar</div>
+      <div style="width: 760px; border: 2px solid #222; background: #fff; display: flex;">
+        <div style="width: 160px; border-right: 2px solid #222; padding: 16px; flex: none;"><div style="width: 70px; height: 16px; background: #333;"></div></div>
+        <div style="flex: 1; padding: 20px;">
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 14px;"><div style="height: 30px; width: 130px; background: #333;"></div></div>
+          <div style="border: 1px solid #ccc;">
+            <div style="display: flex; background: #eee; padding: 8px 10px; gap: 10px;"><div style="height: 8px; width: 40%; background: #666;"></div><div style="height: 8px; width: 20%; background: #666;"></div><div style="height: 8px; width: 20%; background: #666;"></div></div>
+            <div style="display: flex; padding: 10px; gap: 10px; border-top: 1px solid #ddd; align-items: center;"><div style="height: 8px; width: 40%; background: #ccc;"></div><div style="width: 60px; height: 16px; background: #ddd;"></div><div style="height: 8px; width: 15%; background: #ccc;"></div></div>
+            <div style="display: flex; padding: 10px; gap: 10px; border-top: 1px solid #ddd; align-items: center;"><div style="height: 8px; width: 40%; background: #ccc;"></div><div style="width: 60px; height: 16px; background: #ddd;"></div><div style="height: 8px; width: 15%; background: #ccc;"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 21. Sayt tənzimləmələri -->
+    <div data-screen-label="C8 Sayt tenzimlemeleri">
+      <div style="font-size: 13px; font-weight: 600; color: #222; margin-bottom: 8px;">21. Sayt Tənzimləmələri</div>
+      <div style="width: 760px; border: 2px solid #222; background: #fff; display: flex;">
+        <div style="width: 160px; border-right: 2px solid #222; padding: 16px; flex: none;"><div style="width: 70px; height: 16px; background: #333;"></div></div>
+        <div style="flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+          <div><div style="height: 10px; width: 120px; background: #333; margin-bottom: 10px;"></div><div style="display: flex; gap: 10px;"><div style="height: 30px; flex: 1; border: 1px solid #999;"></div><div style="height: 30px; flex: 1; border: 1px solid #999;"></div></div></div>
+          <div><div style="height: 10px; width: 120px; background: #333; margin-bottom: 10px;"></div><div style="height: 30px; border: 1px solid #999;"></div></div>
+          <div style="height: 32px; width: 100px; background: #333;"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+</x-dc>
+</body>
+</html>

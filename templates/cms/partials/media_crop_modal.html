@@ -1,0 +1,50 @@
+{% comment %}
+Shared crop overlay used by static/js/cms/media-uploader.js from both the
+Media Library page and the News editor's cover-image picker. A modal (not
+the mockup's persistent 360px column) because it has to work inside two
+different page layouts — CLAUDE.md ch.11 requires reusable, not duplicated,
+modal behaviour (open/close/ESC/overlay click) regardless of placement.
+{% endcomment %}
+<div class="media-crop-modal" id="media-crop-modal" hidden
+     data-stage-url="{% url 'cms:media_upload_stage' %}"
+     data-confirm-url="{% url 'cms:media_crop_confirm' %}">
+    <div class="media-crop-modal__backdrop" data-action="close-crop-modal"></div>
+    <div class="media-crop-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="media-crop-modal-title">
+        <div class="media-crop-modal__header">
+            <h2 id="media-crop-modal-title" class="media-crop-modal__title">Kadrlama (Crop)</h2>
+            <button type="button" class="header-icon-btn" data-action="close-crop-modal" aria-label="Bağla">
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <div class="media-crop-modal__body">
+            <div class="media-crop-modal__stage">
+                <img id="media-crop-image" alt="">
+            </div>
+
+            <div class="media-crop-modal__aspects" data-role="aspect-buttons">
+                <button type="button" class="media-crop-modal__aspect is-active" data-ratio="1.7777777778">16:9</button>
+                <button type="button" class="media-crop-modal__aspect" data-ratio="1.3333333333">4:3</button>
+                <button type="button" class="media-crop-modal__aspect" data-ratio="1">1:1</button>
+                <button type="button" class="media-crop-modal__aspect" data-ratio="NaN">Sərbəst</button>
+            </div>
+
+            <div class="form-field">
+                <label for="media-crop-alt">Alternativ mətn (alt)</label>
+                <input type="text" id="media-crop-alt" class="form-input" maxlength="255" placeholder="Şəkli təsvir edin...">
+            </div>
+            <div class="form-field">
+                <label for="media-crop-caption">Başlıq (caption)</label>
+                <input type="text" id="media-crop-caption" class="form-input" maxlength="255">
+            </div>
+        </div>
+
+        <div class="media-crop-modal__footer">
+            <span class="media-crop-modal__error form-field__error" data-role="crop-error" hidden></span>
+            <div class="media-crop-modal__actions">
+                <button type="button" class="btn btn--secondary" data-action="close-crop-modal">Ləğv et</button>
+                <button type="button" class="btn btn--primary" data-role="apply-crop">Tətbiq et</button>
+            </div>
+        </div>
+    </div>
+</div>

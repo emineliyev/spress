@@ -1,0 +1,135 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}Xəbərlər{% endblock %}
+{% block page_title %}Xəbərlər{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<div class="cms-list-toolbar">
+    <form method="get" class="cms-filter-bar">
+        {% if show_deleted %}<input type="hidden" name="deleted" value="1">{% endif %}
+        <select name="category" class="form-input" onchange="this.form.submit()">
+            <option value="">Kateqoriya</option>
+            {% for value, label in category_choices %}
+                <option value="{{ value }}" {% if selected_category == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <select name="status" class="form-input" onchange="this.form.submit()">
+            <option value="">Status</option>
+            {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <input type="search" name="q" class="form-input" placeholder="Axtar..." value="{{ query }}">
+        <button type="submit" class="btn btn--secondary btn--sm">Filtrlə</button>
+    </form>
+
+    {% if not show_deleted %}
+        <a href="{% url 'cms:news_create' %}" class="btn btn--primary">
+            <i class="bi bi-plus-lg" aria-hidden="true"></i> Yeni xəbər
+        </a>
+    {% endif %}
+</div>
+
+<div class="cms-list-tabs">
+    <a href="?" class="cms-list-tabs__item{% if not show_deleted %} is-active{% endif %}">Xəbərlər</a>
+    <a href="?deleted=1" class="cms-list-tabs__item{% if show_deleted %} is-active{% endif %}">
+        <i class="bi bi-trash3" aria-hidden="true"></i> Silinənlər
+    </a>
+</div>
+
+{% if articles %}
+<form method="post" action="{% url 'cms:news_bulk_action' %}" id="bulk-form">
+    {% csrf_token %}
+    <div class="cms-bulk-bar" hidden data-role="bulk-bar">
+        <span data-role="bulk-count"></span>
+        {% if show_deleted %}
+            <button type="submit" name="bulk_action" value="delete" class="btn btn--sm btn--secondary" disabled>Sil</button>
+        {% else %}
+            <button type="submit" name="bulk_action" value="publish" class="btn btn--sm btn--secondary" disabled>Dərc et</button>
+            <button type="submit" name="bulk_action" value="archive" class="btn btn--sm btn--secondary" disabled>Arxivləşdir</button>
+            <button type="submit" name="bulk_action" value="delete" class="btn btn--sm btn--secondary" disabled>Sil</button>
+        {% endif %}
+    </div>
+
+    <div class="cms-table-wrapper">
+        <table class="cms-table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" data-role="select-all" aria-label="Hamısını seç"></th>
+                    <th>Başlıq</th>
+                    <th>Müəllif</th>
+                    <th>Kateqoriya</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for article in articles %}
+                    <tr>
+                        <td><input type="checkbox" name="selected" value="{{ article.pk }}" data-role="select-row"></td>
+                        <td>{{ article.title }}</td>
+                        <td>{{ article.author.get_full_name|default:article.author.username }}</td>
+                        <td>{{ article.category.name }}</td>
+                        <td><span class="badge badge--status-{{ article.status }}">{{ article.get_status_display }}</span></td>
+                        <td class="cms-table__actions">
+                            {% if show_deleted %}
+                                <div class="cms-table__actions-group">
+                                    <button type="submit" form="restore-form-{{ article.pk }}" class="btn btn--sm btn--secondary">Bərpa et</button>
+                                    <a href="{% url 'cms:news_permanent_delete' article.pk %}" class="btn btn--sm btn--danger">Həmişəlik sil</a>
+                                </div>
+                            {% else %}
+                                <div class="cms-row-menu">
+                                    <button type="button" class="header-icon-btn" data-action="toggle-row-menu" aria-expanded="false">
+                                        <i class="bi bi-three-dots" aria-hidden="true"></i>
+                                    </button>
+                                    <div class="cms-row-menu__panel" hidden>
+                                        <a href="{% url 'cms:news_edit' article.pk %}">Redaktə</a>
+                                        <button type="submit" form="duplicate-form-{{ article.pk }}">Dublikat et</button>
+                                        <a href="{% url 'cms:news_delete' article.pk %}" class="cms-row-menu__danger">Sil</a>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</form>
+
+<!-- HTML forms cannot nest, and the table above sits inside the bulk-
+     action form (needed for its row checkboxes) — each restore/duplicate
+     button is tied to its own standalone form here via the `form="..."`
+     attribute instead, which associates a control with any form by id
+     regardless of DOM position. A per-row <form> nested inside
+     #bulk-form here would be silently dropped by the browser's HTML
+     parser, and the button would submit the *bulk* form instead (found
+     via a failing Playwright e2e test — "Bərpa et" appeared to work but
+     never actually restored anything). -->
+{% for article in articles %}
+    {% if show_deleted %}
+        <form id="restore-form-{{ article.pk }}" method="post" action="{% url 'cms:news_restore' article.pk %}" hidden>{% csrf_token %}</form>
+    {% else %}
+        <form id="duplicate-form-{{ article.pk }}" method="post" action="{% url 'cms:news_duplicate' article.pk %}" hidden>{% csrf_token %}</form>
+    {% endif %}
+{% endfor %}
+{% include "components/pagination.html" %}
+{% else %}
+    <div class="empty-state">
+        <i class="bi bi-newspaper empty-state__icon" aria-hidden="true"></i>
+        <p class="empty-state__title">{% if show_deleted %}Silinmiş xəbər yoxdur{% else %}Hələ xəbər yoxdur{% endif %}</p>
+        {% if not show_deleted %}
+            <a href="{% url 'cms:news_create' %}" class="btn btn--primary">İlk xəbəri yarat</a>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+    <script defer src="{% static 'js/cms/news.js' %}"></script>
+{% endblock %}

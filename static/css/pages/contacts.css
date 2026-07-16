@@ -1,0 +1,40 @@
+.contact-page {
+    display: flex;
+    gap: var(--space-20);
+    padding-top: var(--space-16);
+    padding-bottom: var(--space-24);
+}
+
+.contact-page__info,
+.contact-page__form {
+    flex: 1;
+}
+
+.contact-page__title {
+    font-size: 36px;
+    font-weight: 800;
+    margin-bottom: var(--space-5);
+}
+
+.contact-page__lead {
+    color: var(--color-text-secondary);
+    max-width: 420px;
+    margin-bottom: var(--space-8);
+}
+
+.contact-page__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.contact-page__list li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: 14px;
+}
+
+.contact-page__list i {
+    color: var(--color-primary);
+}

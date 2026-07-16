@@ -1,0 +1,70 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}Sosial şəbəkələr{% endblock %}
+
+{% block page_title %}
+    <a href="{% url 'cms:settings_edit' %}" class="cms-topbar__crumb">Tənzimləmələr</a>
+    <i class="bi bi-chevron-right cms-topbar__crumb-sep" aria-hidden="true"></i>
+    Sosial şəbəkələr
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<div class="cms-list-toolbar cms-list-toolbar--end">
+    <a href="{% url 'cms:social_link_create' %}" class="btn btn--primary">
+        <i class="bi bi-plus-lg" aria-hidden="true"></i> Yeni link
+    </a>
+</div>
+
+{% if social_links %}
+<div class="cms-table-wrapper">
+    <table class="cms-table">
+        <thead>
+            <tr>
+                <th>Platforma</th>
+                <th>URL</th>
+                <th>Sıra</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for link in social_links %}
+                <tr>
+                    <td>
+                        <i class="bi {{ link.icon_class }}" aria-hidden="true"></i>
+                        {{ link.get_platform_display }}
+                    </td>
+                    <td>{{ link.url }}</td>
+                    <td>{{ link.order }}</td>
+                    <td class="cms-table__actions">
+                        <div class="cms-row-menu">
+                            <button type="button" class="header-icon-btn" data-action="toggle-row-menu" aria-expanded="false">
+                                <i class="bi bi-three-dots" aria-hidden="true"></i>
+                            </button>
+                            <div class="cms-row-menu__panel" hidden>
+                                <a href="{% url 'cms:social_link_edit' link.pk %}">Redaktə</a>
+                                <a href="{% url 'cms:social_link_delete' link.pk %}" class="cms-row-menu__danger">Sil</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+    <div class="empty-state">
+        <i class="bi bi-share empty-state__icon" aria-hidden="true"></i>
+        <p class="empty-state__title">Hələ sosial şəbəkə linki yoxdur</p>
+        <a href="{% url 'cms:social_link_create' %}" class="btn btn--primary">İlk linki yarat</a>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+    <script defer src="{% static 'js/cms/news.js' %}"></script>
+{% endblock %}

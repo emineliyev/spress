@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Serif:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    body { margin: 0; background: #f4f3f1; }
+    * { box-sizing: border-box; }
+    a { color: oklch(54% 0.22 25); text-decoration: none; }
+    a:hover { color: oklch(46% 0.22 25); text-decoration: underline; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; margin: 0 auto; background: #ffffff; font-family: 'Noto Sans', system-ui, sans-serif; color: oklch(18% 0.006 25);">
+
+  <!-- ============ TICKER ============ -->
+  <div style="height: 36px; background: oklch(54% 0.22 25); color: #fff; display: flex; align-items: center; padding: 0 80px; gap: 12px;">
+    <span style="font-size: 11px; font-weight: 800; letter-spacing: 0.08em; background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 2px;">CANLI</span>
+    <span style="font-size: 13px; font-weight: 600;">Mərkəzi Bankın yeni faiz dərəcəsi açıqlandı — bazarlar necə reaksiya verir?</span>
+  </div>
+
+  <!-- ============ HEADER ============ -->
+  <div style="height: 88px; display: flex; align-items: center; justify-content: space-between; padding: 0 80px; border-bottom: 1px solid oklch(90% 0.004 25);">
+    <div style="font-size: 24px; font-weight: 800; letter-spacing: -0.02em;">XƏBƏR<span style="color: oklch(54% 0.22 25);">PORTAL</span></div>
+    <div style="display: flex; gap: 32px; font-size: 14px; font-weight: 600; color: oklch(30% 0.006 25);">
+      <span>Siyasət</span><span>İqtisadiyyat</span><span>Dünya</span><span>Cəmiyyət</span><span>İdman</span><span>Mədəniyyət</span><span>Texnologiya</span>
+    </div>
+    <div style="display: flex; gap: 20px; align-items: center;">
+      <i data-lucide="search" style="width: 20px; height: 20px; cursor: pointer;"></i>
+      <i data-lucide="user" style="width: 20px; height: 20px; cursor: pointer;"></i>
+    </div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <div style="padding: 64px 80px 0; display: flex; gap: 40px;">
+    <div style="flex: 2;">
+      <div style="font-size: 11px; font-weight: 800; color: oklch(54% 0.22 25); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px;">Siyasət</div>
+      <div style="height: 460px; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 12px, oklch(97% 0.003 25) 12px, oklch(97% 0.003 25) 24px); display: flex; align-items: center; justify-content: center; font-family: monospace; font-size: 12px; color: oklch(40% 0.006 25); margin-bottom: 24px;">baş xəbər şəkli 1160×460</div>
+      <div style="font-size: 40px; font-weight: 800; line-height: 1.15; letter-spacing: -0.01em; margin-bottom: 16px;">Parlament yeni büdcə paketini müzakirəyə çıxardı: əsas dəyişikliklər nələrdir</div>
+      <div style="font-family: 'Noto Serif', serif; font-size: 18px; line-height: 1.6; color: oklch(35% 0.006 25); max-width: 760px; margin-bottom: 16px;">Növbəti ilin dövlət büdcəsi layihəsi bu gün parlamentə təqdim olundu. Sənəddə sosial xərclər, vergi dərəcələri və investisiya proqramları üzrə yeniliklər yer alıb.</div>
+      <div style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: oklch(40% 0.006 25);">
+        <div style="width: 24px; height: 24px; border-radius: 50%; background: oklch(90% 0.004 25);"></div>Aygün Məmmədova · 24 dəqiqə əvvəl
+      </div>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 28px; padding-top: 30px;">
+      <div style="display: flex; gap: 14px; padding-bottom: 24px; border-bottom: 1px solid oklch(90% 0.004 25);">
+        <div style="width: 120px; height: 84px; flex: none; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 8px, oklch(97% 0.003 25) 8px, oklch(97% 0.003 25) 16px);"></div>
+        <div>
+          <div style="font-size: 10px; font-weight: 800; color: oklch(54% 0.22 25); text-transform: uppercase; margin-bottom: 6px;">Dünya</div>
+          <div style="font-size: 15px; font-weight: 700; line-height: 1.35;">Enerji sammitində yeni saziş imzalandı</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 14px; padding-bottom: 24px; border-bottom: 1px solid oklch(90% 0.004 25);">
+        <div style="width: 120px; height: 84px; flex: none; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 8px, oklch(97% 0.003 25) 8px, oklch(97% 0.003 25) 16px);"></div>
+        <div>
+          <div style="font-size: 10px; font-weight: 800; color: oklch(54% 0.22 25); text-transform: uppercase; margin-bottom: 6px;">İdman</div>
+          <div style="font-size: 15px; font-weight: 700; line-height: 1.35;">Milli komanda final mərhələsinə yüksəldi</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 14px;">
+        <div style="width: 120px; height: 84px; flex: none; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 8px, oklch(97% 0.003 25) 8px, oklch(97% 0.003 25) 16px);"></div>
+        <div>
+          <div style="font-size: 10px; font-weight: 800; color: oklch(54% 0.22 25); text-transform: uppercase; margin-bottom: 6px;">Texnologiya</div>
+          <div style="font-size: 15px; font-weight: 700; line-height: 1.35;">Yerli startap beynəlxalq investisiya cəlb etdi</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MAIN CONTENT + SIDEBAR ============ -->
+  <div style="padding: 88px 80px 0; display: flex; gap: 40px; align-items: flex-start;">
+
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 88px;">
+
+      <!-- Category block: İqtisadiyyat -->
+      <div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid oklch(18% 0.006 25); padding-bottom: 14px; margin-bottom: 28px;">
+          <div style="font-size: 24px; font-weight: 800;">İqtisadiyyat</div>
+          <a href="#" style="font-size: 13px; font-weight: 700;">Hamısına bax →</a>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px;">
+          <div>
+            <div style="height: 160px; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 10px, oklch(97% 0.003 25) 10px, oklch(97% 0.003 25) 20px); margin-bottom: 14px;"></div>
+            <div style="font-size: 16px; font-weight: 700; line-height: 1.35; margin-bottom: 8px;">Neft qiymətləri üç aylıq zirvəyə çatdı</div>
+            <div style="font-size: 12px; color: oklch(40% 0.006 25);">1 saat əvvəl</div>
+          </div>
+          <div>
+            <div style="height: 160px; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 10px, oklch(97% 0.003 25) 10px, oklch(97% 0.003 25) 20px); margin-bottom: 14px;"></div>
+            <div style="font-size: 16px; font-weight: 700; line-height: 1.35; margin-bottom: 8px;">Kiçik sahibkarlıq üçün yeni güzəştlər</div>
+            <div style="font-size: 12px; color: oklch(40% 0.006 25);">2 saat əvvəl</div>
+          </div>
+          <div>
+            <div style="height: 160px; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 10px, oklch(97% 0.003 25) 10px, oklch(97% 0.003 25) 20px); margin-bottom: 14px;"></div>
+            <div style="font-size: 16px; font-weight: 700; line-height: 1.35; margin-bottom: 8px;">Bank sektorunda birləşmə dalğası</div>
+            <div style="font-size: 12px; color: oklch(40% 0.006 25);">4 saat əvvəl</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category block: Dünya -->
+      <div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between; border-bottom: 2px solid oklch(18% 0.006 25); padding-bottom: 14px; margin-bottom: 28px;">
+          <div style="font-size: 24px; font-weight: 800;">Dünya</div>
+          <a href="#" style="font-size: 13px; font-weight: 700;">Hamısına bax →</a>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px;">
+          <div>
+            <div style="height: 160px; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 10px, oklch(97% 0.003 25) 10px, oklch(97% 0.003 25) 20px); margin-bottom: 14px;"></div>
+            <div style="font-size: 16px; font-weight: 700; line-height: 1.35; margin-bottom: 8px;">Region ölkələri arasında yeni əməkdaşlıq</div>
+            <div style="font-size: 12px; color: oklch(40% 0.006 25);">3 saat əvvəl</div>
+          </div>
+          <div>
+            <div style="height: 160px; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 10px, oklch(97% 0.003 25) 10px, oklch(97% 0.003 25) 20px); margin-bottom: 14px;"></div>
+            <div style="font-size: 16px; font-weight: 700; line-height: 1.35; margin-bottom: 8px;">Sammitdə iqlim öhdəlikləri müzakirə olundu</div>
+            <div style="font-size: 12px; color: oklch(40% 0.006 25);">5 saat əvvəl</div>
+          </div>
+          <div>
+            <div style="height: 160px; background: repeating-linear-gradient(45deg, oklch(93% 0.004 25), oklch(93% 0.004 25) 10px, oklch(97% 0.003 25) 10px, oklch(97% 0.003 25) 20px); margin-bottom: 14px;"></div>
+            <div style="font-size: 16px; font-weight: 700; line-height: 1.35; margin-bottom: 8px;">Uzun sürən danışıqlar başa çatdı</div>
+            <div style="font-size: 12px; color: oklch(40% 0.006 25);">6 saat əvvəl</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SIDEBAR -->
+    <div style="width: 360px; flex: none; display: flex; flex-direction: column; gap: 40px; position: sticky; top: 40px;">
+
+      <div>
+        <div style="font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 2px solid oklch(18% 0.006 25); padding-bottom: 12px; margin-bottom: 20px;">Ən çox oxunan</div>
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div style="display: flex; gap: 16px; align-items: baseline;"><div style="font-size: 22px; font-weight: 800; color: oklch(90% 0.004 25); flex: none; width: 24px;">01</div><div style="font-size: 14px; font-weight: 700; line-height: 1.4;">Mərkəzi Bankın yeni faiz qərarı</div></div>
+          <div style="display: flex; gap: 16px; align-items: baseline;"><div style="font-size: 22px; font-weight: 800; color: oklch(90% 0.004 25); flex: none; width: 24px;">02</div><div style="font-size: 14px; font-weight: 700; line-height: 1.4;">Milli komandanın final oyunu bu gün</div></div>
+          <div style="display: flex; gap: 16px; align-items: baseline;"><div style="font-size: 22px; font-weight: 800; color: oklch(90% 0.004 25); flex: none; width: 24px;">03</div><div style="font-size: 14px; font-weight: 700; line-height: 1.4;">Yeni təhsil islahatı layihəsi</div></div>
+          <div style="display: flex; gap: 16px; align-items: baseline;"><div style="font-size: 22px; font-weight: 800; color: oklch(90% 0.004 25); flex: none; width: 24px;">04</div><div style="font-size: 14px; font-weight: 700; line-height: 1.4;">Startaplar üçün yeni fond açıldı</div></div>
+          <div style="display: flex; gap: 16px; align-items: baseline;"><div style="font-size: 22px; font-weight: 800; color: oklch(90% 0.004 25); flex: none; width: 24px;">05</div><div style="font-size: 14px; font-weight: 700; line-height: 1.4;">Yol infrastrukturuna yeni investisiya</div></div>
+        </div>
+      </div>
+
+      <div style="height: 280px; background: oklch(97% 0.003 25); border: 1px solid oklch(90% 0.004 25); display: flex; align-items: center; justify-content: center; font-family: monospace; font-size: 12px; color: oklch(40% 0.006 25);">reklam bloku 360×280</div>
+
+      <div style="background: oklch(18% 0.006 25); color: #fff; padding: 28px; border-radius: 4px;">
+        <div style="font-size: 17px; font-weight: 800; margin-bottom: 8px;">Gündəlik xülasə</div>
+        <div style="font-size: 13px; color: oklch(75% 0.006 25); margin-bottom: 18px; line-height: 1.5;">Ən vacib xəbərləri hər səhər e-poçtunuza göndərək.</div>
+        <div style="display: flex; gap: 8px;">
+          <input placeholder="E-poçt ünvanınız" style="flex: 1; font-family: inherit; font-size: 13px; padding: 10px 12px; border: none; border-radius: 2px;" />
+          <button style="font-family: inherit; font-weight: 700; font-size: 13px; padding: 10px 16px; background: oklch(54% 0.22 25); color: #fff; border: none; border-radius: 2px;">Abunə ol</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ FOOTER ============ -->
+  <div style="margin-top: 96px; background: oklch(18% 0.006 25); color: #fff; padding: 64px 80px 40px;">
+    <div style="display: flex; gap: 80px; padding-bottom: 48px; border-bottom: 1px solid rgba(255,255,255,0.12);">
+      <div style="flex: 1.4;">
+        <div style="font-size: 22px; font-weight: 800; margin-bottom: 14px;">XƏBƏR<span style="color: oklch(65% 0.18 25);">PORTAL</span></div>
+        <div style="font-size: 13px; color: oklch(70% 0.006 25); line-height: 1.6; max-width: 320px;">Azərbaycanda gündəlik xəbərləri, analitikanı və rəyi ilk əldən izləyin.</div>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: oklch(60% 0.006 25); margin-bottom: 6px;">Bölmələr</div>
+        <div style="font-size: 13px; color: oklch(85% 0.006 25);">Siyasət</div><div style="font-size: 13px; color: oklch(85% 0.006 25);">İqtisadiyyat</div><div style="font-size: 13px; color: oklch(85% 0.006 25);">Dünya</div><div style="font-size: 13px; color: oklch(85% 0.006 25);">İdman</div>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: oklch(60% 0.006 25); margin-bottom: 6px;">Şirkət</div>
+        <div style="font-size: 13px; color: oklch(85% 0.006 25);">Haqqımızda</div><div style="font-size: 13px; color: oklch(85% 0.006 25);">Əlaqə</div><div style="font-size: 13px; color: oklch(85% 0.006 25);">Reklam</div>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: oklch(60% 0.006 25); margin-bottom: 6px;">Hüquqi</div>
+        <div style="font-size: 13px; color: oklch(85% 0.006 25);">Məxfilik siyasəti</div><div style="font-size: 13px; color: oklch(85% 0.006 25);">İstifadə şərtləri</div>
+      </div>
+    </div>
+    <div style="padding-top: 24px; font-size: 12px; color: oklch(60% 0.006 25);">© 2026 XəbərPortal. Bütün hüquqlar qorunur.</div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  componentDidMount() {
+    if (window.lucide) window.lucide.createIcons();
+  }
+  componentDidUpdate() {
+    if (window.lucide) window.lucide.createIcons();
+  }
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

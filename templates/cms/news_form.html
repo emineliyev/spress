@@ -1,0 +1,169 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Redaktə{% else %}Yeni xəbər{% endif %}{% endblock %}
+
+{% block page_title %}
+    <a href="{% url 'cms:news_list' %}" class="cms-topbar__crumb">Xəbərlər</a>
+    <i class="bi bi-chevron-right cms-topbar__crumb-sep" aria-hidden="true"></i>
+    {% if form.instance.pk %}Redaktə{% else %}Yeni xəbər{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'vendors/cropperjs/cropper.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cms/media.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<form method="post" enctype="multipart/form-data" class="editor" novalidate>
+    {% csrf_token %}
+
+    <div class="editor__main">
+        {% if form.non_field_errors %}
+            <div class="alert alert--danger">
+                {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="form-field{% if form.title.errors %} form-field--error{% endif %}">
+            {{ form.title }}
+            {% for error in form.title.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div class="form-field{% if form.short_description.errors %} form-field--error{% endif %}">
+            {{ form.short_description }}
+            {% for error in form.short_description.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div class="form-field{% if form.content.errors %} form-field--error{% endif %}">
+            <label for="{{ form.content.id_for_label }}" class="visually-hidden">{{ form.content.label }}</label>
+            {{ form.content }}
+            <p class="editor__hint">Mətn daxilinə əlavə edilən şəkillər üçün tövsiyə olunan en: 1200px. Daha böyük şəkillər səhifənin yüklənməsini yavaşlada bilər.</p>
+            {% for error in form.content.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+        </div>
+
+        {% if form.instance.pk %}
+            <a href="{{ form.instance.get_absolute_url }}" target="_blank" rel="noopener" class="editor__preview-link">
+                <i class="bi bi-eye" aria-hidden="true"></i> Önizləmə (yeni sekmədə)
+            </a>
+        {% endif %}
+    </div>
+
+    <aside class="editor__sidebar">
+        <div class="form-field">
+            <label for="{{ form.status.id_for_label }}">Status</label>
+            {{ form.status }}
+        </div>
+
+        <div class="form-field">
+            <label for="{{ form.published_at.id_for_label }}">Nəşr tarixi</label>
+            {{ form.published_at }}
+            {% for error in form.published_at.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div class="form-field{% if form.category.errors %} form-field--error{% endif %}">
+            <label for="{{ form.category.id_for_label }}">Kateqoriya</label>
+            {{ form.category }}
+            {% for error in form.category.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div class="form-field">
+            <label for="{{ form.tags.id_for_label }}">Etiketlər</label>
+            {{ form.tags }}
+        </div>
+
+        <div class="form-field">
+            <label class="cms-checkbox">{{ form.is_featured }} Seçilmiş xəbər</label>
+            <label class="cms-checkbox">{{ form.is_breaking }} Təcili xəbər</label>
+        </div>
+
+        <div class="form-field">
+            <label>Örtük şəkli</label>
+            <div class="media-picker" data-role="image-picker" data-aspect-ratio="1.7777777778">
+                <div class="media-picker__preview" data-role="picker-preview"{% if not form.instance.featured_image %} hidden{% endif %}>
+                    <img src="{% if form.instance.featured_image.thumbnail %}{{ form.instance.featured_image.thumbnail.url }}{% elif form.instance.featured_image %}{{ form.instance.featured_image.file.url }}{% endif %}" alt="" class="editor__cover-preview" data-role="picker-preview-image">
+                    <button type="button" class="media-picker__remove" data-action="remove-image" aria-label="Şəkli sil">
+                        <i class="bi bi-x-lg" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <button type="button" class="media-picker__choose" data-action="choose-image"{% if form.instance.featured_image %} hidden{% endif %}>
+                    <i class="bi bi-image" aria-hidden="true"></i> Örtük şəkli seçin
+                </button>
+                <input type="file" data-role="picker-file-input" accept="image/jpeg,image/png,image/webp,image/svg+xml" hidden>
+                {{ form.featured_image }}
+            </div>
+            <p class="editor__hint">JPEG, PNG, WebP və ya SVG. Seçdikdən sonra kəsmə (crop) paneli açılacaq. Tövsiyə olunan ölçü: 1200×675px (16:9).</p>
+            {% for error in form.featured_image.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div class="editor__seo">
+            <div class="editor__seo-title">SEO</div>
+            <div class="form-field">
+                <label for="{{ form.meta_title.id_for_label }}">Meta başlıq</label>
+                {{ form.meta_title }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.meta_description.id_for_label }}">Meta təsvir</label>
+                {{ form.meta_description }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.meta_keywords.id_for_label }}">Açar sözlər</label>
+                {{ form.meta_keywords }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.canonical_url.id_for_label }}">Canonical URL</label>
+                {{ form.canonical_url }}
+                {% for error in form.canonical_url.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.og_title.id_for_label }}">OG başlıq</label>
+                {{ form.og_title }}
+            </div>
+            <div class="form-field">
+                <label for="{{ form.og_description.id_for_label }}">OG təsvir</label>
+                {{ form.og_description }}
+            </div>
+            <div class="form-field">
+                <label>OG şəkli</label>
+                <div class="media-picker" data-role="image-picker">
+                    <div class="media-picker__preview" data-role="picker-preview"{% if not form.instance.og_image %} hidden{% endif %}>
+                        <img src="{% if form.instance.og_image %}{{ form.instance.og_image.file.url }}{% endif %}" alt="" class="editor__cover-preview" data-role="picker-preview-image">
+                        <button type="button" class="media-picker__remove" data-action="remove-image" aria-label="OG şəklini sil">
+                            <i class="bi bi-x-lg" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <button type="button" class="media-picker__choose" data-action="choose-image"{% if form.instance.og_image %} hidden{% endif %}>
+                        <i class="bi bi-image" aria-hidden="true"></i> OG şəkli seçin
+                    </button>
+                    <input type="file" data-role="picker-file-input" accept="image/jpeg,image/png,image/webp,image/svg+xml" hidden>
+                    {{ form.og_image }}
+                </div>
+                <p class="editor__hint">Boş buraxsanız, sosial paylaşımlarda örtük şəkli istifadə olunacaq. Tövsiyə olunan ölçü: 1200×630px.</p>
+            </div>
+            <div class="form-field">
+                <label class="cms-checkbox">{{ form.robots_index }} Axtarış motorlarında indeksləşdirilsin</label>
+                <label class="cms-checkbox">{{ form.robots_follow }} Linklər izlənilsin</label>
+            </div>
+            <div class="form-field">
+                <label for="{{ form.slug.id_for_label }}">URL slug</label>
+                {{ form.slug }}
+                {% for error in form.slug.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block">Yadda saxla</button>
+    </aside>
+</form>
+
+{% include "cms/partials/media_crop_modal.html" %}
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/cms/ckeditor-youtube-embed.js' %}"></script>
+    {{ form.media }}
+    <script src="{% static 'vendors/cropperjs/cropper.min.js' %}"></script>
+    <script defer src="{% static 'js/cms/media-uploader.js' %}"></script>
+    <script defer src="{% static 'js/cms/image-pickers.js' %}"></script>
+    <script defer src="{% static 'js/cms/editor.js' %}"></script>
+{% endblock %}

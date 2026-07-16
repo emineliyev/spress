@@ -1,0 +1,55 @@
+{% extends "cms/base.html" %}
+{% load az_dates %}
+
+{% block title %}Fəaliyyət jurnalı{% endblock %}
+{% block page_title %}Fəaliyyət jurnalı{% endblock %}
+
+{% block cms_content %}
+<div class="cms-activity-log">
+    <form method="get" class="cms-filter-bar">
+        <select name="user" class="form-input" onchange="this.form.submit()">
+            <option value="">Bütün istifadəçilər</option>
+            {% for actor in actors %}
+                <option value="{{ actor.pk }}" {% if selected_user == actor.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ actor.get_full_name|default:actor.username }}
+                </option>
+            {% endfor %}
+        </select>
+        <select name="action" class="form-input" onchange="this.form.submit()">
+            <option value="">Bütün əməliyyatlar</option>
+            {% for value, label in action_choices %}
+                <option value="{{ value }}" {% if selected_action == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
+    {% if logs %}
+        <ul class="cms-activity-timeline">
+            {% for entry in logs %}
+                <li class="cms-activity-timeline__item cms-activity-timeline__item--{{ entry.action }}">
+                    <span class="cms-activity-timeline__icon" aria-hidden="true">
+                        {% if entry.action == 'login_success' %}<i class="bi bi-check-lg"></i>
+                        {% elif entry.action == 'login_failed' %}<i class="bi bi-x-lg"></i>
+                        {% else %}<i class="bi bi-box-arrow-right"></i>{% endif %}
+                    </span>
+                    <div>
+                        <div class="cms-activity-timeline__text">
+                            <b>{% if entry.actor %}{{ entry.actor.get_full_name|default:entry.actor.username }}{% else %}Naməlum{% endif %}</b>
+                            {{ entry.get_action_display }}{% if entry.description %} — {{ entry.description }}{% endif %}
+                        </div>
+                        <div class="cms-activity-timeline__meta">
+                            {{ entry.created_at|date:"d.m.Y, H:i" }}{% if entry.ip_address %} · {{ entry.ip_address }}{% endif %}
+                        </div>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+        {% include "components/pagination.html" %}
+    {% else %}
+        <div class="empty-state">
+            <i class="bi bi-clock-history empty-state__icon" aria-hidden="true"></i>
+            <p class="empty-state__title">Bu filtrlərə uyğun qeyd tapılmadı</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

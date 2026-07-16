@@ -1,0 +1,12 @@
+{
+  "name": "spress-e2e",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Playwright end-to-end tests for the SPress news portal (dev tooling only — never shipped, not part of the Django app).",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}

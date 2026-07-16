@@ -1,0 +1,33 @@
+# Environment
+.env
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Django
+*.log
+/staticfiles/
+/media/
+!/media/.gitkeep
+/logs/*.log
+/test_media/
+/test_media_e2e/
+
+# Testing
+/.pytest_cache/
+/htmlcov/
+.coverage
+/e2e/node_modules/
+/e2e/test-results/
+/e2e/playwright-report/
+
+# Editors / OS
+.vscode/
+.idea/
+.claude/
+.DS_Store
+Thumbs.db

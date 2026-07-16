@@ -1,0 +1,47 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Redaktə{% else %}Yeni link{% endif %}{% endblock %}
+
+{% block page_title %}
+    <a href="{% url 'cms:social_link_list' %}" class="cms-topbar__crumb">Sosial şəbəkələr</a>
+    <i class="bi bi-chevron-right cms-topbar__crumb-sep" aria-hidden="true"></i>
+    {% if form.instance.pk %}Redaktə{% else %}Yeni link{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<form method="post" class="cms-simple-form" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div class="alert alert--danger">
+            {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="form-field{% if form.platform.errors %} form-field--error{% endif %}">
+        <label for="{{ form.platform.id_for_label }}">Platforma</label>
+        {{ form.platform }}
+        {% for error in form.platform.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-field{% if form.url.errors %} form-field--error{% endif %}">
+        <label for="{{ form.url.id_for_label }}">URL</label>
+        {{ form.url }}
+        {% for error in form.url.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-field{% if form.order.errors %} form-field--error{% endif %}">
+        <label for="{{ form.order.id_for_label }}">Sıra</label>
+        {{ form.order }}
+        <p class="editor__hint">Kiçik rəqəm əvvəldə görünür.</p>
+        {% for error in form.order.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <button type="submit" class="btn btn--primary">Yadda saxla</button>
+</form>
+{% endblock %}

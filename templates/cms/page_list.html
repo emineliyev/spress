@@ -1,0 +1,77 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}Səhifələr{% endblock %}
+{% block page_title %}Statik səhifələr{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<div class="cms-list-toolbar">
+    <form method="get" class="cms-filter-bar">
+        <input type="search" name="q" class="form-input" placeholder="Başlıq ilə axtar..." value="{{ query }}">
+        <button type="submit" class="btn btn--secondary btn--sm">Axtar</button>
+    </form>
+
+    <a href="{% url 'cms:page_create' %}" class="btn btn--primary">
+        <i class="bi bi-plus-lg" aria-hidden="true"></i> Yeni səhifə
+    </a>
+</div>
+
+{% if pages %}
+<div class="cms-table-wrapper">
+    <table class="cms-table">
+        <thead>
+            <tr>
+                <th>Başlıq</th>
+                <th>Slug</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for page in pages %}
+                <tr>
+                    <td>{{ page.title }}</td>
+                    <td>/{{ page.slug }}</td>
+                    <td>
+                        {% if page.is_published %}
+                            <span class="badge badge--status-active">Dərc olunub</span>
+                        {% else %}
+                            <span class="badge badge--status-inactive">Qaralama</span>
+                        {% endif %}
+                    </td>
+                    <td class="cms-table__actions">
+                        <div class="cms-row-menu">
+                            <button type="button" class="header-icon-btn" data-action="toggle-row-menu" aria-expanded="false">
+                                <i class="bi bi-three-dots" aria-hidden="true"></i>
+                            </button>
+                            <div class="cms-row-menu__panel" hidden>
+                                <a href="{% url 'cms:page_edit' page.pk %}">Redaktə</a>
+                                <a href="{{ page.get_absolute_url }}" target="_blank" rel="noopener">Önizləmə</a>
+                                <a href="{% url 'cms:page_delete' page.pk %}" class="cms-row-menu__danger">Sil</a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% include "components/pagination.html" %}
+{% else %}
+    <div class="empty-state">
+        <i class="bi bi-file-earmark-text empty-state__icon" aria-hidden="true"></i>
+        <p class="empty-state__title">{% if query %}Nəticə tapılmadı{% else %}Hələ səhifə yoxdur{% endif %}</p>
+        {% if not query %}
+            <a href="{% url 'cms:page_create' %}" class="btn btn--primary">İlk səhifəni yarat</a>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+    <script defer src="{% static 'js/cms/news.js' %}"></script>
+{% endblock %}

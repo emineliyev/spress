@@ -1,0 +1,28 @@
+.cms-stat-grid--seo {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 576px) {
+    .cms-stat-grid--seo {
+        grid-template-columns: 1fr;
+    }
+}
+
+.cms-stat-card__value {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 15px;
+}
+
+.cms-stat-card__status-icon {
+    color: var(--color-success);
+    font-size: 1rem;
+}
+
+.cms-seo-hint {
+    margin-top: var(--space-6);
+    font-size: 13px;
+    color: var(--color-text-muted);
+    max-width: 640px;
+}

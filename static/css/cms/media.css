@@ -1,0 +1,507 @@
+/* Media Library (templates/cms/media_list.html) and the shared crop
+   modal (templates/cms/partials/media_crop_modal.html) used by both the
+   library page and the News editor's cover-image picker. */
+
+.media-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-8);
+    margin: calc(var(--space-8) * -1);
+}
+
+/* Folders sidebar */
+
+.media-folders {
+    width: 220px;
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-8) var(--space-4);
+    border-right: 1px solid var(--color-border);
+    align-self: stretch;
+    /* A long file grid in .media-main otherwise scrolls the folder list
+       out of view with it — sticking it to the viewport keeps folder
+       switching reachable without scrolling back to the top. */
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
+    overflow-y: auto;
+}
+
+.media-folders__label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-secondary);
+    padding: 0 var(--space-2);
+    margin-bottom: var(--space-2);
+}
+
+.media-folders__row {
+    display: flex;
+    align-items: center;
+    border-radius: var(--radius-control);
+}
+
+.media-folders__row:hover {
+    background: var(--color-surface);
+}
+
+.media-folders__row:hover .media-folders__row-actions {
+    visibility: visible;
+}
+
+.media-folders__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 9px 10px;
+    flex: 1;
+    min-width: 0;
+    border-radius: var(--radius-control);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
+
+.media-folders__row:hover .media-folders__item {
+    background: none;
+}
+
+.media-folders__row-actions {
+    display: flex;
+    gap: 2px;
+    padding-right: var(--space-1);
+    visibility: hidden;
+    flex: none;
+}
+
+.media-folders__action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    font-size: 13px;
+    color: var(--color-text-muted);
+    border-radius: var(--radius-control);
+}
+
+.media-folders__action:hover {
+    color: var(--color-primary);
+    background: var(--color-primary-tint);
+}
+
+.media-folders__rename-form {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    padding: var(--space-1) var(--space-1) var(--space-2);
+}
+
+.media-folders__rename-form .form-input {
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+.media-folders__item:hover {
+    background: var(--color-surface);
+}
+
+.media-folders__item.is-active {
+    background: var(--color-primary-tint);
+    color: var(--color-primary-hover);
+    font-weight: 700;
+}
+
+.media-folders__count {
+    margin-left: auto;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.media-folders__item.is-active .media-folders__count {
+    color: inherit;
+}
+
+.media-folders__new {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 9px 10px;
+    color: var(--color-primary);
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: var(--space-2);
+}
+
+.media-folders__new-form {
+    display: flex;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-1) 0;
+}
+
+.media-folders__new-form .form-input {
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+.media-folders__storage {
+    margin-top: auto;
+    padding: var(--space-3) var(--space-2) 0;
+    border-top: 1px solid var(--color-border);
+}
+
+.media-folders__storage-label {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+}
+
+/* Main column */
+
+.media-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding: var(--space-8) var(--space-8) var(--space-8) 0;
+}
+
+.media-dropzone {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-5);
+    padding: var(--space-6);
+    border: 2px dashed var(--color-primary-border-tint);
+    border-radius: var(--radius-card);
+    background: var(--color-primary-tint);
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.media-dropzone.is-dragover {
+    border-color: var(--color-primary);
+    background: oklch(94% 0.05 25);
+}
+
+.media-dropzone__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    flex: none;
+    border-radius: 50%;
+    background: #fff;
+    color: var(--color-primary);
+    font-size: 22px;
+}
+
+.media-dropzone__text {
+    flex: 1;
+}
+
+.media-dropzone__title {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.media-dropzone__hint {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-top: 4px;
+}
+
+.media-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.media-search {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 300px;
+    padding: 9px var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    color: var(--color-text-secondary);
+}
+
+.media-search i {
+    font-size: 15px;
+}
+
+.media-search input {
+    border: none;
+    outline: none;
+    font-size: 13px;
+    width: 100%;
+    font-family: inherit;
+    color: var(--color-text-primary);
+}
+
+.media-filters {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.media-filter-pill {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px var(--space-4);
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+}
+
+.media-filter-pill:hover {
+    border-color: var(--color-border-strong);
+}
+
+.media-filter-pill.is-active {
+    background: var(--color-text-primary);
+    border-color: var(--color-text-primary);
+    color: #fff;
+}
+
+/* Grid */
+
+.media-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+}
+
+.media-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    background: #fff;
+}
+
+.media-card__thumb {
+    position: relative;
+    height: 120px;
+    background: var(--color-surface);
+}
+
+.media-card__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.media-card__format {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    padding: 2px 6px;
+    border-radius: 2px;
+    color: #fff;
+    background: var(--color-text-muted);
+}
+
+.media-card__format--webp {
+    background: var(--color-success);
+}
+
+.media-card__format--jpeg {
+    background: var(--color-warning);
+}
+
+.media-card__format--svg {
+    background: var(--color-info);
+}
+
+.media-card__menu {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+}
+
+.media-card__menu .header-icon-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.85);
+}
+
+.media-card__body {
+    padding: 10px var(--space-3);
+}
+
+.media-card__name {
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.media-card__meta {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-top: 4px;
+}
+
+/* Crop modal (shared with the News editor cover picker) */
+
+.media-crop-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.media-crop-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.media-crop-modal__dialog {
+    position: relative;
+    width: 420px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+}
+
+.media-crop-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-5) var(--space-6);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.media-crop-modal__title {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.media-crop-modal__body {
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.media-crop-modal__stage {
+    height: 260px;
+    background: var(--color-surface);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+}
+
+.media-crop-modal__stage img {
+    display: block;
+    max-width: 100%;
+}
+
+.media-crop-modal__aspects {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.media-crop-modal__aspect {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px var(--space-3);
+    border-radius: var(--radius-control);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    background: #fff;
+}
+
+.media-crop-modal__aspect.is-active {
+    background: var(--color-text-primary);
+    border-color: var(--color-text-primary);
+    color: #fff;
+}
+
+.media-crop-modal__footer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-5) var(--space-6);
+    border-top: 1px solid var(--color-border);
+}
+
+.media-crop-modal__error {
+    text-align: center;
+}
+
+.media-crop-modal__actions {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.media-crop-modal__actions .btn {
+    flex: 1;
+}
+
+body.media-crop-modal-open {
+    overflow: hidden;
+}
+
+/* Cover-image picker (templates/cms/news_form.html) */
+
+.media-picker__preview {
+    position: relative;
+}
+
+.media-picker__remove {
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+}
+
+.media-picker__remove:hover {
+    background: var(--color-primary);
+}
+
+.media-picker__choose {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 1.5px dashed var(--color-border-strong);
+    border-radius: var(--radius-card);
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    font-weight: 700;
+    background: var(--color-surface);
+}
+
+.media-picker__choose:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}

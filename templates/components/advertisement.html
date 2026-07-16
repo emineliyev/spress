@@ -1,0 +1,7 @@
+{% if ad %}
+    <a href="{% url 'advertisements:click' ad.pk %}" class="ad-slot {{ css_class }}" target="_blank" rel="noopener sponsored" aria-label="Reklam: {{ ad.title }}">
+        <img src="{{ ad.banner.file.url }}" alt="{{ ad.title }}" class="ad-slot__image" loading="lazy">
+    </a>
+{% else %}
+    <div class="ad-slot {{ css_class }}" aria-hidden="true"></div>
+{% endif %}

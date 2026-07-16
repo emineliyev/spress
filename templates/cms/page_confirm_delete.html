@@ -1,0 +1,24 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}Silmək{% endblock %}
+{% block page_title %}Səhifəni sil{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<div class="cms-confirm">
+    <i class="bi bi-exclamation-triangle cms-confirm__icon" aria-hidden="true"></i>
+    <h2 class="cms-confirm__title">"{{ page.title }}" silinsin?</h2>
+    <p class="cms-confirm__description">
+        Səhifə geri qaytarıla bilməyəcək şəkildə silinəcək.
+    </p>
+    <form method="post" class="cms-confirm__actions">
+        {% csrf_token %}
+        <a href="{% url 'cms:page_list' %}" class="btn btn--secondary">Ləğv et</a>
+        <button type="submit" class="btn btn--primary">Sil</button>
+    </form>
+</div>
+{% endblock %}

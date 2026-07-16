@@ -1,0 +1,40 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}SEO{% endblock %}
+{% block page_title %}SEO{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cms/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cms/seo.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<div class="cms-stat-grid cms-stat-grid--seo">
+    <div class="cms-stat-card">
+        <div class="cms-stat-card__label">Sitemap.xml</div>
+        <div class="cms-stat-card__value">
+            <i class="bi bi-check-circle-fill cms-stat-card__status-icon" aria-hidden="true"></i>
+            Aktiv, avtomatik yenilənir
+        </div>
+        <a href="{{ sitemap_url }}" target="_blank" rel="noopener" class="cms-panel__link">Baxın</a>
+    </div>
+    <div class="cms-stat-card">
+        <div class="cms-stat-card__label">Robots.txt</div>
+        <div class="cms-stat-card__value">
+            <i class="bi bi-check-circle-fill cms-stat-card__status-icon" aria-hidden="true"></i>
+            Konfiqurasiya olunub
+        </div>
+        <a href="{{ robots_url }}" target="_blank" rel="noopener" class="cms-panel__link">Baxın</a>
+    </div>
+    <div class="cms-stat-card">
+        <div class="cms-stat-card__label">İndeksləşməmiş səhifə</div>
+        <div class="cms-stat-card__value">{{ unindexed_count }}</div>
+    </div>
+</div>
+
+<p class="cms-seo-hint">
+    Hər bir xəbər və statik səhifənin meta teqləri (meta başlıq, təsvir, açar sözlər, canonical URL,
+    Open Graph, indeksləşmə) həmin materialın öz redaktə formasında idarə olunur.
+</p>
+{% endblock %}

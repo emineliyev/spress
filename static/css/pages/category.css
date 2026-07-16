@@ -1,0 +1,28 @@
+.category-page {
+    padding-top: var(--space-5);
+    padding-bottom: var(--space-24);
+}
+
+.category-page__header {
+    margin-bottom: var(--space-10);
+}
+
+.category-page__title {
+    font-size: 40px;
+    font-weight: 800;
+}
+
+.category-page__count {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.category-page__layout {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-10);
+}
+
+.category-page__main {
+    flex: 1;
+}

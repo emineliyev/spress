@@ -1,0 +1,23 @@
+{% if page_obj.paginator.num_pages > 1 %}
+<nav class="pagination" aria-label="Səhifələmə">
+    {% if page_obj.has_previous %}
+        <a href="?{{ query_string }}page={{ page_obj.previous_page_number }}" class="pagination__item" aria-label="Əvvəlki səhifə">
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </a>
+    {% endif %}
+
+    {% for number in page_obj.paginator.page_range %}
+        {% if number == page_obj.number %}
+            <span class="pagination__item pagination__item--current" aria-current="page">{{ number }}</span>
+        {% else %}
+            <a href="?{{ query_string }}page={{ number }}" class="pagination__item">{{ number }}</a>
+        {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+        <a href="?{{ query_string }}page={{ page_obj.next_page_number }}" class="pagination__item" aria-label="Növbəti səhifə">
+            <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        </a>
+    {% endif %}
+</nav>
+{% endif %}

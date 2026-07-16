@@ -1,0 +1,343 @@
+/* Two-column article editor (templates/cms/news_form.html) */
+
+.editor {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-8);
+}
+
+.editor__main {
+    flex: 1;
+    max-width: 880px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.editor__title-input {
+    font-size: 28px;
+    font-weight: 800;
+    border: none;
+    padding: var(--space-2) 0;
+}
+
+.editor__title-input:focus {
+    box-shadow: none;
+    border: none;
+}
+
+.editor__excerpt-input {
+    font-size: 15px;
+    color: var(--color-text-secondary);
+    border: none;
+    border-bottom: 1px solid var(--color-border);
+    border-radius: 0;
+    resize: none;
+}
+
+.editor__excerpt-input:focus {
+    box-shadow: none;
+    border-color: var(--color-primary);
+}
+
+.editor__preview-link {
+    align-self: flex-start;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+}
+
+.editor__preview-link:hover {
+    color: var(--color-primary);
+}
+
+.editor__sidebar {
+    width: 360px;
+    flex: none;
+    background: oklch(99% 0.002 25);
+    border-left: 1px solid var(--color-border);
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.editor__sidebar .form-field {
+    margin-bottom: 0;
+}
+
+.editor__sidebar label {
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.cms-checkbox {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--color-text-primary);
+    margin-top: var(--space-2);
+}
+
+.cms-checkbox input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-primary);
+}
+
+.editor__cover-preview {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: var(--radius-card);
+    margin-bottom: var(--space-2);
+    background: var(--color-surface);
+}
+
+.editor__hint {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin: var(--space-1) 0 0;
+}
+
+.editor__seo {
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.editor__seo-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-secondary);
+}
+
+.tag-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-2) 0;
+}
+
+.tag-picker__pill {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px var(--space-3);
+    border-radius: 999px;
+    border: 1px solid var(--color-border-strong);
+    color: var(--color-text-secondary);
+    background: #fff;
+}
+
+.tag-picker__pill.is-selected {
+    background: var(--color-primary-tint);
+    color: var(--color-primary-hover);
+    border-color: var(--color-primary-border-tint);
+}
+
+/* CKEditor 5 host element */
+.django_ckeditor_5 {
+    border-radius: var(--radius-card);
+}
+
+/* News list toolbar / tabs / row menu / bulk bar */
+
+.cms-list-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+/* No search form / tabs on the left (e.g. templates/cms/social_link_list.html) — just the "create" button, pushed to the right. */
+.cms-list-toolbar--end {
+    justify-content: flex-end;
+}
+
+.cms-list-tabs {
+    display: flex;
+    gap: var(--space-6);
+    border-bottom: 1px solid var(--color-border);
+    margin: var(--space-2) 0 var(--space-2);
+}
+
+.cms-list-tabs__item {
+    padding: var(--space-3) 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+}
+
+.cms-list-tabs__item.is-active {
+    color: var(--color-text-primary);
+    border-bottom-color: var(--color-primary);
+}
+
+.cms-bulk-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-5);
+    background: var(--color-primary-tint);
+    border: 1px solid var(--color-primary-border-tint);
+    border-radius: var(--radius-card);
+    margin-bottom: var(--space-3);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.cms-table-wrapper {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    overflow: hidden;
+    overflow-x: auto;
+}
+
+.cms-table__actions {
+    text-align: right;
+    position: relative;
+}
+
+/* Trash-tab rows show two actions side by side ("Bərpa et" + "Həmişəlik
+   sil", templates/cms/news_list.html) instead of the row-menu dropdown
+   used everywhere else. */
+.cms-table__actions-group {
+    display: inline-flex;
+    gap: var(--space-2);
+}
+
+.cms-row-menu {
+    position: relative;
+    display: inline-block;
+}
+
+.cms-row-menu__panel {
+    /* top/right are set inline by static/js/cms/news.js on open — fixed
+       (viewport-relative) so the panel can escape .cms-table-wrapper's
+       `overflow: hidden`, which otherwise clips it near the bottom edge. */
+    position: fixed;
+    min-width: 160px;
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    box-shadow: var(--shadow-md);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-2) 0;
+}
+
+.cms-row-menu__panel a,
+.cms-row-menu__panel button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: var(--space-2) var(--space-4);
+    font-size: 13px;
+    color: var(--color-text-primary);
+}
+
+.cms-row-menu__panel a:hover,
+.cms-row-menu__panel button:hover {
+    background: var(--color-surface);
+}
+
+.cms-row-menu__danger {
+    color: var(--color-primary) !important;
+}
+
+/* Delete confirmation */
+
+.cms-confirm {
+    max-width: 480px;
+    text-align: center;
+    margin: var(--space-16) auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.cms-confirm__icon {
+    font-size: 40px;
+    color: var(--color-primary);
+}
+
+.cms-confirm__title {
+    font-size: 20px;
+    font-weight: 800;
+    margin: 0;
+}
+
+.cms-confirm__description {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.cms-confirm__actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+/* Merge confirm (templates/cms/tag_confirm_merge.html) — a target-tag
+   select sits above the actions row instead of the plain text used by the
+   other cms-confirm pages. */
+.cms-confirm__form {
+    width: 100%;
+}
+
+.cms-quick-actions {
+    display: flex;
+    gap: var(--space-3);
+}
+
+/* Plain single-column form page (Category/Tag) — too few fields to justify
+   the two-column .editor layout built for the News/CKEditor screen. */
+
+.cms-simple-form {
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+/* Pages CMS form (templates/cms/page_form.html) — same single-column
+   shape as .cms-simple-form, but wider to give the CKEditor field room
+   (matches .editor__main's max-width used by the News editor). */
+.cms-simple-form--wide {
+    max-width: 880px;
+}
+
+/* Stacks the two-column editor on tablet/mobile — must stay below every
+   un-guarded .editor__sidebar{width:360px} rule above: with equal
+   selector specificity, CSS resolves the tie by source order, so a
+   media-scoped override placed earlier in the file loses regardless of
+   whether its condition matches. */
+@media (max-width: 1200px) {
+    .editor {
+        flex-direction: column;
+    }
+
+    .editor__main {
+        max-width: none;
+        width: 100%;
+    }
+
+    .editor__sidebar {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--color-border);
+    }
+}
