@@ -70,6 +70,18 @@
 }
 
 .article__body {
+    /* Without an explicit flex-basis, a flex item's width falls out of
+       its own content's intrinsic size — for ordinary paragraph text
+       that happens to converge on something reasonable, but a body
+       made up only of aspect-ratio-sized content (a video embed with no
+       surrounding text) has no intrinsic width to compute from at all
+       and collapses to 0, taking the video with it. flex: 1 makes this
+       column always claim the row's remaining space deterministically,
+       regardless of what's inside it; min-width: 0 lets it actually
+       shrink there instead of the flex default (auto) fighting back
+       against long unbreakable content (URLs, embeds) forcing overflow. */
+    flex: 1;
+    min-width: 0;
     max-width: 780px;
 }
 

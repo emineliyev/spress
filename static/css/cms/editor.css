@@ -104,6 +104,30 @@
     margin: var(--space-1) 0 0;
 }
 
+.editor__video-covers {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.editor__video-cover-row {
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+}
+
+.editor__video-cover-row:first-child {
+    padding-top: 0;
+    border-top: none;
+}
+
+.editor__video-cover-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-2);
+    word-break: break-all;
+}
+
 .editor__seo {
     border-top: 1px solid var(--color-border);
     padding-top: var(--space-5);

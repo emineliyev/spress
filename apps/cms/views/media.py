@@ -63,6 +63,16 @@ class MediaLibraryListView(LoginRequiredMixin, ListView):
         return context
 
 
+class MediaPickerListView(MediaLibraryListView):
+    """Same filtering/pagination as `MediaLibraryListView` — just a
+    lighter template (`cms/partials/media_picker_grid.html`, no page
+    chrome) meant to be `fetch()`-ed into `media_picker_modal.html`'s
+    "Kitabxanadan seç" tab (static/js/cms/image-pickers.js) instead of
+    rendered as a full page."""
+
+    template_name = 'cms/partials/media_picker_grid.html'
+
+
 class MediaUploadStageView(LoginRequiredMixin, View):
     """AJAX step 1: validate + park the file, return it for Cropper.js to load."""
 

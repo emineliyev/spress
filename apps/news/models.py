@@ -118,3 +118,32 @@ class News(SEOFieldsMixin, BaseModel):
         items.append((self.category.name, self.category.get_absolute_url()))
         items.append((self.title, None))
         return items
+
+
+class NewsVideoCover(BaseModel):
+    """An optional custom thumbnail for one YouTube video embedded inside
+    `News.content` (CMS "Video örtükləri" sidebar, `apps/news/services.py`'s
+    `sync_video_covers()`).
+
+    Deliberately its own table rather than anything stored on the embed's
+    HTML itself: `CKEDITOR_5_CONFIGS` (config/settings/base.py) has no
+    General HTML Support plugin enabled, so a custom attribute added to
+    the saved markup isn't guaranteed to survive CKEditor5 regenerating
+    its editing view from its internal model on the next edit — this
+    model sidesteps that entirely by never touching `content` at all.
+    The public article page matches a cover to its video by `video_id`
+    at render time (apps/news/views.py's `NewsDetailView`,
+    static/js/pages/article.js), not by anything embedded in the HTML.
+    """
+
+    news = models.ForeignKey(News, on_delete=models.CASCADE, related_name='video_covers')
+    video_id = models.CharField(max_length=32)
+    cover_image = models.ForeignKey('media_manager.MediaFile', on_delete=models.CASCADE, related_name='+')
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['news', 'video_id'], name='unique_news_video_cover'),
+        ]
+
+    def __str__(self):
+        return f'{self.news.title} — {self.video_id}'

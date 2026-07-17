@@ -13,6 +13,7 @@ from apps.advertisements.forms import AdvertisementForm
 from apps.advertisements.models import Advertisement
 from apps.core.utils import get_client_ip
 from apps.logs.models import ActivityLog
+from apps.media_manager.services import delete_unused_media
 
 AD_LIST_PER_PAGE = 20
 
@@ -125,6 +126,40 @@ class AdDeleteView(LoginRequiredMixin, View):
             ip_address=get_client_ip(request),
         )
         messages.success(request, f'"{ad.title}" silindi.')
+        return redirect('cms:ad_list')
+
+
+class AdPermanentDeleteView(LoginRequiredMixin, View):
+    """Only reachable from the "Silinənlər" trash tab — a real, hard
+    delete, unlike `AdDeleteView`'s soft delete. Mirrors
+    `NewsPermanentDeleteView` (apps/cms/views/news.py): the banner
+    (`Advertisement.banner`, `on_delete=PROTECT`) only gets cleaned up
+    here, once the campaign is truly gone, not at soft-delete time —
+    a later `AdRestoreView` must still be able to bring back a campaign
+    with its banner intact."""
+
+    def get(self, request, pk):
+        ad = get_object_or_404(Advertisement, pk=pk, is_deleted=True)
+        return render(request, 'cms/ad_confirm_permanent_delete.html', {'ad': ad})
+
+    def post(self, request, pk):
+        ad = get_object_or_404(Advertisement, pk=pk, is_deleted=True)
+        title = ad.title
+        banner_id = ad.banner_id
+
+        ad.delete()
+        deleted_media_count = delete_unused_media({banner_id})
+
+        description = title
+        if deleted_media_count:
+            description += f' (+ {deleted_media_count} media fayl)'
+        ActivityLog.objects.create(
+            actor=request.user,
+            action=ActivityLog.Action.AD_PURGED,
+            description=description,
+            ip_address=get_client_ip(request),
+        )
+        messages.success(request, f'"{title}" həmişəlik silindi.')
         return redirect('cms:ad_list')
 
 

@@ -75,7 +75,11 @@ _YOUTUBE_IFRAME_HOSTS = {'www.youtube-nocookie.com', 'youtube-nocookie.com'}
 
 def _validate_iframe_attribute(tag, name, value):
     if name != 'src':
-        return name in ('allow', 'allowfullscreen', 'loading')
+        # referrerpolicy: required for the embed to actually work, not
+        # cosmetic — see the comment in static/js/cms/ckeditor-youtube-
+        # embed.js. Without it here, the sanitizer would strip it back out
+        # of every article on save, silently undoing that fix.
+        return name in ('allow', 'allowfullscreen', 'loading', 'referrerpolicy')
     parsed = urlparse(value)
     return parsed.scheme == 'https' and parsed.hostname in _YOUTUBE_IFRAME_HOSTS
 

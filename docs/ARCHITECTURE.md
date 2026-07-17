@@ -2072,3 +2072,338 @@ this phase and pushed to `https://github.com/emineliyev/spress.git`.
 a real dev server. `python manage.py check` and `makemigrations --check
 --dry-run` clean throughout (the slug-generation fix touched only
 Python logic, no schema change).
+
+# Phase 22 (ad slot conflicts blocked; permanent delete for Category/Advertisement; pick-from-library image picker)
+
+## Context
+
+Three gaps the user found using the CMS directly, after Phase 21's test suite and deploy prep: two silent-failure-shaped bugs and one workflow gap.
+
+## Ad slots: a second active campaign in the same position used to win silently
+
+`{% ad_slot %}` (`apps/advertisements/templatetags/ads.py`) has always just
+picked `Advertisement.objects.active().filter(position__code=...).order_by
+('-created_at').first()` — nothing anywhere validated that only one
+campaign should be simultaneously active per position. Create a second
+active campaign in the same slot without realizing the first was still
+running, and the first one silently stops rendering — no error, no
+warning, just a banner that quietly changed. User chose blocking over
+auto-deactivation (a plain "we handled it for you" felt riskier than
+making the conflict visible).
+
+`AdvertisementForm.clean()` (`apps/advertisements/forms.py`) now checks,
+whenever `position` + `is_active` + `start_date` are all set, every
+*other* `visible()` campaign in the same position for a date-range
+overlap (`_ranges_overlap()`, a small helper treating a `None` end date
+as "no upper bound" rather than needing a sentinel "infinity" value) —
+on a hit, `self.add_error('position', ...)` names the conflicting
+campaign by title so the editor knows exactly what to deactivate first.
+Scoped to `is_active=True` campaigns only (a draft/paused campaign
+sharing a position is fine) and excludes `self.instance.pk` (editing a
+campaign doesn't conflict with its own unchanged record).
+
+## Permanent delete extended to Category and Advertisement
+
+News already had this (Phase 19) — Category and Advertisement's trash
+tabs showed "Bərpa et" with no way to actually clear an item out.
+`CategoryPermanentDeleteView`/`AdPermanentDeleteView`
+(`apps/cms/views/category.py`, `apps/cms/views/advertisement.py`) copy
+`NewsPermanentDeleteView`'s GET-confirm/POST-delete shape exactly, at
+`.../hemise-sil/` (`cms:category_permanent_delete`,
+`cms:ad_permanent_delete`), with a `Həmişəlik sil` button added next to
+`Bərpa et` in both trash-tab templates (neither `category_list.html`
+nor `ad_list.html` wraps its table in a bulk-action `<form>` the way
+`news_list.html` did — confirmed before adding a plain link button here,
+not assumed safe from Phase 21's nested-form bug).
+
+Category needed more care than News did: `News.category` is
+`on_delete=PROTECT` and `Category.parent` is `on_delete=CASCADE` — a
+naive `category.delete()` would either raise an unhandled
+`ProtectedError` (a linked article, even a soft-deleted one, still holds
+the FK) or silently cascade-delete child categories. Both are checked
+explicitly against *every* row first (not just `.visible()` ones — a
+soft-deleted News or Category can still hold the reference), blocking
+with a clear count-based message rather than either failing loudly or
+deleting more than the admin asked for. Advertisement is simpler (only
+its own `banner` to worry about) and mirrors News's media-cleanup
+pattern directly: capture `banner_id` before `ad.delete()`, then
+`delete_unused_media({banner_id})` (`apps/media_manager/services.py`,
+already built in Phase 19) removes it only if nothing else still
+references it.
+
+New `ActivityLog.Action.CATEGORY_PURGED`/`AD_PURGED` (+ migration).
+
+## Media picker: choosing an existing image, not just uploading a new one every time
+
+Every "Şəkil seçin" button (News cover/OG, Page OG, Settings logo/
+favicon, Ad banner — all sharing `static/js/cms/image-pickers.js`) used
+to go straight to the OS file dialog. Reusing an already-uploaded image
+meant downloading it and re-uploading it, or wasn't really possible at
+all — and every fresh upload duplicated storage for an image already in
+the library.
+
+New shared modal, `templates/cms/partials/media_picker_modal.html`
+(one singleton per page, included next to the existing
+`media_crop_modal.html` on every page with a picker — `news_form.html`,
+`page_form.html`, `ad_form.html`, `settings.html`), two tabs:
+
+- **"Kitabxanadan seç"** (default) — `apps/cms/views/media.py`'s new
+  `MediaPickerListView(MediaLibraryListView)` reuses the existing
+  view's filtering/pagination untouched, just a lighter
+  `template_name` (`cms/partials/media_picker_grid.html` — adapted from
+  the existing `media_grid.html`, whose own comment had already
+  anticipated this reuse since Phase 10: *"a future picker-from-library
+  view can reuse it without duplicating card markup"*). Cards are
+  `<button data-action="pick-media">` instead of management-menu `<div>`s
+  — clicking one sets the picker's hidden input and preview directly,
+  no crop step, since a library image is already processed. Search and
+  the format filter re-`fetch()` the grid in place; pagination links
+  inside the fetched HTML are intercepted the same way (read the raw
+  `href` query-string, refetch against the *picker's own* URL) rather
+  than left to navigate normally — a plain anchor's `.href` resolves
+  against the page's own address, not the fetched fragment's original
+  one, so navigating it directly would silently target the wrong page
+  once injected into e.g. `/cms/xeberler/yeni/`.
+- **"Yeni yüklə"** — the exact same stage→crop→confirm pipeline as
+  before, just triggered from inside the modal: the picker modal hides
+  itself before the crop modal opens (confirmed via Playwright, not
+  assumed — no double-modal stacking), and `MediaUploader`'s existing
+  "singleton, rebind `onComplete`/`defaultRatio` before each use"
+  pattern (already established for reusing one uploader instance across
+  multiple pickers on a page) now also carries the *currently open*
+  picker's identity through the modal correctly.
+
+`image-pickers.js` was rewritten around a single `currentPicker` module
+variable, set when any picker's "Şəkil seçin" is clicked and read by
+both tabs — verified with Playwright that two pickers on the same page
+(News has featured_image *and* og_image) never cross-contaminate each
+other's hidden input, since both tabs ultimately read/write through
+whichever picker was opened last.
+
+## Verification
+
+`pytest`: 6 new `AdvertisementForm` tests (blocked/allowed/inactive-
+doesn't-conflict/editing-self-doesn't-conflict) and 7 new permanent-
+delete tests (`apps/cms/tests/test_permanent_delete.py`, including the
+Category-blocked-by-referencing-News case that would otherwise raise
+`ProtectedError`) — 120 passed total, `manage.py check` and
+`makemigrations --check --dry-run` clean.
+
+Playwright (manual scripts, not yet folded into `e2e/`): picker modal
+opens showing all 9 real library files; nonsense search → empty state,
+clearing it restores the grid; clicking a card closes the modal and
+sets the correct hidden input/preview; switching to "Yeni yüklə",
+uploading, and applying a crop closes both modals and updates the
+picker with the newly created media, with the featured-image picker's
+16:9 aspect ratio correctly pre-selected in the crop panel; two pickers
+on one page (featured_image/og_image) confirmed to track independently.
+Test article/media created during verification cleaned up afterward
+(no state left in the dev database, which by this phase holds genuine
+editorial content, not just test rows).
+
+# Phase 23 (SEO field hints; two real bugs behind the reported YouTube "Error 153")
+
+## SEO panel fields now explain themselves
+
+User asked for plain-language explanations of "OG başlıq / Canonical URL /
+OG təsvir / OG şəkli" — jargon a non-technical editor has no reason to
+already know (CLAUDE.md ch.9 "must never be designed for technical users
+only"). Added an `.editor__hint` under every SEO field in both
+`news_form.html` and `page_form.html` (identical field set via
+`SEOFieldsMixin`) plus one summary sentence at the top of the section,
+each explaining what the field actually controls rather than just its
+name — e.g. "OG başlıq" → *""OG" = Open Graph. Sosial şəbəkədə
+paylaşılanda linkin üzərində görünəcək başlıq."*
+
+## Reported bug: inserted YouTube videos show "Xəta 153 / Video pleyer konfiqurasiya xətası"
+
+Investigated by reproducing it directly rather than guessing — created a
+real article through the CMS with an embedded YouTube video and viewed
+it publicly. Two unrelated real bugs turned up, not one.
+
+**Bug 1 — `.article__body` collapses to zero width for text-light
+content.** `static/css/pages/article.css`'s `.article__layout` is a flex
+row (share-icon column + main content); `.article__body` had `max-width:
+780px` but no `flex-grow`/`flex-basis`, so its actual width fell out of
+its own content's intrinsic sizing. For ordinary paragraph text this
+happens to converge on something reasonable (text has real min/max-
+content width to shrink from), which is why this had never surfaced
+before — but a body whose only content is an `aspect-ratio`-sized video
+embed has no intrinsic width to compute from at all, and the whole
+element, and everything inside it (`.rich-text-content`, `.media-embed`,
+the iframe itself), collapsed to `0×0` — confirmed by walking the
+ancestor chain with `getBoundingClientRect()` at every level, not
+assumed from reading the CSS. Fixed with `flex: 1; min-width: 0;` —
+the standard, deterministic way to make a "fill the remaining row
+space" column, instead of relying on content happening to produce a
+reasonable shrink-to-fit size.
+
+**Bug 2 — the real "Error 153" cause: no `referrerpolicy` on the
+iframe.** Once the video had real dimensions to actually render into,
+the reported error reproduced exactly. Ruled out two plausible causes
+empirically before finding the real one: swapping `youtube-nocookie.com`
+for plain `youtube.com` didn't help; testing via `localhost` instead of
+the raw `127.0.0.1` IP didn't help either. The actual cause: this
+project's `SecurityMiddleware` sends `Referrer-Policy: same-origin`
+site-wide (CLAUDE.md ch.12) — correct for the site itself, but it means
+the browser sends *no* referrer at all on any cross-origin request,
+including to YouTube's embedded player, which can't validate the embed
+without one and fails with a generic configuration error instead of
+actually loading. Confirmed by adding `referrerpolicy="strict-origin-
+when-cross-origin"` directly to the iframe (overriding the page-level
+policy for just that element) — the error changed from the generic
+"Error 153" to YouTube's real response for that specific video,
+proving the player initializes correctly once it has an origin to
+validate against. `strict-origin-when-cross-origin` still only reveals
+this site's origin (scheme+host) to YouTube, not the specific article
+URL being read, keeping the same referrer-privacy intent
+`Referrer-Policy: same-origin` was set for in the first place.
+
+Two files: `static/js/cms/ckeditor-youtube-embed.js` (the custom
+MediaEmbed provider that generates the saved iframe markup — Phase ~9)
+now emits the attribute; `apps/core/utils.py`'s `_validate_iframe_attribute`
+allow-list (the bleach sanitizer applied in `News.save()`/`Page.save()`)
+had to be extended to keep it, or every save would have silently
+stripped it back out.
+
+## Verification
+
+`pytest`: 2 new sanitizer tests (`apps/core/tests.py`) — `referrerpolicy`
+survives sanitization on a real YouTube iframe, a non-YouTube iframe
+host is still rejected. 122 passed total.
+
+Playwright: reproduced the original error on a fresh CMS-created,
+published article; confirmed the layout fix via `getBoundingClientRect()`
+at every level of the ancestor chain before and after; confirmed the
+referrer-policy fix by observing the error message itself change from
+generic-config-error to a real YouTube response; re-screenshotted an
+existing real article (text + featured image, no video) to confirm the
+flex change caused no regression there. Test articles/media removed
+afterward.
+
+# Phase 24 (optional per-video cover image for embedded YouTube videos, click-to-load facade)
+
+## What was asked
+
+An editor may want a custom thumbnail for an embedded YouTube video
+instead of YouTube's own preview frame — explicitly *not* a general
+native-video-upload feature, confirmed with the user before starting:
+just an optional cover image keyed to the existing YouTube-embed
+feature from Phase ~9/23. No cover set → behaves exactly as before
+(direct iframe).
+
+## Why a separate model, not an HTML attribute on the embed
+
+`CKEDITOR_5_CONFIGS` has no `htmlSupport`/General HTML Support plugin
+enabled (checked directly in `config/settings/base.py`, not assumed),
+so a custom attribute hand-added to the saved markup has no guarantee
+of surviving CKEditor5 regenerating its editing view from its internal
+model on the next edit. Rather than risk silent data loss on re-edit,
+the video_id → cover mapping lives in its own table,
+`apps.news.models.NewsVideoCover` (`news` FK + `video_id` +
+`cover_image` FK, unique on `(news, video_id)`) — the article's
+`content` field is never touched by this feature at all. This is the
+first model in the project with a plain "one News, many X" FK (no
+precedent existed before — checked).
+
+## A real discovery made while building this: what `News.content` actually contains
+
+Building the CMS-side "which videos are in this article right now"
+detection required understanding what CKEditor5's MediaEmbed plugin
+actually round-trips through `editor.getData()`/`setData()`, not just
+what's visible in the rendered iframe. Verified directly (Playwright,
+loading a real existing video article — pk 29 — back into the CMS
+editor and dumping `editor.getData()`): the *actual* stored
+`News.content` is not merely the bare `<div class="media-embed
+media-embed--youtube"><iframe>` produced by the custom provider's
+`html:` callback (Phase 9/23) — it's that div wrapped in
+`<figure class="media"><div data-oembed-url="...original pasted
+URL...">`, which the bleach sanitizer must therefore also allow through
+(only iframe-level attributes are restricted by
+`_validate_iframe_attribute`). That `data-oembed-url` marker is what
+lets CKEditor5's own upcast converter recognize the content as a media
+widget again on the next edit and reconstruct the correct editing-view
+figure — proven empirically when a first attempt at feeding
+`editor.setData()` a bare `media-embed` div (no figure/oembed wrapper)
+during Playwright verification silently dropped the video entirely.
+Because of this, `static/js/cms/video-covers.js`'s video-ID detection
+only ever looks for `<iframe src=".../embed/(id)">` inside the current
+data — it doesn't care about or depend on the wrapper shape at all,
+so it's unaffected either way.
+
+## CMS: "Video örtükləri" sidebar
+
+`static/js/cms/video-covers.js` — registers with django_ckeditor_5's
+own `window.ckeditorRegisterCallback('id_content', ...)` hook to get
+the live CKEditor5 instance, rather than polling/observing the editing-
+view DOM: the editor element is created asynchronously (`ClassicEditor
+.create().then(...)`, well after `DOMContentLoaded`), so scraping the
+DOM at load time is inherently racy, while the registered callback only
+fires once the instance genuinely exists. On every `change:data`
+(debounced 500ms) it re-scans `editor.getData()` for YouTube iframe
+src's, diffs against the currently-rendered picker rows, and adds/
+removes rows in the "Video örtükləri" sidebar section accordingly. Each
+row is built with the exact same `[data-role="image-picker"]` markup as
+the featured/OG image pickers and registered into the *same* shared
+media-picker modal via a new export from Phase 22's
+`static/js/cms/image-pickers.js` — `window.registerImagePicker(el)` —
+so no picker/modal logic is duplicated for this feature. Existing
+covers (when editing an already-saved article) are seeded from hidden
+`data-role="existing-video-cover"` spans the template renders from
+`form.instance.video_covers.all`. On submit, the current video→cover
+state is serialized into a hidden `video_covers_json` field, read by
+`apps/news/services.py`'s new `sync_video_covers(article, payload_json)`
+— a full replace-all (not a diff) called from `NewsCreateView`/
+`NewsUpdateView.form_valid()` right after `super().form_valid(form)`,
+matching how `ActivityLog.objects.create()` already relies on
+`self.object.pk` being available at that point in both views.
+Malformed/invalid entries (bad JSON, missing video_id, a
+`cover_media_id` that isn't a real `MediaFile`) are silently skipped —
+`content` remains the source of truth for which videos exist; a cover
+mapping is only ever an optional enhancement on top of it, never
+something a save should fail over.
+
+`apps/media_manager/services.py`'s `collect_news_media_ids()` (Phase 19)
+now also includes every `article.video_covers.cover_image_id` — so
+`NewsPermanentDeleteView`'s existing exclusive-media cleanup correctly
+accounts for cover images too, same shared-vs-exclusive logic already
+covering featured/OG/inline images.
+
+## Public site: click-to-load facade
+
+`NewsDetailView.get_context_data()` adds `video_covers` — a plain
+`{video_id: cover_image_url}` dict — surfaced to the template via
+Django's `json_script` filter (`templates/news/detail.html`), no new
+server-rendering logic needed. `static/js/pages/article.js` (previously
+just the print button) reads it on load and, only for videos that have
+a matching cover, replaces the `<iframe>` inside `.media-embed--youtube`
+with a `<button class="media-embed__facade">` showing the cover image
+and a play icon; the iframe's `src`/`allow`/`referrerpolicy`/`loading`
+are preserved on the button as closure state, not re-derived. Clicking
+it lazily builds a fresh real `<iframe>` with those exact attributes and
+swaps it back in — the video never starts loading until the reader
+actually asks for it. A video with no matching cover is left completely
+untouched, so Phase 23's `referrerpolicy` fix keeps applying unchanged.
+
+## Verification
+
+`pytest`: new `apps/news/tests/test_video_covers.py` — `sync_video_covers()`
+create/replace/malformed-entry behavior; `collect_news_media_ids()`
+includes video-cover images; a video-cover image survives permanent-
+delete of its article if still referenced elsewhere (mirrors Phase 19's
+shared-media test), and is cleaned up via the real HTTP permanent-delete
+view when it isn't; `NewsCreateView` persists a submitted
+`video_covers_json` payload end-to-end. 130 passed total.
+
+Playwright: created a real article via the CMS, inserted a YouTube
+embed directly into the live CKEditor instance (in the correct
+`<figure data-oembed-url>` shape — see the discovery above), confirmed
+the "Video örtükləri" row appeared, picked a cover via the existing
+Phase 22 media-picker modal, saved and published; confirmed the public
+page rendered a `.media-embed__facade` with that exact cover image and
+zero direct iframes, then confirmed clicking it produced a real iframe
+with the correct `src`/`referrerpolicy`. Separately re-verified the
+pre-existing real article (pk 29, no cover set) still renders a direct
+iframe with Phase 23's `referrerpolicy` intact — no regression. Test
+article and its `NewsVideoCover` rows removed from the dev database
+afterward.

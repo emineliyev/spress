@@ -1,0 +1,28 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}Həmişəlik sil{% endblock %}
+{% block page_title %}Kateqoriyanı həmişəlik sil{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<div class="cms-confirm">
+    <i class="bi bi-exclamation-triangle cms-confirm__icon" aria-hidden="true"></i>
+    <h2 class="cms-confirm__title">"{{ category.name }}" həmişəlik silinsin?</h2>
+    <p class="cms-confirm__description">
+        {% if news_count or children_count %}
+            Bu kateqoriyaya bağlı <strong>{{ news_count }}</strong> xəbər və <strong>{{ children_count }}</strong> alt-kateqoriya var (silinənlər də daxil) — həmişəlik silinmədən əvvəl onları həmişəlik silin və ya başqa kateqoriyaya köçürün.
+        {% else %}
+            Bu əməliyyat geri qaytarıla bilməz — kateqoriya bazadan tamamilə silinəcək.
+        {% endif %}
+    </p>
+    <form method="post" class="cms-confirm__actions">
+        {% csrf_token %}
+        <a href="{% url 'cms:category_list' %}?deleted=1" class="btn btn--secondary">Ləğv et</a>
+        <button type="submit" class="btn btn--danger"{% if news_count or children_count %} disabled{% endif %}>Həmişəlik sil</button>
+    </form>
+</div>
+{% endblock %}

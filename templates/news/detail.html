@@ -123,6 +123,7 @@
     </section>
     {% endif %}
 </article>
+{{ video_covers|json_script:"video-covers-data" }}
 {% endblock %}
 
 {% block extra_js %}

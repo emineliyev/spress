@@ -462,6 +462,138 @@ body.media-crop-modal-open {
     overflow: hidden;
 }
 
+/* Picker modal (templates/cms/partials/media_picker_modal.html) — same
+   shell pattern as .media-crop-modal above, wider dialog since it hosts
+   a multi-column grid instead of a single cropped image. */
+
+.media-picker-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.media-picker-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.media-picker-modal__dialog {
+    position: relative;
+    width: 780px;
+    max-width: 92vw;
+    max-height: 85vh;
+    background: #fff;
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+}
+
+.media-picker-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-5) var(--space-6);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.media-picker-modal__title {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.media-picker-modal__tabs {
+    display: flex;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-6) 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.media-picker-modal__tab {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-2);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    background: none;
+}
+
+.media-picker-modal__tab.is-active {
+    color: var(--color-text-primary);
+    border-bottom-color: var(--color-primary);
+}
+
+.media-picker-modal__body {
+    padding: var(--space-6);
+    overflow-y: auto;
+}
+
+.media-picker-modal__toolbar {
+    display: flex;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.media-picker-modal__toolbar .media-search {
+    flex: 1;
+}
+
+.media-picker-modal__grid {
+    min-height: 200px;
+}
+
+.media-picker-modal__upload-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    padding: var(--space-16) var(--space-6);
+    border: 1.5px dashed var(--color-border-strong);
+    border-radius: var(--radius-card);
+    color: var(--color-text-secondary);
+    text-align: center;
+}
+
+.media-picker-modal__upload-icon {
+    font-size: 32px;
+    color: var(--color-text-muted);
+}
+
+/* Reuses .media-grid/.media-card (above) for visual consistency — the
+   card itself is a <button>, not a <div>, since every card in this
+   context is a single "select this" action rather than a management
+   surface (CLAUDE.md ch.6: pick the right element for the interaction,
+   not the box model). */
+.media-card--pickable {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.media-card--pickable:hover,
+.media-card--pickable:focus-visible {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+body.media-picker-modal-open {
+    overflow: hidden;
+}
+
 /* Cover-image picker (templates/cms/news_form.html) */
 
 .media-picker__preview {

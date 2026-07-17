@@ -1,24 +1,26 @@
 /**
- * Generic multi-picker image uploader, shared by any CMS page with one or
+ * Generic multi-picker image chooser, shared by any CMS page with one or
  * more `[data-role="image-picker"]` blocks (Site Settings' logo+favicon,
- * News/Page's featured/OG image, Reklam's banner). A second
- * `new MediaUploader(...)` per picker would double-bind click handlers
- * onto the same singleton `#media-crop-modal` DOM (see
- * templates/cms/partials/media_crop_modal.html) — instead this uses a
- * single shared instance and reassigns `onComplete`/`defaultRatio` right
- * before each `uploadFile()` call, since MediaUploader reads those off
- * `this` at the moment it needs them, not once at construction.
+ * News/Page's featured/OG image, Reklam's banner).
  *
- * Originally written for Site Settings alone (hence prior filename
- * settings.js) — renamed once a third and fourth page started reusing it,
- * since nothing about it is Settings-specific.
+ * "Şəkil seçin" opens the shared `#media-picker-modal`
+ * (templates/cms/partials/media_picker_modal.html) instead of going
+ * straight to the OS file dialog — its "Kitabxanadan seç" tab lets an
+ * editor reuse an already-uploaded MediaFile without a fresh upload;
+ * "Yeni yüklə" runs the exact same stage→crop→confirm pipeline as
+ * before. One shared `MediaUploader` instance (not one per picker —
+ * see media-uploader.js) has its `onComplete`/`defaultRatio`
+ * reassigned to the *currently open* picker's state right before each
+ * upload, the same "singleton, rebind before use" approach the crop
+ * modal itself already relies on.
  */
 (function () {
     'use strict';
 
     function initImagePickers() {
         var pickers = document.querySelectorAll('[data-role="image-picker"]');
-        if (!pickers.length || !window.MediaUploader) {
+        var modal = document.getElementById('media-picker-modal');
+        if (!pickers.length || !modal || !window.MediaUploader) {
             return;
         }
 
@@ -30,38 +32,168 @@
             },
         });
 
-        pickers.forEach(function (picker) {
-            var hiddenInput = picker.querySelector('[data-role="picker-input"]');
-            var chooseButton = picker.querySelector('[data-action="choose-image"]');
-            var removeButton = picker.querySelector('[data-action="remove-image"]');
-            var fileInput = picker.querySelector('[data-role="picker-file-input"]');
-            var preview = picker.querySelector('[data-role="picker-preview"]');
-            var previewImage = picker.querySelector('[data-role="picker-preview-image"]');
-            var ratio = parseFloat(picker.dataset.aspectRatio);
+        var pickerUrl = modal.dataset.pickerUrl;
+        var grid = modal.querySelector('[data-role="picker-grid"]');
+        var searchInput = modal.querySelector('[data-role="picker-search"]');
+        var formatSelect = modal.querySelector('[data-role="picker-format-filter"]');
+        var tabs = modal.querySelectorAll('[data-role="picker-tab"]');
+        var panels = modal.querySelectorAll('[data-role="picker-panel"]');
+        var sharedFileInput = modal.querySelector('[data-role="picker-shared-file-input"]');
+        var uploadTriggerButton = modal.querySelector('[data-action="picker-trigger-upload"]');
 
-            chooseButton.addEventListener('click', function () {
-                fileInput.click();
+        var currentPicker = null;
+
+        function fetchGrid(queryString) {
+            grid.setAttribute('aria-busy', 'true');
+            fetch(pickerUrl + (queryString || ''))
+                .then(function (response) {
+                    return response.text();
+                })
+                .then(function (html) {
+                    grid.innerHTML = html;
+                })
+                .finally(function () {
+                    grid.removeAttribute('aria-busy');
+                });
+        }
+
+        function currentFilterQueryString() {
+            var params = new URLSearchParams();
+            if (searchInput.value.trim()) {
+                params.set('q', searchInput.value.trim());
+            }
+            if (formatSelect.value) {
+                params.set('format', formatSelect.value);
+            }
+            var query = params.toString();
+            return query ? '?' + query : '';
+        }
+
+        function switchTab(panelName) {
+            tabs.forEach(function (tab) {
+                tab.classList.toggle('is-active', tab.dataset.panel === panelName);
+            });
+            panels.forEach(function (panel) {
+                panel.hidden = panel.dataset.panel !== panelName;
+            });
+        }
+
+        function openModal(picker) {
+            currentPicker = picker;
+            switchTab('library');
+            searchInput.value = '';
+            formatSelect.value = '';
+            fetchGrid('');
+            modal.hidden = false;
+            document.body.classList.add('media-picker-modal-open');
+        }
+
+        function closeModal() {
+            modal.hidden = true;
+            document.body.classList.remove('media-picker-modal-open');
+        }
+
+        function selectMedia(mediaId, thumbnailUrl) {
+            if (!currentPicker) {
+                return;
+            }
+            currentPicker.hiddenInput.value = mediaId;
+            currentPicker.previewImage.src = thumbnailUrl;
+            currentPicker.preview.hidden = false;
+            currentPicker.chooseButton.hidden = true;
+            closeModal();
+        }
+
+        function registerPicker(pickerEl) {
+            var picker = {
+                hiddenInput: pickerEl.querySelector('[data-role="picker-input"]'),
+                chooseButton: pickerEl.querySelector('[data-action="choose-image"]'),
+                removeButton: pickerEl.querySelector('[data-action="remove-image"]'),
+                preview: pickerEl.querySelector('[data-role="picker-preview"]'),
+                previewImage: pickerEl.querySelector('[data-role="picker-preview-image"]'),
+                ratio: parseFloat(pickerEl.dataset.aspectRatio),
+            };
+
+            picker.chooseButton.addEventListener('click', function () {
+                openModal(picker);
             });
 
-            fileInput.addEventListener('change', function () {
-                if (fileInput.files[0]) {
-                    uploader.defaultRatio = ratio;
-                    uploader.onComplete = function (mediaFile) {
-                        hiddenInput.value = mediaFile.id;
-                        previewImage.src = mediaFile.thumbnail_url;
-                        preview.hidden = false;
-                        chooseButton.hidden = true;
-                    };
-                    uploader.uploadFile(fileInput.files[0]);
-                }
-                fileInput.value = '';
+            picker.removeButton.addEventListener('click', function () {
+                picker.hiddenInput.value = '';
+                picker.preview.hidden = true;
+                picker.chooseButton.hidden = false;
             });
+        }
 
-            removeButton.addEventListener('click', function () {
-                hiddenInput.value = '';
-                preview.hidden = true;
-                chooseButton.hidden = false;
+        pickers.forEach(registerPicker);
+
+        // Lets other modules (e.g. video-covers.js, which adds picker
+        // blocks dynamically as videos are found in the editor content)
+        // wire freshly-created `[data-role="image-picker"]` blocks into
+        // this same shared modal/uploader without duplicating any of the
+        // logic above.
+        window.registerImagePicker = registerPicker;
+
+        // "Kitabxanadan seç" — card clicks, search, format filter, pagination.
+        grid.addEventListener('click', function (event) {
+            var card = event.target.closest('[data-action="pick-media"]');
+            if (card) {
+                selectMedia(card.dataset.mediaId, card.dataset.thumbnailUrl);
+                return;
+            }
+            var pageLink = event.target.closest('.pagination a');
+            if (pageLink) {
+                event.preventDefault();
+                fetchGrid(pageLink.getAttribute('href'));
+            }
+        });
+
+        var searchDebounce;
+        searchInput.addEventListener('input', function () {
+            window.clearTimeout(searchDebounce);
+            searchDebounce = window.setTimeout(function () {
+                fetchGrid(currentFilterQueryString());
+            }, 300);
+        });
+        formatSelect.addEventListener('change', function () {
+            fetchGrid(currentFilterQueryString());
+        });
+
+        // "Yeni yüklə" — unchanged upload→crop→confirm pipeline, just
+        // triggered from inside the modal instead of directly.
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                switchTab(tab.dataset.panel);
             });
+        });
+        uploadTriggerButton.addEventListener('click', function () {
+            sharedFileInput.click();
+        });
+        sharedFileInput.addEventListener('change', function () {
+            var file = sharedFileInput.files[0];
+            sharedFileInput.value = '';
+            if (!file || !currentPicker) {
+                return;
+            }
+            var picker = currentPicker;
+            closeModal();
+            uploader.defaultRatio = picker.ratio;
+            uploader.onComplete = function (mediaFile) {
+                picker.hiddenInput.value = mediaFile.id;
+                picker.previewImage.src = mediaFile.thumbnail_url;
+                picker.preview.hidden = false;
+                picker.chooseButton.hidden = true;
+            };
+            uploader.uploadFile(file);
+        });
+
+        modal.querySelectorAll('[data-action="close-picker-modal"]').forEach(function (el) {
+            el.addEventListener('click', closeModal);
+        });
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !modal.hidden) {
+                closeModal();
+            }
         });
     }
 

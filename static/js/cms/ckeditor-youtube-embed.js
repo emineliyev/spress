@@ -15,8 +15,19 @@
 window.ckeditorYoutubeEmbedHtml = function (match) {
     'use strict';
     var videoId = match[1];
+    // referrerpolicy is required, not cosmetic: SecurityMiddleware sends
+    // `Referrer-Policy: same-origin` site-wide (CLAUDE.md ch.12), which
+    // strips the referrer entirely on any cross-origin request — YouTube's
+    // player can't validate the embed without one and fails with a
+    // generic "Error 153 / player configuration error" instead of
+    // actually loading, confirmed by reproducing it with and without this
+    // attribute. `strict-origin-when-cross-origin` still only reveals this
+    // site's origin (scheme+host, not the full page URL) to YouTube —
+    // enough for the player to initialize without leaking the specific
+    // article being read.
     return '<div class="media-embed media-embed--youtube">' +
         '<iframe src="https://www.youtube-nocookie.com/embed/' + videoId + '" ' +
         'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+        'referrerpolicy="strict-origin-when-cross-origin" ' +
         'allowfullscreen loading="lazy"></iframe></div>';
 };

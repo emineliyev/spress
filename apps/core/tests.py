@@ -1,7 +1,7 @@
 import pytest
 
 from apps.categories.models import Category
-from apps.core.utils import az_slugify, generate_unique_slug
+from apps.core.utils import az_slugify, generate_unique_slug, sanitize_rich_text_html
 
 
 def test_az_slugify_transliterates_azerbaijani_letters():
@@ -40,3 +40,28 @@ def test_generate_unique_slug_excludes_own_pk_on_update():
     # change) must not collide with itself.
     slug = generate_unique_slug(category, category.name)
     assert slug == category.slug
+
+
+def test_sanitize_keeps_referrerpolicy_on_youtube_iframe():
+    """Without `referrerpolicy`, YouTube's player fails with a generic
+    "Error 153 / player configuration error" instead of actually loading
+    — SecurityMiddleware's site-wide `Referrer-Policy: same-origin`
+    strips the referrer on any cross-origin request, and YouTube's
+    player can't initialize without one (confirmed by reproducing the
+    error with and without this attribute). If the sanitizer ever
+    dropped `referrerpolicy` again, every embedded video on the site
+    would silently start failing the same way."""
+    html = (
+        '<figure class="media"><div class="media-embed media-embed--youtube">'
+        '<iframe src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ" '
+        'allow="accelerometer; autoplay" referrerpolicy="strict-origin-when-cross-origin" '
+        'allowfullscreen loading="lazy"></iframe></div></figure>'
+    )
+    cleaned = sanitize_rich_text_html(html)
+    assert 'referrerpolicy="strict-origin-when-cross-origin"' in cleaned
+
+
+def test_sanitize_rejects_iframe_from_a_non_youtube_host():
+    html = '<iframe src="https://evil.example.com/embed"></iframe>'
+    cleaned = sanitize_rich_text_html(html)
+    assert 'evil.example.com' not in cleaned

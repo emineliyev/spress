@@ -157,6 +157,54 @@ class CategoryRestoreView(LoginRequiredMixin, View):
         return redirect('cms:category_list')
 
 
+class CategoryPermanentDeleteView(LoginRequiredMixin, View):
+    """Only reachable from the "Silinənlər" trash tab — a real, hard
+    delete, unlike `CategoryDeleteView`'s soft delete.
+
+    Unlike `NewsPermanentDeleteView`, this can't just delete and let
+    Django's FK behavior sort itself out: `News.category` is
+    `on_delete=PROTECT` (a `ProtectedError` would surface as a raw 500)
+    and `Category.parent` is `on_delete=CASCADE` (a child category would
+    silently vanish along with its parent). Both are checked — against
+    *every* row, not just visible ones, since a soft-deleted News or
+    Category can still hold the reference — and blocked with a clear
+    message rather than either failing loudly or cascading quietly.
+    """
+
+    def get(self, request, pk):
+        category = get_object_or_404(Category, pk=pk, is_deleted=True)
+        return render(request, 'cms/category_confirm_permanent_delete.html', {
+            'category': category,
+            'news_count': category.news.count(),
+            'children_count': category.children.count(),
+        })
+
+    def post(self, request, pk):
+        category = get_object_or_404(Category, pk=pk, is_deleted=True)
+        news_count = category.news.count()
+        children_count = category.children.count()
+
+        if news_count or children_count:
+            messages.error(
+                request,
+                f'"{category.name}" həmişəlik silinmədi — ona bağlı {news_count} xəbər və '
+                f'{children_count} alt-kateqoriya var (silinənlər də daxil). Əvvəlcə onları '
+                'həmişəlik silin və ya başqa kateqoriyaya köçürün.',
+            )
+            return redirect('cms:category_list')
+
+        name = category.name
+        category.delete()
+        ActivityLog.objects.create(
+            actor=request.user,
+            action=ActivityLog.Action.CATEGORY_PURGED,
+            description=name,
+            ip_address=get_client_ip(request),
+        )
+        messages.success(request, f'"{name}" həmişəlik silindi.')
+        return redirect('cms:category_list')
+
+
 class CategoryReorderView(LoginRequiredMixin, View):
     """AJAX drag-and-drop reorder (CLAUDE.md ch.8 "CMS actions" is a named
     legitimate AJAX use case). Body: `{"parent": null|pk, "order": [pk, ...]}`

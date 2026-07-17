@@ -29,6 +29,7 @@ urlpatterns = [
     path('kateqoriyalar/<int:pk>/redakte/', views.CategoryUpdateView.as_view(), name='category_edit'),
     path('kateqoriyalar/<int:pk>/sil/', views.CategoryDeleteView.as_view(), name='category_delete'),
     path('kateqoriyalar/<int:pk>/berpa/', views.CategoryRestoreView.as_view(), name='category_restore'),
+    path('kateqoriyalar/<int:pk>/hemise-sil/', views.CategoryPermanentDeleteView.as_view(), name='category_permanent_delete'),
     path('etiketler/', views.TagListView.as_view(), name='tag_list'),
     path('etiketler/yeni/', views.TagCreateView.as_view(), name='tag_create'),
     path('etiketler/<int:pk>/redakte/', views.TagUpdateView.as_view(), name='tag_edit'),
@@ -54,5 +55,7 @@ urlpatterns = [
     path('reklamlar/<int:pk>/redakte/', views.AdUpdateView.as_view(), name='ad_edit'),
     path('reklamlar/<int:pk>/sil/', views.AdDeleteView.as_view(), name='ad_delete'),
     path('reklamlar/<int:pk>/berpa/', views.AdRestoreView.as_view(), name='ad_restore'),
+    path('reklamlar/<int:pk>/hemise-sil/', views.AdPermanentDeleteView.as_view(), name='ad_permanent_delete'),
     path('seo/', views.SeoOverviewView.as_view(), name='seo_overview'),
+    path('media/secici/', views.MediaPickerListView.as_view(), name='media_picker'),
 ]

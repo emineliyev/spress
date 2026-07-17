@@ -1,0 +1,57 @@
+{% comment %}
+Shared "choose image" modal — opened by static/js/cms/image-pickers.js
+whenever any [data-role="image-picker"] block's "Şəkil seçin" button is
+clicked (News cover/OG, Page OG, Settings logo/favicon, Ad banner). One
+singleton per page, same reasoning as media_crop_modal.html: the JS
+tracks which picker block is currently active and rebinds this modal's
+target (hidden input/preview) each time it opens, instead of one modal
+instance per picker.
+{% endcomment %}
+<div class="media-picker-modal" id="media-picker-modal" hidden data-picker-url="{% url 'cms:media_picker' %}">
+    <div class="media-picker-modal__backdrop" data-action="close-picker-modal"></div>
+    <div class="media-picker-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="media-picker-modal-title">
+        <div class="media-picker-modal__header">
+            <h2 id="media-picker-modal-title" class="media-picker-modal__title">Şəkil seçin</h2>
+            <button type="button" class="header-icon-btn" data-action="close-picker-modal" aria-label="Bağla">
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <div class="media-picker-modal__tabs">
+            <button type="button" class="media-picker-modal__tab is-active" data-role="picker-tab" data-panel="library">
+                <i class="bi bi-images" aria-hidden="true"></i> Kitabxanadan seç
+            </button>
+            <button type="button" class="media-picker-modal__tab" data-role="picker-tab" data-panel="upload">
+                <i class="bi bi-cloud-upload" aria-hidden="true"></i> Yeni yüklə
+            </button>
+        </div>
+
+        <div class="media-picker-modal__body">
+            <div class="media-picker-modal__panel" data-role="picker-panel" data-panel="library">
+                <div class="media-picker-modal__toolbar">
+                    <div class="media-search">
+                        <i class="bi bi-search" aria-hidden="true"></i>
+                        <input type="search" data-role="picker-search" placeholder="Fayl adı ilə axtar...">
+                    </div>
+                    <select class="form-input" data-role="picker-format-filter">
+                        <option value="">Bütün formatlar</option>
+                        <option value="jpeg">JPEG</option>
+                        <option value="png">PNG</option>
+                        <option value="webp">WebP</option>
+                        <option value="svg">SVG</option>
+                    </select>
+                </div>
+                <div class="media-picker-modal__grid" data-role="picker-grid"></div>
+            </div>
+
+            <div class="media-picker-modal__panel" data-role="picker-panel" data-panel="upload" hidden>
+                <div class="media-picker-modal__upload-prompt">
+                    <i class="bi bi-cloud-upload media-picker-modal__upload-icon" aria-hidden="true"></i>
+                    <p>Kompüterinizdən yeni şəkil yükləyin</p>
+                    <button type="button" class="btn btn--primary" data-action="picker-trigger-upload">Fayl seçin</button>
+                    <input type="file" data-role="picker-shared-file-input" accept="image/jpeg,image/png,image/webp,image/svg+xml" hidden>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

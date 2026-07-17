@@ -87,6 +87,10 @@ class NewsDetailView(DetailView):
             related = News.objects.in_category(article.category).exclude(pk=article.pk)
         context['related_articles'] = related.select_related('category', 'featured_image')[:4]
         context['nav_active_category'] = article.category
+        context['video_covers'] = {
+            cover.video_id: cover.cover_image.file.url
+            for cover in article.video_covers.select_related('cover_image')
+        }
         return context
 
 

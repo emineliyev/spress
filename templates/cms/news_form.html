@@ -90,39 +90,62 @@
                 <button type="button" class="media-picker__choose" data-action="choose-image"{% if form.instance.featured_image %} hidden{% endif %}>
                     <i class="bi bi-image" aria-hidden="true"></i> Örtük şəkli seçin
                 </button>
-                <input type="file" data-role="picker-file-input" accept="image/jpeg,image/png,image/webp,image/svg+xml" hidden>
                 {{ form.featured_image }}
             </div>
             <p class="editor__hint">JPEG, PNG, WebP və ya SVG. Seçdikdən sonra kəsmə (crop) paneli açılacaq. Tövsiyə olunan ölçü: 1200×675px (16:9).</p>
             {% for error in form.featured_image.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
         </div>
 
+        <div class="editor__video-covers" data-role="video-covers-section" hidden>
+            <label>Video örtükləri</label>
+            <p class="editor__hint">Mətnə əlavə etdiyiniz YouTube videoları üçün könüllü örtük şəkli. Seçilməsə, YouTube-un öz preview şəkli göstəriləcək.</p>
+            <div data-role="video-covers-list"></div>
+        </div>
+        <input type="hidden" name="video_covers_json" data-role="video-covers-input">
+        {% if form.instance.pk %}
+            <div hidden>
+                {% for video_cover in form.instance.video_covers.all %}
+                    <span data-role="existing-video-cover"
+                          data-video-id="{{ video_cover.video_id }}"
+                          data-media-id="{{ video_cover.cover_image_id }}"
+                          data-thumbnail-url="{% if video_cover.cover_image.thumbnail %}{{ video_cover.cover_image.thumbnail.url }}{% else %}{{ video_cover.cover_image.file.url }}{% endif %}"></span>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         <div class="editor__seo">
             <div class="editor__seo-title">SEO</div>
+            <p class="editor__hint">Bu bölmə xəbərin axtarış motorlarında (Google) və sosial şəbəkələrdə (Facebook, WhatsApp və s.) paylaşılanda necə göründüyünü idarə edir. Bütün sahələr boş buraxıla bilər — bu halda xəbərin öz başlığı və qısa təsviri avtomatik istifadə olunur.</p>
             <div class="form-field">
                 <label for="{{ form.meta_title.id_for_label }}">Meta başlıq</label>
                 {{ form.meta_title }}
+                <p class="editor__hint">Google axtarış nəticələrində göy rəngli başlıq kimi görünəcək mətn.</p>
             </div>
             <div class="form-field">
                 <label for="{{ form.meta_description.id_for_label }}">Meta təsvir</label>
                 {{ form.meta_description }}
+                <p class="editor__hint">Google axtarış nəticələrində başlığın altında görünəcək qısa təsvir (max. 160 simvol).</p>
             </div>
             <div class="form-field">
                 <label for="{{ form.meta_keywords.id_for_label }}">Açar sözlər</label>
                 {{ form.meta_keywords }}
+                <p class="editor__hint">Xəbərin mövzusunu təsvir edən sözlər, vergüllə ayrılmış (məs: siyasət, seçki, parlament).</p>
             </div>
             <div class="form-field">
                 <label for="{{ form.canonical_url.id_for_label }}">Canonical URL</label>
                 {{ form.canonical_url }}
+                <p class="editor__hint">Yalnız bu xəbər başqa bir ünvanda da (məs. başqa saytda) eyni məzmunla dərc olunubsa doldurulur — Google-a "əsl" ünvanın bu olduğunu bildirir. Adi hallarda boş saxlayın.</p>
                 {% for error in form.canonical_url.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
             </div>
             <div class="form-field">
                 <label for="{{ form.og_title.id_for_label }}">OG başlıq</label>
                 {{ form.og_title }}
+                <p class="editor__hint">"OG" = Open Graph. Sosial şəbəkədə paylaşılanda linkin üzərində görünəcək başlıq.</p>
             </div>
             <div class="form-field">
                 <label for="{{ form.og_description.id_for_label }}">OG təsvir</label>
                 {{ form.og_description }}
+                <p class="editor__hint">Sosial şəbəkədə paylaşılanda başlığın altında görünəcək qısa təsvir.</p>
             </div>
             <div class="form-field">
                 <label>OG şəkli</label>
@@ -136,10 +159,9 @@
                     <button type="button" class="media-picker__choose" data-action="choose-image"{% if form.instance.og_image %} hidden{% endif %}>
                         <i class="bi bi-image" aria-hidden="true"></i> OG şəkli seçin
                     </button>
-                    <input type="file" data-role="picker-file-input" accept="image/jpeg,image/png,image/webp,image/svg+xml" hidden>
                     {{ form.og_image }}
                 </div>
-                <p class="editor__hint">Boş buraxsanız, sosial paylaşımlarda örtük şəkli istifadə olunacaq. Tövsiyə olunan ölçü: 1200×630px.</p>
+                <p class="editor__hint">Sosial şəbəkədə paylaşılanda linklə birlikdə görünəcək şəkil. Boş buraxsanız, örtük şəkli istifadə olunacaq. Tövsiyə olunan ölçü: 1200×630px.</p>
             </div>
             <div class="form-field">
                 <label class="cms-checkbox">{{ form.robots_index }} Axtarış motorlarında indeksləşdirilsin</label>
@@ -157,6 +179,7 @@
 </form>
 
 {% include "cms/partials/media_crop_modal.html" %}
+{% include "cms/partials/media_picker_modal.html" %}
 {% endblock %}
 
 {% block extra_js %}
@@ -165,5 +188,6 @@
     <script src="{% static 'vendors/cropperjs/cropper.min.js' %}"></script>
     <script defer src="{% static 'js/cms/media-uploader.js' %}"></script>
     <script defer src="{% static 'js/cms/image-pickers.js' %}"></script>
+    <script defer src="{% static 'js/cms/video-covers.js' %}"></script>
     <script defer src="{% static 'js/cms/editor.js' %}"></script>
 {% endblock %}

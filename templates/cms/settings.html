@@ -66,7 +66,6 @@
                     <button type="button" class="media-picker__choose" data-action="choose-image"{% if object.logo %} hidden{% endif %}>
                         <i class="bi bi-image" aria-hidden="true"></i> Loqo seçin
                     </button>
-                    <input type="file" data-role="picker-file-input" accept="image/jpeg,image/png,image/webp,image/svg+xml" hidden>
                     {{ form.logo }}
                 </div>
                 <p class="editor__hint">Tərcihən şəffaf fonlu PNG və ya SVG, hündürlük ən azı 120px.</p>
@@ -84,7 +83,6 @@
                     <button type="button" class="media-picker__choose" data-action="choose-image"{% if object.favicon %} hidden{% endif %}>
                         <i class="bi bi-image" aria-hidden="true"></i> Favicon seçin
                     </button>
-                    <input type="file" data-role="picker-file-input" accept="image/jpeg,image/png,image/webp,image/svg+xml" hidden>
                     {{ form.favicon }}
                 </div>
                 <p class="editor__hint">Kvadrat şəkil, tövsiyə olunan ölçü: 512×512px.</p>
@@ -123,6 +121,7 @@
 </form>
 
 {% include "cms/partials/media_crop_modal.html" %}
+{% include "cms/partials/media_picker_modal.html" %}
 {% endblock %}
 
 {% block extra_js %}

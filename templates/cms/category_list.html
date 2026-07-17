@@ -46,10 +46,13 @@
                     <td>{{ category.news_count }}</td>
                     <td class="cms-table__actions">
                         {% if show_deleted %}
-                            <form method="post" action="{% url 'cms:category_restore' category.pk %}">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn--sm btn--secondary">Bərpa et</button>
-                            </form>
+                            <div class="cms-table__actions-group">
+                                <form method="post" action="{% url 'cms:category_restore' category.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn--sm btn--secondary">Bərpa et</button>
+                                </form>
+                                <a href="{% url 'cms:category_permanent_delete' category.pk %}" class="btn btn--sm btn--danger">Həmişəlik sil</a>
+                            </div>
                         {% else %}
                             <div class="cms-row-menu">
                                 <button type="button" class="header-icon-btn" data-action="toggle-row-menu" aria-expanded="false">
@@ -73,10 +76,13 @@
                         <td>{{ child.news_count }}</td>
                         <td class="cms-table__actions">
                             {% if show_deleted %}
-                                <form method="post" action="{% url 'cms:category_restore' child.pk %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn--sm btn--secondary">Bərpa et</button>
-                                </form>
+                                <div class="cms-table__actions-group">
+                                    <form method="post" action="{% url 'cms:category_restore' child.pk %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn--sm btn--secondary">Bərpa et</button>
+                                    </form>
+                                    <a href="{% url 'cms:category_permanent_delete' child.pk %}" class="btn btn--sm btn--danger">Həmişəlik sil</a>
+                                </div>
                             {% else %}
                                 <div class="cms-row-menu">
                                     <button type="button" class="header-icon-btn" data-action="toggle-row-menu" aria-expanded="false">

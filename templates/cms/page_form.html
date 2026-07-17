@@ -56,30 +56,37 @@
 
     <div class="editor__seo">
         <div class="editor__seo-title">SEO</div>
+        <p class="editor__hint">Bu bölmə səhifənin axtarış motorlarında (Google) və sosial şəbəkələrdə (Facebook, WhatsApp və s.) paylaşılanda necə göründüyünü idarə edir. Bütün sahələr boş buraxıla bilər — bu halda səhifənin öz başlığı istifadə olunur.</p>
         <div class="form-field">
             <label for="{{ form.meta_title.id_for_label }}">Meta başlıq</label>
             {{ form.meta_title }}
+            <p class="editor__hint">Google axtarış nəticələrində göy rəngli başlıq kimi görünəcək mətn.</p>
         </div>
         <div class="form-field">
             <label for="{{ form.meta_description.id_for_label }}">Meta təsvir</label>
             {{ form.meta_description }}
+            <p class="editor__hint">Google axtarış nəticələrində başlığın altında görünəcək qısa təsvir (max. 160 simvol).</p>
         </div>
         <div class="form-field">
             <label for="{{ form.meta_keywords.id_for_label }}">Açar sözlər</label>
             {{ form.meta_keywords }}
+            <p class="editor__hint">Səhifənin mövzusunu təsvir edən sözlər, vergüllə ayrılmış.</p>
         </div>
         <div class="form-field">
             <label for="{{ form.canonical_url.id_for_label }}">Canonical URL</label>
             {{ form.canonical_url }}
+            <p class="editor__hint">Yalnız bu səhifə başqa bir ünvanda da eyni məzmunla dərc olunubsa doldurulur — Google-a "əsl" ünvanın bu olduğunu bildirir. Adi hallarda boş saxlayın.</p>
             {% for error in form.canonical_url.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
         </div>
         <div class="form-field">
             <label for="{{ form.og_title.id_for_label }}">OG başlıq</label>
             {{ form.og_title }}
+            <p class="editor__hint">"OG" = Open Graph. Sosial şəbəkədə paylaşılanda linkin üzərində görünəcək başlıq.</p>
         </div>
         <div class="form-field">
             <label for="{{ form.og_description.id_for_label }}">OG təsvir</label>
             {{ form.og_description }}
+            <p class="editor__hint">Sosial şəbəkədə paylaşılanda başlığın altında görünəcək qısa təsvir.</p>
         </div>
         <div class="form-field">
             <label>OG şəkli</label>
@@ -93,10 +100,9 @@
                 <button type="button" class="media-picker__choose" data-action="choose-image"{% if form.instance.og_image %} hidden{% endif %}>
                     <i class="bi bi-image" aria-hidden="true"></i> OG şəkli seçin
                 </button>
-                <input type="file" data-role="picker-file-input" accept="image/jpeg,image/png,image/webp,image/svg+xml" hidden>
                 {{ form.og_image }}
             </div>
-            <p class="editor__hint">Boş buraxsanız, sosial paylaşımlarda ümumi şəkil istifadə olunacaq. Tövsiyə olunan ölçü: 1200×630px.</p>
+            <p class="editor__hint">Sosial şəbəkədə paylaşılanda linklə birlikdə görünəcək şəkil. Boş buraxsanız, ümumi şəkil istifadə olunacaq. Tövsiyə olunan ölçü: 1200×630px.</p>
         </div>
         <div class="form-field">
             <label class="cms-checkbox">{{ form.robots_index }} Axtarış motorlarında indeksləşdirilsin</label>
@@ -108,6 +114,7 @@
 </form>
 
 {% include "cms/partials/media_crop_modal.html" %}
+{% include "cms/partials/media_picker_modal.html" %}
 {% endblock %}
 
 {% block extra_js %}

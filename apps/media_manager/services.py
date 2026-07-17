@@ -197,11 +197,16 @@ def _media_ids_referenced_in_html(html):
 
 def collect_news_media_ids(article):
     """Every `MediaFile` id potentially exclusively owned by `article` —
-    its featured/OG image FKs plus any inline body-content image. Call
-    this *before* deleting the article; the ids are only meaningful once
-    paired with `delete_unused_media()` called *after* the article is
-    gone (so `MediaFile.usage_count` reflects the post-deletion state,
-    not a stale count that still includes this article's own reference).
+    its featured/OG image FKs, any inline body-content image, and any
+    per-video cover image (`apps.news.models.NewsVideoCover`, Phase 24).
+    Call this *before* deleting the article; the ids are only meaningful
+    once paired with `delete_unused_media()` called *after* the article
+    is gone (so `MediaFile.usage_count` reflects the post-deletion
+    state, not a stale count that still includes this article's own
+    reference). Must run before `article.delete()` for another reason
+    too here: `NewsVideoCover.news` is `on_delete=CASCADE`, so those
+    rows — and the only record of which cover images this article
+    used — are gone the moment the article itself is.
     """
     ids = set()
     if article.featured_image_id:
@@ -209,6 +214,7 @@ def collect_news_media_ids(article):
     if article.og_image_id:
         ids.add(article.og_image_id)
     ids |= _media_ids_referenced_in_html(article.content)
+    ids |= set(article.video_covers.values_list('cover_image_id', flat=True))
     return ids
 
 

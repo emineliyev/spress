@@ -11,6 +11,7 @@ from apps.logs.models import ActivityLog
 from apps.media_manager.services import collect_news_media_ids, delete_unused_media
 from apps.news.forms import NewsForm
 from apps.news.models import News
+from apps.news.services import sync_video_covers
 
 NEWS_LIST_PER_PAGE = 15
 
@@ -59,6 +60,7 @@ class NewsCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.author = self.request.user
         response = super().form_valid(form)
+        sync_video_covers(self.object, self.request.POST.get('video_covers_json'))
         ActivityLog.objects.create(
             actor=self.request.user,
             action=ActivityLog.Action.ARTICLE_CREATED,
@@ -82,6 +84,7 @@ class NewsUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
+        sync_video_covers(self.object, self.request.POST.get('video_covers_json'))
         ActivityLog.objects.create(
             actor=self.request.user,
             action=ActivityLog.Action.ARTICLE_UPDATED,
