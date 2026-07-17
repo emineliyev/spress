@@ -1,5 +1,7 @@
 from django import forms
 
+from apps.core.forms import INVALID_URL_MESSAGE, REQUIRED_MESSAGE
+
 from .models import SiteSettings, SocialLink
 
 FIELD_CLASS = 'form-input'
@@ -13,6 +15,8 @@ class SiteSettingsForm(forms.ModelForm):
             'logo', 'favicon',
             'contact_phone', 'contact_address',
         ]
+        # USE_I18N = False (apps/core/forms.py docstring)
+        error_messages = {'site_name': REQUIRED_MESSAGE}
         widgets = {
             'site_name': forms.TextInput(attrs={'class': FIELD_CLASS}),
             'footer_text': forms.TextInput(attrs={'class': FIELD_CLASS}),
@@ -31,6 +35,11 @@ class SocialLinkForm(forms.ModelForm):
     class Meta:
         model = SocialLink
         fields = ['platform', 'url', 'order']
+        # USE_I18N = False (apps/core/forms.py docstring)
+        error_messages = {
+            'platform': REQUIRED_MESSAGE,
+            'url': {**REQUIRED_MESSAGE, **INVALID_URL_MESSAGE},
+        }
         widgets = {
             'platform': forms.Select(attrs={'class': FIELD_CLASS}),
             'url': forms.URLInput(attrs={'class': FIELD_CLASS, 'placeholder': 'https://...'}),

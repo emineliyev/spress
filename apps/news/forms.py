@@ -2,6 +2,7 @@ from django import forms
 from django.utils import timezone
 
 from apps.categories.models import Category
+from apps.core.forms import REQUIRED_MESSAGE
 from apps.tags.models import Tag
 
 from .models import News
@@ -19,6 +20,15 @@ class NewsForm(forms.ModelForm):
             'meta_title', 'meta_description', 'meta_keywords', 'canonical_url',
             'og_title', 'og_description', 'og_image', 'robots_index', 'robots_follow',
         ]
+        # USE_I18N = False (apps/core/forms.py docstring) — the model's
+        # actually-required fields, with an Azerbaijani override for
+        # Django's default English "This field is required."
+        error_messages = {
+            'title': REQUIRED_MESSAGE,
+            'short_description': REQUIRED_MESSAGE,
+            'content': REQUIRED_MESSAGE,
+            'category': REQUIRED_MESSAGE,
+        }
         widgets = {
             'title': forms.TextInput(attrs={'class': FIELD_CLASS + ' editor__title-input', 'placeholder': 'Xəbər başlığını daxil edin...', 'data-role': 'title-input'}),
             'slug': forms.TextInput(attrs={'class': FIELD_CLASS, 'data-role': 'slug-input'}),

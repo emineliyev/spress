@@ -1,5 +1,7 @@
 from django import forms
 
+from apps.core.forms import INVALID_EMAIL_MESSAGE, MAX_LENGTH_MESSAGE, REQUIRED_MESSAGE
+
 from .models import Page
 
 FIELD_CLASS = 'form-input'
@@ -31,6 +33,12 @@ class PageForm(forms.ModelForm):
             # via the Media Library pipeline.
             'og_image': forms.HiddenInput(attrs={'data-role': 'picker-input'}),
         }
+        # USE_I18N = False (apps/core/forms.py docstring) — title/content
+        # are the only required fields here.
+        error_messages = {
+            'title': {**REQUIRED_MESSAGE, **MAX_LENGTH_MESSAGE},
+            'content': REQUIRED_MESSAGE,
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -38,34 +46,24 @@ class PageForm(forms.ModelForm):
         self.fields['og_image'].required = False
 
 
-# USE_I18N = False means Django's own built-in field error messages
-# ("This field is required.", "Enter a valid email address.") render as
-# literal English with no translation catalog to fall back on — the same
-# root cause already fixed for LoginForm/PasswordResetForm/SetPasswordForm
-# (apps/accounts/forms.py). Every field below gets an explicit Azerbaijani
-# override for the same reason.
-_REQUIRED_MESSAGE = {'required': 'Bu sahənin doldurulması mütləqdir.'}
-_MAX_LENGTH_MESSAGE = {'max_length': 'Bu sahə ən çoxu %(limit_value)d simvol ola bilər.'}
-
-
 class ContactForm(forms.Form):
     name = forms.CharField(
         max_length=120, label='Ad Soyad',
         widget=forms.TextInput(attrs={'class': FIELD_CLASS}),
-        error_messages={**_REQUIRED_MESSAGE, **_MAX_LENGTH_MESSAGE},
+        error_messages={**REQUIRED_MESSAGE, **MAX_LENGTH_MESSAGE},
     )
     email = forms.EmailField(
         label='E-poçt',
         widget=forms.EmailInput(attrs={'class': FIELD_CLASS}),
-        error_messages={**_REQUIRED_MESSAGE, 'invalid': 'Düzgün e-poçt ünvanı daxil edin.'},
+        error_messages={**REQUIRED_MESSAGE, **INVALID_EMAIL_MESSAGE},
     )
     subject = forms.CharField(
         max_length=200, label='Mövzu',
         widget=forms.TextInput(attrs={'class': FIELD_CLASS}),
-        error_messages={**_REQUIRED_MESSAGE, **_MAX_LENGTH_MESSAGE},
+        error_messages={**REQUIRED_MESSAGE, **MAX_LENGTH_MESSAGE},
     )
     message = forms.CharField(
         max_length=4000, label='Mesaj',
         widget=forms.Textarea(attrs={'class': FIELD_CLASS, 'rows': 6}),
-        error_messages={**_REQUIRED_MESSAGE, **_MAX_LENGTH_MESSAGE},
+        error_messages={**REQUIRED_MESSAGE, **MAX_LENGTH_MESSAGE},
     )

@@ -1,5 +1,7 @@
 from django import forms
 
+from apps.core.forms import REQUIRED_MESSAGE
+
 from .models import Category
 
 FIELD_CLASS = 'form-input'
@@ -9,6 +11,8 @@ class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
         fields = ['name', 'slug', 'parent', 'is_active']
+        # USE_I18N = False (apps/core/forms.py docstring)
+        error_messages = {'name': REQUIRED_MESSAGE}
         widgets = {
             'name': forms.TextInput(attrs={'class': FIELD_CLASS, 'data-role': 'title-input'}),
             'slug': forms.TextInput(attrs={'class': FIELD_CLASS, 'data-role': 'slug-input'}),
