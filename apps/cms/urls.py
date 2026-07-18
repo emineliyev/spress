@@ -56,6 +56,9 @@ urlpatterns = [
     path('reklamlar/<int:pk>/sil/', views.AdDeleteView.as_view(), name='ad_delete'),
     path('reklamlar/<int:pk>/berpa/', views.AdRestoreView.as_view(), name='ad_restore'),
     path('reklamlar/<int:pk>/hemise-sil/', views.AdPermanentDeleteView.as_view(), name='ad_permanent_delete'),
+    path('muraciyyetler/', views.ContactMessageListView.as_view(), name='contact_message_list'),
+    path('muraciyyetler/<int:pk>/', views.ContactMessageDetailView.as_view(), name='contact_message_detail'),
+    path('muraciyyetler/<int:pk>/status/', views.ContactMessageToggleStatusView.as_view(), name='contact_message_toggle_status'),
     path('seo/', views.SeoOverviewView.as_view(), name='seo_overview'),
     path('media/secici/', views.MediaPickerListView.as_view(), name='media_picker'),
 ]

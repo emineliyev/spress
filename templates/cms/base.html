@@ -45,6 +45,12 @@
                 <a href="{% url 'cms:page_list' %}" class="cms-sidebar__item{% if 'page_' in request.resolver_match.url_name %} is-active{% endif %}">
                     <i class="bi bi-file-earmark-text" aria-hidden="true"></i> Səhifələr
                 </a>
+                <a href="{% url 'cms:contact_message_list' %}" class="cms-sidebar__item{% if 'contact_message' in request.resolver_match.url_name %} is-active{% endif %}">
+                    <i class="bi bi-envelope" aria-hidden="true"></i> Müraciətlər
+                    {% if unread_contact_message_count %}
+                        <span class="cms-sidebar__badge">{{ unread_contact_message_count }}</span>
+                    {% endif %}
+                </a>
                 {% if request.user.is_superuser or request.user.role == request.user.Role.ADMINISTRATOR %}
                     <a href="{% url 'cms:user_list' %}" class="cms-sidebar__item{% if 'user_' in request.resolver_match.url_name %} is-active{% endif %}">
                         <i class="bi bi-people" aria-hidden="true"></i> İstifadəçilər

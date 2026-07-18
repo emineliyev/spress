@@ -2407,3 +2407,113 @@ pre-existing real article (pk 29, no cover set) still renders a direct
 iframe with Phase 23's `referrerpolicy` intact — no regression. Test
 article and its `NewsVideoCover` rows removed from the dev database
 afterward.
+
+# Phase 25 (responsive ad banner; a placeholder CTA for empty ad slots; a real CMS Contact Message inbox)
+
+## Ad banner cropping on resize
+
+Reported as "the ad banner isn't responsive" and, after a first fix,
+"still gets cropped when the screen shrinks." Root cause (confirmed with
+Playwright at five viewport widths, not guessed): `.ad-slot--sidebar`
+(`static/css/layout/sidebar.css`) had `width: 100%` but a fixed
+`height: 280px` — correct only at the desktop sidebar's exact 360px
+width (`AdPosition` "home-sidebar-1"/"category-sidebar-1" is registered
+as 360×280). Once the sidebar stacks to near full page width on tablet
+(768–992px, `static/css/responsive/mobile.css`), the box stayed pinned
+at 280px tall while ~700–950px wide, and `object-fit: cover` cropped
+the banner into an unreadable sliver (confirmed visually — the
+campaign's own logo and CTA button were cut off).
+
+Landed on the same fluid-width/fixed-ratio pattern `.news-card__image`
+already uses everywhere else on the site (`static/css/components/
+cards.css`): `aspect-ratio: 360 / 280` directly on `.ad-slot--sidebar`,
+`object-fit: cover` on `.ad-slot__image`. Verified at 1440/992/768/480/
+360px — the banner now keeps the same proportions and shows in full at
+every width, matching the rest of the site's card imagery instead of a
+one-off implementation.
+
+## Empty ad slot becomes a house-ad CTA
+
+A slot with no active campaign used to render a bare empty `<div>`. Now
+`templates/components/advertisement.html`'s empty branch is a real link
+to `pages:contact` ("Burada sizin reklamınız ola bilər. Əlaqə üçün
+əlaqə səhifəsinə keçin.") reusing the exact same `.ad-slot--sidebar`
+box (same aspect-ratio, same footprint) via a new `.ad-slot--placeholder`
+modifier — centered text, hover feedback, no layout shift once a real
+campaign goes live in that slot.
+
+## Contact Message CMS inbox
+
+The Contact form (`apps.pages.forms.ContactForm`/`ContactView`) only
+ever emailed a submission and forgot it — an editor whose mailbox
+filtered or dropped that email had no other record it existed. New
+`apps.pages.models.ContactMessage` (status: `Status.NEW`/`Status.READ`
+— CLAUDE.md ch.10 "Avoid boolean fields for workflows... use status
+values", not an `is_read` boolean) is created in `ContactView.form_valid()`
+alongside the existing `send_contact_email.delay()` call — the CMS row
+is the durable record, the email is a notification on top of it, not
+the source of truth.
+
+New CMS module, `apps/cms/views/contact_message.py` — kept as its own
+file rather than folded into `apps/pages/views.py` (public) or another
+CMS view module, matching the project's one-file-per-screen convention:
+
+- `ContactMessageListView` — the standard CMS list shape (status filter,
+  name search, pagination), mirroring `TagListView`/`PageListView`.
+- `ContactMessageDetailView` — opening a message *is* what marks it
+  read (`get_object()` flips `NEW` → `READ` before rendering), the same
+  implicit-read convention every email inbox uses, so reading a message
+  costs zero extra clicks.
+- `ContactMessageToggleStatusView` — a manual override for flipping a
+  message back to `NEW` (e.g. "I'll come back to this one"), reachable
+  from both the list row and the detail page.
+
+New sidebar entry ("Müraciətlər", `templates/cms/base.html`) shows a
+live unread-count badge. Backed by a new, narrowly-scoped context
+processor — `apps.core.context_processors.cms_notifications` — kept
+separate from the existing `site()` processor (which every public page
+also pays for) specifically because this one only makes sense, and only
+runs its query, for authenticated `/cms/` requests; `site()` has no such
+guard and would run this query on every public page view for no reason.
+
+## Verification
+
+`pytest`: `apps/cms/tests/test_contact_messages.py` — submitting the
+public form creates a CMS-visible `ContactMessage`; the list requires
+login, shows messages, and filters by status; opening a message marks
+it read; the toggle view flips read back to new; the sidebar unread
+count reflects only `NEW` messages. 137 passed total.
+
+Playwright: submitted the real public contact form, confirmed the CMS
+sidebar badge showed "1", opened the message from the list (status
+flipped `Yeni` → `Oxunub` immediately, list re-confirmed it), toggled it
+back to `Yeni` from the list row. Ad banner re-screenshotted at all five
+widths after the aspect-ratio fix — full banner visible and proportional
+at every one, matching `.news-card__image`'s behavior. Test message
+removed from the dev database afterward.
+
+## Addendum — a visible template comment, and an optional phone number
+
+Two follow-ups reported right after Phase 25 shipped:
+
+**A raw template comment was showing up on the message detail page.**
+Django's `{# ... #}` comment tag is documented as single-line only — the
+three-line version in `contact_message_detail.html` wasn't parsed as a
+comment at all, so its literal text rendered on the page. Fixed by
+switching to `{% comment %}...{% endcomment %}`, which does support
+multiple lines. Checked the rest of the templates for the same mistake
+(none found).
+
+**Email shouldn't be mandatory if a phone number is given instead.**
+`ContactMessage`/`ContactForm` gained a `phone` field (`CharField(max_length=30,
+blank=True)`, matching `SiteSettings.contact_phone`'s existing shape);
+`email` became `required=False`. A new `ContactForm.clean()` requires at
+least one of the two — a reply channel is still mandatory, just not a
+specific one. `send_contact_email` and the CMS detail page adjust
+accordingly (a phone-only message shows a "Zəng et" call link instead of
+a broken `mailto:` with nothing after the colon).
+
+Verified with Playwright: submitted phone-only (succeeds), submitted
+with neither email nor phone (shows the Azerbaijani cross-field error),
+confirmed the fixed detail page no longer leaks the comment text and
+shows the phone number with a working `tel:` link. 139 tests passing.

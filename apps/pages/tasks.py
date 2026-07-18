@@ -6,7 +6,7 @@ from apps.settings_app.models import SiteSettings
 
 
 @shared_task
-def send_contact_email(name, email, subject, message):
+def send_contact_email(name, email, phone, subject, message):
     """Deliver a Contact-form submission to the editorial inbox.
 
     Dispatched via .delay() so the request doesn't block on SMTP
@@ -20,9 +20,13 @@ def send_contact_email(name, email, subject, message):
     if not recipient:
         return
 
+    sender_line = f'{name} <{email}>' if email else name
+    if phone:
+        sender_line += f' — {phone}'
+
     send_mail(
         subject=f'[Əlaqə formu] {subject}',
-        message=f'Göndərən: {name} <{email}>\n\n{message}',
-        from_email=settings.DEFAULT_FROM_EMAIL or email,
+        message=f'Göndərən: {sender_line}\n\n{message}',
+        from_email=settings.DEFAULT_FROM_EMAIL or email or None,
         recipient_list=[recipient],
     )

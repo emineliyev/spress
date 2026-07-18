@@ -1,0 +1,71 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}Müraciətlər{% endblock %}
+{% block page_title %}Müraciətlər{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<div class="cms-list-toolbar">
+    <form method="get" class="cms-filter-bar">
+        <select name="status" class="form-input" onchange="this.form.submit()">
+            <option value="">Status</option>
+            {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <input type="search" name="q" class="form-input" placeholder="Ad ilə axtar..." value="{{ query }}">
+        <button type="submit" class="btn btn--secondary btn--sm">Filtrlə</button>
+    </form>
+</div>
+
+{% if contact_messages %}
+<div class="cms-table-wrapper">
+    <table class="cms-table">
+        <thead>
+            <tr>
+                <th>Ad Soyad</th>
+                <th>Əlaqə</th>
+                <th>Mövzu</th>
+                <th>Tarix</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for contact_message in contact_messages %}
+                <tr class="{% if contact_message.status == 'new' %}cms-table__row--highlight{% endif %}">
+                    <td>{{ contact_message.name }}</td>
+                    <td>{{ contact_message.email|default:contact_message.phone }}</td>
+                    <td>{{ contact_message.subject }}</td>
+                    <td>{{ contact_message.created_at|date:"d.m.Y H:i" }}</td>
+                    <td><span class="badge badge--status-{{ contact_message.status }}">{{ contact_message.get_status_display }}</span></td>
+                    <td class="cms-table__actions">
+                        <div class="cms-table__actions-group">
+                            <a href="{% url 'cms:contact_message_detail' contact_message.pk %}" class="btn btn--sm btn--secondary">Bax</a>
+                            <form method="post" action="{% url 'cms:contact_message_toggle_status' contact_message.pk %}">
+                                {% csrf_token %}
+                                {% if contact_message.status == 'new' %}
+                                    <button type="submit" class="btn btn--sm btn--secondary">Oxunmuş et</button>
+                                {% else %}
+                                    <button type="submit" class="btn btn--sm btn--secondary">Yeni et</button>
+                                {% endif %}
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% include "components/pagination.html" %}
+{% else %}
+    <div class="empty-state">
+        <i class="bi bi-envelope empty-state__icon" aria-hidden="true"></i>
+        <p class="empty-state__title">{% if query or selected_status %}Nəticə tapılmadı{% else %}Hələ müraciət yoxdur{% endif %}</p>
+    </div>
+{% endif %}
+{% endblock %}

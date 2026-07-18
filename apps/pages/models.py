@@ -31,3 +31,30 @@ class Page(SEOFieldsMixin, BaseModel):
 
     def get_absolute_url(self):
         return reverse('pages:detail', kwargs={'slug': self.slug})
+
+
+class ContactMessage(BaseModel):
+    """A Contact-form submission (`ContactForm`/`ContactView`), kept in the
+    CMS as a real inbox — not just emailed and forgotten — so an editor can
+    see what came in and track what's been read (CLAUDE.md ch.10 "Avoid
+    boolean fields for workflows... use status values")."""
+
+    class Status(models.TextChoices):
+        NEW = 'new', 'Yeni'
+        READ = 'read', 'Oxunub'
+
+    name = models.CharField(max_length=120)
+    # At least one of email/phone is enforced by ContactForm.clean(), not
+    # here — a reply channel is required, but which one is the sender's
+    # choice.
+    email = models.EmailField(blank=True)
+    phone = models.CharField(max_length=30, blank=True)
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.NEW, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.name} — {self.subject}'

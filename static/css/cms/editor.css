@@ -344,6 +344,17 @@
     max-width: 880px;
 }
 
+/* Read-only message body (templates/cms/contact_message_detail.html) —
+   {{ contact_message.message|linebreaksbr }} already converts newlines
+   to <br>, so only spacing/framing is needed here. */
+.cms-contact-message__body {
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    line-height: 1.6;
+}
+
 /* Stacks the two-column editor on tablet/mobile — must stay below every
    un-guarded .editor__sidebar{width:360px} rule above: with equal
    selector specificity, CSS resolves the tie by source order, so a

@@ -47,3 +47,21 @@ def site(request):
         # a fixed field per platform).
         'social_links': SocialLink.objects.all(),
     }
+
+
+def cms_notifications(request):
+    """Unread contact-message count for the CMS sidebar badge
+    (`templates/cms/base.html`). Scoped to `/cms/` and authenticated
+    requests only — the public site never needs this query, unlike
+    `site()` above which every page needs."""
+
+    if not request.path.startswith('/cms/') or not request.user.is_authenticated:
+        return {}
+
+    from apps.pages.models import ContactMessage
+
+    return {
+        'unread_contact_message_count': ContactMessage.objects.filter(
+            status=ContactMessage.Status.NEW,
+        ).count(),
+    }

@@ -1,0 +1,65 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}Müraciət{% endblock %}
+
+{% block page_title %}
+    <a href="{% url 'cms:contact_message_list' %}" class="cms-topbar__crumb">Müraciətlər</a>
+    <i class="bi bi-chevron-right cms-topbar__crumb-sep" aria-hidden="true"></i>
+    {{ contact_message.subject }}
+{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<div class="cms-simple-form">
+    <div class="form-field">
+        <label>Ad Soyad</label>
+        <p>{{ contact_message.name }}</p>
+    </div>
+    <div class="form-field">
+        <label>E-poçt</label>
+        <p>{% if contact_message.email %}<a href="mailto:{{ contact_message.email }}">{{ contact_message.email }}</a>{% else %}—{% endif %}</p>
+    </div>
+    <div class="form-field">
+        <label>Telefon</label>
+        <p>{% if contact_message.phone %}<a href="tel:{{ contact_message.phone }}">{{ contact_message.phone }}</a>{% else %}—{% endif %}</p>
+    </div>
+    <div class="form-field">
+        <label>Tarix</label>
+        <p>{{ contact_message.created_at|date:"d.m.Y H:i" }}</p>
+    </div>
+    <div class="form-field">
+        <label>Status</label>
+        <p><span class="badge badge--status-{{ contact_message.status }}">{{ contact_message.get_status_display }}</span></p>
+    </div>
+    <div class="form-field">
+        <label>Mesaj</label>
+        <p class="cms-contact-message__body">{{ contact_message.message|linebreaksbr }}</p>
+    </div>
+
+    <div class="cms-quick-actions">
+        {% if contact_message.email %}
+            <a href="mailto:{{ contact_message.email }}?subject=Re: {{ contact_message.subject|urlencode }}" class="btn btn--primary">
+                <i class="bi bi-reply" aria-hidden="true"></i> E-poçtla cavabla
+            </a>
+        {% elif contact_message.phone %}
+            <a href="tel:{{ contact_message.phone }}" class="btn btn--primary">
+                <i class="bi bi-telephone" aria-hidden="true"></i> Zəng et
+            </a>
+        {% endif %}
+        <form method="post" action="{% url 'cms:contact_message_toggle_status' contact_message.pk %}">
+            {% csrf_token %}
+            {% comment %}
+                Opening this page (ContactMessageDetailView.get_object) already
+                marked the message read, so this is always the "revert to
+                unread" direction — a bookmark to come back to it later.
+            {% endcomment %}
+            <button type="submit" class="btn btn--secondary">Yeni kimi işarələ</button>
+        </form>
+        <a href="{% url 'cms:contact_message_list' %}" class="btn btn--secondary">Siyahıya qayıt</a>
+    </div>
+</div>
+{% endblock %}

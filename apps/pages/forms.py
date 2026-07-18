@@ -52,10 +52,18 @@ class ContactForm(forms.Form):
         widget=forms.TextInput(attrs={'class': FIELD_CLASS}),
         error_messages={**REQUIRED_MESSAGE, **MAX_LENGTH_MESSAGE},
     )
+    # Neither is required on its own — clean() below only requires that at
+    # least one of the two is filled in, so a sender can leave out
+    # whichever reply channel they don't want to share.
     email = forms.EmailField(
-        label='E-poçt',
+        label='E-poçt', required=False,
         widget=forms.EmailInput(attrs={'class': FIELD_CLASS}),
-        error_messages={**REQUIRED_MESSAGE, **INVALID_EMAIL_MESSAGE},
+        error_messages={**INVALID_EMAIL_MESSAGE},
+    )
+    phone = forms.CharField(
+        max_length=30, label='Telefon', required=False,
+        widget=forms.TextInput(attrs={'class': FIELD_CLASS, 'placeholder': '+994 XX XXX XX XX'}),
+        error_messages={**MAX_LENGTH_MESSAGE},
     )
     subject = forms.CharField(
         max_length=200, label='Mövzu',
@@ -67,3 +75,9 @@ class ContactForm(forms.Form):
         widget=forms.Textarea(attrs={'class': FIELD_CLASS, 'rows': 6}),
         error_messages={**REQUIRED_MESSAGE, **MAX_LENGTH_MESSAGE},
     )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if not cleaned_data.get('email') and not cleaned_data.get('phone'):
+            self.add_error(None, 'E-poçt və ya telefon nömrəsindən ən azı birini daxil edin.')
+        return cleaned_data

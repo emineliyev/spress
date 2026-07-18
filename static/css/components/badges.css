@@ -64,3 +64,12 @@
 .badge--status-expired {
     background: var(--color-text-muted);
 }
+
+/* ContactMessage.status (CMS Müraciətlər list) */
+.badge--status-new {
+    background: var(--color-warning);
+}
+
+.badge--status-read {
+    background: var(--color-border-strong);
+}

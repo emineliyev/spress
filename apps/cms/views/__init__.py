@@ -22,6 +22,11 @@ from .category import (
     CategoryRestoreView,
     CategoryUpdateView,
 )
+from .contact_message import (
+    ContactMessageDetailView,
+    ContactMessageListView,
+    ContactMessageToggleStatusView,
+)
 from .dashboard import DashboardView
 from .media import (
     CKEditorImageUploadView,
@@ -90,6 +95,9 @@ __all__ = [
     'CategoryReorderView',
     'CategoryRestoreView',
     'CategoryUpdateView',
+    'ContactMessageDetailView',
+    'ContactMessageListView',
+    'ContactMessageToggleStatusView',
     'DashboardView',
     'FolderCreateView',
     'FolderDeleteView',

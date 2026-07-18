@@ -24,6 +24,16 @@
     background: var(--color-surface);
 }
 
+/* Unread contact message row (templates/cms/contact_message_list.html) */
+
+.cms-table__row--highlight {
+    background: color-mix(in oklch, var(--color-warning) 8%, transparent);
+}
+
+.cms-table__row--highlight:hover {
+    background: color-mix(in oklch, var(--color-warning) 14%, transparent);
+}
+
 /* User list (templates/cms/user_list.html) name cell */
 
 .cms-user-cell {

@@ -11,7 +11,10 @@ def test_contact_form_required_fields_are_azerbaijani():
     form = ContactForm(data={})
     assert not form.is_valid()
     assert form.errors['name'] == ['Bu sahənin doldurulması mütləqdir.']
-    assert form.errors['email'] == ['Bu sahənin doldurulması mütləqdir.']
+    # Neither email nor phone is required on its own — see the
+    # email-or-phone cross-field test below.
+    assert 'email' not in form.errors
+    assert 'phone' not in form.errors
 
 
 @pytest.mark.django_db
@@ -21,6 +24,21 @@ def test_contact_form_invalid_email_is_azerbaijani():
     })
     assert not form.is_valid()
     assert form.errors['email'] == ['Düzgün e-poçt ünvanı daxil edin.']
+
+
+@pytest.mark.django_db
+def test_contact_form_requires_email_or_phone():
+    form = ContactForm(data={'name': 'Test', 'subject': 'Mövzu', 'message': 'Mesaj'})
+    assert not form.is_valid()
+    assert 'E-poçt və ya telefon nömrəsindən ən azı birini daxil edin.' in form.non_field_errors()
+
+
+@pytest.mark.django_db
+def test_contact_form_valid_with_phone_only():
+    form = ContactForm(data={
+        'name': 'Test', 'phone': '+994501234567', 'subject': 'Mövzu', 'message': 'Mesaj',
+    })
+    assert form.is_valid()
 
 
 @pytest.mark.django_db

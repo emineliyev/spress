@@ -6,7 +6,7 @@ from django.views.generic import DetailView, FormView, TemplateView
 from apps.core.utils import az_slugify
 
 from .forms import ContactForm
-from .models import Page
+from .models import ContactMessage, Page
 from .tasks import send_contact_email
 
 ABOUT_SLUG = az_slugify('Haqqımızda')
@@ -34,6 +34,12 @@ class ContactView(FormView):
         return context
 
     def form_valid(self, form):
+        # Saved as a real CMS-visible row, not just emailed — the inbox
+        # (apps/cms/views/contact_message.py) is the durable record; the
+        # email is a same-moment notification on top of it, not the
+        # source of truth (an editor whose mailbox drops/filters it can
+        # still see it in the CMS).
+        ContactMessage.objects.create(**form.cleaned_data)
         send_contact_email.delay(**form.cleaned_data)
         messages.success(self.request, 'Mesajınız göndərildi. Redaksiyamız tezliklə sizinlə əlaqə saxlayacaq.')
         return redirect(self.success_url)
