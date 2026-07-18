@@ -73,12 +73,13 @@ class UserForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'username', 'email', 'role', 'is_active']
+        fields = ['first_name', 'last_name', 'username', 'email', 'phone', 'role', 'is_active']
         widgets = {
             'first_name': forms.TextInput(attrs={'class': FIELD_CLASS}),
             'last_name': forms.TextInput(attrs={'class': FIELD_CLASS}),
             'username': forms.TextInput(attrs={'class': FIELD_CLASS}),
             'email': forms.EmailInput(attrs={'class': FIELD_CLASS}),
+            'phone': forms.TextInput(attrs={'class': FIELD_CLASS, 'placeholder': '+994 XX XXX XX XX'}),
             'role': forms.Select(attrs={'class': FIELD_CLASS}),
         }
 

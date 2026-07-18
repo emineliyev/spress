@@ -2698,3 +2698,29 @@ sidebar to confirm the disabled items render as inert `<span>` elements,
 not dead links. Confirmed the News editor's status dropdown for a
 Jurnalist offers only "Qaralama"/"Nəzərdən keçirilir". Test accounts
 removed from the dev database afterward.
+
+## Addendum — phone number on the user form, and role privileges spelled out
+
+Two follow-ups once the role system above existed to actually describe:
+`User.phone` (added alongside the role work) is now surfaced in
+`UserForm`/`user_form.html`. And since Phase 27 gave the five roles real,
+different privileges, the "Rol" field on that same form now spells out
+each one's actual access in plain Azerbaijani directly under the
+dropdown, so an Administrator creating an account doesn't have to guess
+or go check the code — kept in sync by hand with the permission
+properties on `User`, the same way `AdvertisementForm`'s CMS hints
+already explain jargon fields elsewhere.
+
+Also clarified for the user: new accounts intentionally never get a
+password typed in by the creating Administrator — they always get one
+via an emailed setup link (`apps.accounts.services.send_password_setup_email`),
+per CLAUDE.md ch.12 "Never display passwords. Never email passwords."
+This was already noted on the form (`"Yeni istifadəçiyə şifrə təyin
+etmək üçün e-poçtuna keçid göndəriləcək."`) but had gone unnoticed —
+no behavior change, just confirmed the existing design was intentional.
+
+Verified with Playwright: the phone field renders and round-trips
+through a real user creation; screenshotted the role hint block.
+195 tests still passing (no new tests needed — `phone` is a plain
+optional field with no validation logic of its own to cover). Test
+account removed from the dev database afterward.

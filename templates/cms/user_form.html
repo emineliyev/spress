@@ -51,10 +51,23 @@
         {% for error in form.email.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
     </div>
 
+    <div class="form-field{% if form.phone.errors %} form-field--error{% endif %}">
+        <label for="{{ form.phone.id_for_label }}">Telefon</label>
+        {{ form.phone }}
+        {% for error in form.phone.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+    </div>
+
     <div class="form-field{% if form.role.errors %} form-field--error{% endif %}">
         <label for="{{ form.role.id_for_label }}">Rol</label>
         {{ form.role }}
         {% for error in form.role.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+        <div class="editor__hint">
+            <strong>Administrator</strong> — bütün bölmələrə tam çıxış (İstifadəçilər və Tənzimləmələr daxil).<br>
+            <strong>Baş redaktor</strong> — Xəbər, Kateqoriya, Etiket, Səhifə, Reklam və SEO-nu tam idarə edir; İstifadəçilər və Tənzimləmələrə çatmır.<br>
+            <strong>Redaktor</strong> — Xəbər, Etiket, Səhifə və SEO-nu idarə edir; Kateqoriya və Reklama çatmır.<br>
+            <strong>Jurnalist</strong> — yalnız öz yazdığı xəbərləri yarada/redaktə edə bilər, birbaşa dərc edə bilməz (Qaralama və ya Nəzərdən keçirilir statusunda saxlayır); Kateqoriya, Etiket, Səhifə, Reklam və SEO-ya çatmır.<br>
+            <strong>Kontent meneceri</strong> — Kateqoriya, Etiket, Səhifə, Reklam və SEO-nu idarə edir; Xəbər yaza/redaktə edə bilmir.
+        </div>
     </div>
 
     <div class="form-field">
