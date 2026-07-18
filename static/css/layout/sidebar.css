@@ -54,12 +54,43 @@
 }
 
 .ad-slot--sidebar {
+    /* Matches AdPosition "home-sidebar-1"/"category-sidebar-1" (360×280,
+       apps.advertisements.models.AdPosition) — an aspect-ratio, not a
+       fixed pixel height, so both the real banner and the "no campaign"
+       placeholder below keep the same footprint and scale smoothly at
+       every viewport width (CLAUDE.md ch.13 "reserve layout space to
+       prevent layout shifts"). */
     width: 100%;
-    height: 280px;
+    aspect-ratio: 360 / 280;
 }
 
 .ad-slot__image {
+    /* Same fluid-width/fixed-ratio pattern as `.news-card__image`
+       (static/css/components/cards.css). */
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+/* No active campaign for this slot — a real CTA instead of a decorative
+   empty box, inviting the reader to advertise here. */
+.ad-slot--placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-6);
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+    transition: border-color var(--transition-base), color var(--transition-base);
+}
+
+.ad-slot--placeholder:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
 }
