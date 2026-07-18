@@ -2517,3 +2517,77 @@ Verified with Playwright: submitted phone-only (succeeds), submitted
 with neither email nor phone (shows the Azerbaijani cross-field error),
 confirmed the fixed detail page no longer leaks the comment text and
 shows the phone number with a working `tel:` link. 139 tests passing.
+
+# Phase 26 (move a Media Library file between folders)
+
+## What was asked
+
+`MediaFile.folder` (a nullable FK to `Folder`, CLAUDE.md ch.9 "Media
+Library — Folder organization") could only ever be set once, at upload
+time (`process_crop(..., folder_id=...)`) — there was no way to move an
+already-uploaded file into a different folder afterward, or back out of
+one. Requested as a "if it's not too hard" nice-to-have, so implemented
+as the simplest thing that solves it — no drag-and-drop, matching
+`FolderCreateView`/`FolderUpdateView`'s existing plain-POST-and-redirect
+pattern (CLAUDE.md ch.8 "AJAX should be used only when necessary")
+rather than introducing a new interaction paradigm for one feature.
+
+## Implementation
+
+A plain `<select onchange="this.form.submit()">` added to each card's
+existing row-menu (`templates/cms/partials/media_grid.html`), listing
+every `Folder` plus a "Qovluqdan çıxar" (remove from folder) option —
+posts to a new `apps.cms.views.media.MediaMoveView`, which just
+reassigns `MediaFile.folder` and logs `ActivityLog.Action.MEDIA_MOVED`.
+`"Qovluqdan çıxar"` uses the sentinel value `__unfiled__` rather than an
+empty string — the placeholder option ("Qovluğa köçür...") is itself
+`value=""` and `disabled`, so a second option sharing that value would
+have been ambiguous HTML even though it's never actually submittable in
+practice.
+
+Redirects back to the exact filtered/paginated grid the move was made
+from (folder/format/search/page) — reconstructed server-side from a
+small whitelist of hidden `return_*` fields via `reverse()` +
+`urlencode()`, deliberately not a raw "next" URL parameter, so this
+can't become an open redirect (CLAUDE.md ch.12). Moving a file *out of*
+the folder currently being viewed correctly returns to that same
+(now one-file-shorter) filtered view rather than following the file to
+its new location — consistent with how every other per-row action on
+this page already behaves (stays where you were working).
+
+Media Picker's grid (`cms/partials/media_picker_grid.html`, Phase 22)
+deliberately has no row-menu at all — this feature only touches the
+main Library grid, not the picker.
+
+## Verification
+
+`pytest`: `apps/cms/tests/test_media_move.py` — requires login; assigns
+a folder; moves between two different folders; "Qovluqdan çıxar" clears
+it; the redirect preserves the filtered grid's folder/format/search/page
+via the `return_*` fields. 144 passed total.
+
+Playwright: moved a real Media Library file unfiled → "Reklam" →
+"Loqo" → unfiled again, confirmed via the filtered grid endpoint
+(`?folder=<id>`) at each step that the file appeared/disappeared
+correctly; confirmed moving it out of the currently-viewed folder
+redirected back to that folder's view, not the file's new one. File
+ended the run back in its original (unfiled) state — no cleanup needed.
+
+## Addendum — the panel closed itself the instant the select was clicked
+
+Reported immediately after shipping: opening the row-menu and clicking
+the new select closed the whole panel before a folder could be chosen.
+`static/js/cms/news.js`'s `initRowMenus()` (shared by both the News and
+Media list pages) closes every open row-menu panel on any `document`
+click, so the menu can dismiss itself on an outside click — but a click
+on a still-closed `<select>` to open it also dispatches a real, bubbling
+`click` event on the select itself, which is indistinguishable from an
+"outside" click to that listener. Confirmed the actual mechanism (not
+guessed) with Playwright: a raw `.click()` on the select, not the
+higher-level `selectOption()` helper my first verification pass used
+(which sets the value programmatically and never exercises this path at
+all — why the bug wasn't caught the first time). Fixed by skipping
+`closeAllPanels()` when the click originated inside
+`.cms-row-menu__move-form`; every other row action (`Əvəz et`, `Sil`,
+the toggle button) is unaffected since they either navigate away or
+already stop their own propagation.

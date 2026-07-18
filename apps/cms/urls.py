@@ -20,6 +20,7 @@ urlpatterns = [
     path('media/ckeditor-yukle/', views.CKEditorImageUploadView.as_view(), name='ckeditor_image_upload'),
     path('media/kadrla/', views.MediaCropConfirmView.as_view(), name='media_crop_confirm'),
     path('media/<int:pk>/sil/', views.MediaDeleteView.as_view(), name='media_delete'),
+    path('media/<int:pk>/kocur/', views.MediaMoveView.as_view(), name='media_move'),
     path('media/qovluq/yeni/', views.FolderCreateView.as_view(), name='folder_create'),
     path('media/qovluq/<int:pk>/redakte/', views.FolderUpdateView.as_view(), name='folder_update'),
     path('media/qovluq/<int:pk>/sil/', views.FolderDeleteView.as_view(), name='folder_delete'),

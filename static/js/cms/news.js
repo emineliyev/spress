@@ -42,7 +42,18 @@
             });
         });
 
-        document.addEventListener('click', closeAllPanels);
+        document.addEventListener('click', function (event) {
+            // Clicking a closed <select> to open it (the "Qovluğa köçür"
+            // move select, templates/cms/partials/media_grid.html) fires
+            // a bubbling click on the select itself, same as any other
+            // click inside the panel — without this guard the panel (and
+            // the select along with it) closed itself the instant it was
+            // clicked, before a folder could ever be chosen.
+            if (event.target.closest('.cms-row-menu__move-form')) {
+                return;
+            }
+            closeAllPanels();
+        });
         // Fixed-position panels don't scroll with the table body, so a
         // stale-looking detached panel would otherwise linger on scroll.
         window.addEventListener('scroll', closeAllPanels, true);

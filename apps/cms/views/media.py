@@ -213,6 +213,51 @@ class MediaDeleteView(LoginRequiredMixin, View):
         return redirect('cms:media_list')
 
 
+class MediaMoveView(LoginRequiredMixin, View):
+    """Moves a `MediaFile` into a different folder (or out of any folder)
+    from its card's row-menu — a plain `<select onchange="submit">`, not
+    drag-and-drop: same "AJAX only when necessary" reasoning as
+    `FolderCreateView`/`FolderUpdateView`, and the simplest thing that
+    actually solves "I uploaded this into the wrong folder."
+
+    Redirects back to the exact filtered/paginated grid the move was made
+    from — reconstructed from a small whitelist of POSTed `return_*`
+    fields via `reverse()`, not a raw "next" URL, so this can't become an
+    open redirect (CLAUDE.md ch.12).
+    """
+
+    def post(self, request, pk):
+        media_file = get_object_or_404(MediaFile, pk=pk)
+        folder_id = request.POST.get('folder')
+
+        if folder_id and folder_id != '__unfiled__':
+            folder = get_object_or_404(Folder, pk=folder_id)
+            media_file.folder = folder
+            description = f'{media_file.original_filename} → "{folder.name}"'
+        else:
+            media_file.folder = None
+            description = f'{media_file.original_filename} → (qovluqsuz)'
+        media_file.save(update_fields=['folder', 'updated_at'])
+
+        ActivityLog.objects.create(
+            actor=request.user,
+            action=ActivityLog.Action.MEDIA_MOVED,
+            description=description,
+            ip_address=get_client_ip(request),
+        )
+        messages.success(request, f'"{media_file.original_filename}" köçürüldü.')
+
+        params = {
+            key: request.POST[source]
+            for key, source in (('folder', 'return_folder'), ('format', 'return_format'), ('q', 'return_q'), ('page', 'return_page'))
+            if request.POST.get(source)
+        }
+        url = reverse('cms:media_list')
+        if params:
+            url += '?' + urlencode(params)
+        return redirect(url)
+
+
 class FolderCreateView(LoginRequiredMixin, View):
     def post(self, request):
         name = request.POST.get('name', '').strip()

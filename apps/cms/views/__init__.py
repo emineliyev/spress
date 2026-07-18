@@ -36,6 +36,7 @@ from .media import (
     MediaCropConfirmView,
     MediaDeleteView,
     MediaLibraryListView,
+    MediaMoveView,
     MediaPickerListView,
     MediaUploadStageView,
 )
@@ -105,6 +106,7 @@ __all__ = [
     'MediaCropConfirmView',
     'MediaDeleteView',
     'MediaLibraryListView',
+    'MediaMoveView',
     'MediaPickerListView',
     'MediaUploadStageView',
     'NewsBulkActionView',

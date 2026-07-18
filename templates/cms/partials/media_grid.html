@@ -22,6 +22,20 @@ without duplicating card markup.
                     </button>
                     <div class="cms-row-menu__panel" hidden>
                         <button type="button" data-action="replace-media" data-media-id="{{ media_file.pk }}">Əvəz et</button>
+                        <form method="post" action="{% url 'cms:media_move' media_file.pk %}" class="cms-row-menu__move-form">
+                            {% csrf_token %}
+                            {% if selected_folder %}<input type="hidden" name="return_folder" value="{{ selected_folder }}">{% endif %}
+                            {% if selected_format %}<input type="hidden" name="return_format" value="{{ selected_format }}">{% endif %}
+                            {% if query %}<input type="hidden" name="return_q" value="{{ query }}">{% endif %}
+                            {% if page_obj.number > 1 %}<input type="hidden" name="return_page" value="{{ page_obj.number }}">{% endif %}
+                            <select name="folder" class="cms-row-menu__move-select" onchange="this.form.submit()" aria-label="Qovluğa köçür">
+                                <option value="" disabled {% if not media_file.folder_id %}selected{% endif %}>Qovluğa köçür...</option>
+                                {% for folder in folders %}
+                                    <option value="{{ folder.pk }}" {% if media_file.folder_id == folder.pk %}selected{% endif %}>{{ folder.name }}</option>
+                                {% endfor %}
+                                {% if media_file.folder_id %}<option value="__unfiled__">Qovluqdan çıxar</option>{% endif %}
+                            </select>
+                        </form>
                         <a href="{% url 'cms:media_delete' media_file.pk %}" class="cms-row-menu__danger">Sil</a>
                     </div>
                 </div>

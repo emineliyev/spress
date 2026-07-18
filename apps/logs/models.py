@@ -27,6 +27,7 @@ class ActivityLog(models.Model):
         MEDIA_UPLOADED = 'media_uploaded', 'Fayl yüklədi'
         MEDIA_REPLACED = 'media_replaced', 'Faylı əvəz etdi'
         MEDIA_DELETED = 'media_deleted', 'Faylı sildi'
+        MEDIA_MOVED = 'media_moved', 'Faylı başqa qovluğa köçürdü'
         CATEGORY_CREATED = 'category_created', 'Kateqoriya yaratdı'
         CATEGORY_UPDATED = 'category_updated', 'Kateqoriyanı redaktə etdi'
         CATEGORY_DELETED = 'category_deleted', 'Kateqoriyanı sildi'
