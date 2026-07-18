@@ -26,6 +26,36 @@ def journalist(django_user_model):
 
 
 @pytest.fixture
+def editor_in_chief(django_user_model):
+    return django_user_model.objects.create_user(
+        username='editor_in_chief',
+        password='test-pass-12345',
+        role=django_user_model.Role.EDITOR_IN_CHIEF,
+        email='editor-in-chief@example.com',
+    )
+
+
+@pytest.fixture
+def editor(django_user_model):
+    return django_user_model.objects.create_user(
+        username='editor',
+        password='test-pass-12345',
+        role=django_user_model.Role.EDITOR,
+        email='editor@example.com',
+    )
+
+
+@pytest.fixture
+def content_manager(django_user_model):
+    return django_user_model.objects.create_user(
+        username='content_manager',
+        password='test-pass-12345',
+        role=django_user_model.Role.CONTENT_MANAGER,
+        email='content-manager@example.com',
+    )
+
+
+@pytest.fixture
 def admin_client(client, administrator):
     """A test client already logged in as an Administrator — most CMS
     tests care about behavior once inside, not the login flow itself."""
@@ -36,6 +66,24 @@ def admin_client(client, administrator):
 @pytest.fixture
 def journalist_client(client, journalist):
     client.force_login(journalist)
+    return client
+
+
+@pytest.fixture
+def editor_in_chief_client(client, editor_in_chief):
+    client.force_login(editor_in_chief)
+    return client
+
+
+@pytest.fixture
+def editor_client(client, editor):
+    client.force_login(editor)
+    return client
+
+
+@pytest.fixture
+def content_manager_client(client, content_manager):
+    client.force_login(content_manager)
     return client
 
 

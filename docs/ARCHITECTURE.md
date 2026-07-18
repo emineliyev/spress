@@ -2591,3 +2591,110 @@ all — why the bug wasn't caught the first time). Fixed by skipping
 `.cms-row-menu__move-form`; every other row action (`Əvəz et`, `Sil`,
 the toggle button) is unaffected since they either navigate away or
 already stop their own propagation.
+
+# Phase 27 (real per-role permissions — the other four CMS roles stop being just a label)
+
+## What was asked
+
+User noticed the role picker on the "add user" screen and asked what
+each role actually did. The honest answer, checked against the code
+rather than assumed from CLAUDE.md's aspirational ch.9 description: only
+two tiers existed — `AdministratorRequiredMixin` gated Users/Settings/
+Social Links, and every other role (Baş redaktor, Redaktor, Jurnalist,
+Kontent meneceri) had *identical* access to everything else. The picker
+worked, but four of its five options were purely cosmetic. Confirmed
+with the user which concrete rules to build for each role before writing
+any code, rather than inventing a scheme unilaterally.
+
+## The permission model
+
+Four boolean-ish properties on `apps.accounts.models.User`, each backed
+by a `set` of `Role` members plus an `is_administrator` escape hatch
+(superusers and Administrators pass every check):
+
+- `can_write_news` — Administrator, Baş redaktor, Redaktor, Jurnalist.
+  Kontent meneceri is the one role that never touches News at all.
+- `can_manage_structure` — Administrator, Baş redaktor, Kontent meneceri.
+  Categories and Advertisements are structural/monetization decisions,
+  not day-to-day editorial work — Redaktor and Jurnalist don't reach
+  either screen.
+- `can_manage_content` — everyone except Jurnalist. Tags, Pages, and the
+  SEO overview are content-adjacent but not News itself.
+- `is_senior_editor` — Administrator, Baş redaktor, Redaktor. The line a
+  Jurnalist doesn't cross: editing/publishing/deleting *any* article,
+  not just their own.
+
+Three new `LoginRequiredMixin` subclasses in `apps/core/mixins.py`
+(`StructureManagerRequiredMixin`, `ContentManagerRequiredMixin`,
+`NewsAccessRequiredMixin`) each just delegate `test_func()` to one of
+these properties, mirroring the existing `AdministratorRequiredMixin`.
+Applied to the relevant CMS views: Category/Advertisement views got
+`StructureManagerRequiredMixin`; Tag/Page/SEO overview got
+`ContentManagerRequiredMixin`; every News view got
+`NewsAccessRequiredMixin`. Media Library, Dashboard, Activity Log and
+the Contact Message inbox stay open to every logged-in role — nothing
+in the confirmed rules restricted them.
+
+## Jurnalist: own articles only, no direct publishing
+
+Two more restrictions apply *within* the News screens, since
+`can_write_news` alone only answers "can this role reach the screen,"
+not "what can they see/do on it":
+
+**Ownership scoping.** A new `apps/cms/views/news.py` helper,
+`_scope_to_author(queryset, user)`, filters to `author=user` for
+anyone who isn't `is_senior_editor` — applied to every News queryset
+and `get_object_or_404` lookup (list, create's success redirect target,
+update, delete, permanent-delete, restore, duplicate, and the bulk-
+action queryset). A Jurnalist opening someone else's article by URL
+gets a 404, not a 403 — consistent with the rest of the project's
+existing "don't reveal whether the object exists" pattern rather than a
+new one invented for this feature.
+
+**No direct publish.** `apps.news.forms.NewsForm.__init__` now takes a
+required `user` kwarg (`NewsCreateView`/`NewsUpdateView` supply it via
+`get_form_kwargs()`) and narrows `status`'s choices to Draft/Pending
+Review when `not user.is_senior_editor` — the dropdown itself never
+offers Published/Scheduled/Archived, and a crafted POST with one of
+those values is rejected by Django's own "not one of the available
+choices" ChoiceField validation, no separate `clean()` check needed.
+`NewsBulkActionView` gets the equivalent check for the bulk publish/
+archive actions (bulk delete stays available, scoped to the Jurnalist's
+own articles same as everything else).
+
+## Template visibility
+
+`templates/cms/base.html`'s sidebar now renders a disabled `<span>`
+instead of a link for every section a role can't reach (matching the
+existing Users/Settings pattern from before this phase, just driven by
+the new properties instead of a hardcoded Administrator check).
+`dashboard.html`'s "Yeni xəbər" quick action and `news_list.html`'s bulk
+publish/archive buttons are similarly hidden rather than left as dead
+links that would 403/reject on click.
+
+## Verification
+
+`pytest`: rewrote `apps/cms/tests/test_permissions.py` as a full
+5-role × 13-screen access matrix (`ALL_ROLES` × `LIST_VIEWS`, with the
+allowed-role set spelled out per screen) — the old test only ever
+checked Administrator vs. "logged in" for a fixed six of those screens.
+New `apps/cms/tests/test_news_role_scoping.py`: a Jurnalist's news list
+only shows their own articles, editing someone else's 404s, editing
+their own works, direct-publish is rejected while Draft/Pending Review
+succeeds, an Editor *can* edit and publish someone else's article
+(confirming the restriction is Jurnalist-specific, not News-wide), a
+Kontent meneceri can't reach News at all, and both bulk-publish
+(rejected) and bulk-delete (allowed, own articles) for a Jurnalist. New
+`editor_in_chief`/`editor`/`content_manager` fixtures added to
+`conftest.py` alongside the existing `administrator`/`journalist` pair.
+195 passed total.
+
+Playwright: created one real test account per new role, hit all 9
+gated CMS screens with each, and confirmed every response code against
+the exact matrix above (all matched — Baş redaktor: everything but
+Users/Settings; Redaktor: no Categories/Ads; Jurnalist: only News+Media;
+Kontent meneceri: no News). Screenshotted a Jurnalist's dashboard
+sidebar to confirm the disabled items render as inert `<span>` elements,
+not dead links. Confirmed the News editor's status dropdown for a
+Jurnalist offers only "Qaralama"/"Nəzərdən keçirilir". Test accounts
+removed from the dev database afterward.

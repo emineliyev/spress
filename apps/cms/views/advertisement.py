@@ -1,7 +1,6 @@
 from urllib.parse import urlencode
 
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -11,6 +10,7 @@ from django.views.generic import CreateView, ListView, UpdateView
 
 from apps.advertisements.forms import AdvertisementForm
 from apps.advertisements.models import Advertisement
+from apps.core.mixins import StructureManagerRequiredMixin
 from apps.core.utils import get_client_ip
 from apps.logs.models import ActivityLog
 from apps.media_manager.services import delete_unused_media
@@ -18,7 +18,7 @@ from apps.media_manager.services import delete_unused_media
 AD_LIST_PER_PAGE = 20
 
 
-class AdListView(LoginRequiredMixin, ListView):
+class AdListView(StructureManagerRequiredMixin, ListView):
     template_name = 'cms/ad_list.html'
     context_object_name = 'ads'
     paginate_by = AD_LIST_PER_PAGE
@@ -63,7 +63,7 @@ class AdListView(LoginRequiredMixin, ListView):
         return context
 
 
-class AdCreateView(LoginRequiredMixin, CreateView):
+class AdCreateView(StructureManagerRequiredMixin, CreateView):
     model = Advertisement
     form_class = AdvertisementForm
     template_name = 'cms/ad_form.html'
@@ -83,7 +83,7 @@ class AdCreateView(LoginRequiredMixin, CreateView):
         return reverse('cms:ad_edit', kwargs={'pk': self.object.pk})
 
 
-class AdUpdateView(LoginRequiredMixin, UpdateView):
+class AdUpdateView(StructureManagerRequiredMixin, UpdateView):
     model = Advertisement
     form_class = AdvertisementForm
     template_name = 'cms/ad_form.html'
@@ -106,7 +106,7 @@ class AdUpdateView(LoginRequiredMixin, UpdateView):
         return reverse('cms:ad_edit', kwargs={'pk': self.object.pk})
 
 
-class AdDeleteView(LoginRequiredMixin, View):
+class AdDeleteView(StructureManagerRequiredMixin, View):
     """Soft delete (CLAUDE.md ch.10 lists Advertisements among soft-delete
     entities) — no dependency guard needed, unlike Category: nothing else
     in the project references an Advertisement."""
@@ -129,7 +129,7 @@ class AdDeleteView(LoginRequiredMixin, View):
         return redirect('cms:ad_list')
 
 
-class AdPermanentDeleteView(LoginRequiredMixin, View):
+class AdPermanentDeleteView(StructureManagerRequiredMixin, View):
     """Only reachable from the "Silinənlər" trash tab — a real, hard
     delete, unlike `AdDeleteView`'s soft delete. Mirrors
     `NewsPermanentDeleteView` (apps/cms/views/news.py): the banner
@@ -163,7 +163,7 @@ class AdPermanentDeleteView(LoginRequiredMixin, View):
         return redirect('cms:ad_list')
 
 
-class AdRestoreView(LoginRequiredMixin, View):
+class AdRestoreView(StructureManagerRequiredMixin, View):
     def post(self, request, pk):
         ad = get_object_or_404(Advertisement, pk=pk, is_deleted=True)
         ad.is_deleted = False

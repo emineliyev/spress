@@ -1,12 +1,12 @@
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
 from django.views.generic import TemplateView
 
+from apps.core.mixins import ContentManagerRequiredMixin
 from apps.news.models import News
 from apps.pages.models import Page
 
 
-class SeoOverviewView(LoginRequiredMixin, TemplateView):
+class SeoOverviewView(ContentManagerRequiredMixin, TemplateView):
     """Read-only SEO status overview (design/CMS SEO.dc.html).
 
     Per-article/page meta tags are edited on the article/page's own edit

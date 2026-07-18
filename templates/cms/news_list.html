@@ -50,8 +50,10 @@
         {% if show_deleted %}
             <button type="submit" name="bulk_action" value="delete" class="btn btn--sm btn--secondary" disabled>Sil</button>
         {% else %}
-            <button type="submit" name="bulk_action" value="publish" class="btn btn--sm btn--secondary" disabled>Dərc et</button>
-            <button type="submit" name="bulk_action" value="archive" class="btn btn--sm btn--secondary" disabled>Arxivləşdir</button>
+            {% if request.user.is_senior_editor %}
+                <button type="submit" name="bulk_action" value="publish" class="btn btn--sm btn--secondary" disabled>Dərc et</button>
+                <button type="submit" name="bulk_action" value="archive" class="btn btn--sm btn--secondary" disabled>Arxivləşdir</button>
+            {% endif %}
             <button type="submit" name="bulk_action" value="delete" class="btn btn--sm btn--secondary" disabled>Sil</button>
         {% endif %}
     </div>

@@ -1,7 +1,6 @@
 import json
 
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Max, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -11,6 +10,7 @@ from django.views.generic import CreateView, ListView, UpdateView
 
 from apps.categories.forms import CategoryForm
 from apps.categories.models import Category
+from apps.core.mixins import StructureManagerRequiredMixin
 from apps.core.utils import get_client_ip
 from apps.logs.models import ActivityLog
 
@@ -20,7 +20,7 @@ from apps.logs.models import ActivityLog
 VISIBLE_NEWS_COUNT = Count('news', filter=Q(news__is_deleted=False))
 
 
-class CategoryListView(LoginRequiredMixin, ListView):
+class CategoryListView(StructureManagerRequiredMixin, ListView):
     """No pagination — matches `CMS Categories.dc.html`, which assumes a
     short, manageable list (CLAUDE.md's two-level hierarchy caps the total
     size naturally, unlike News)."""
@@ -55,7 +55,7 @@ class CategoryListView(LoginRequiredMixin, ListView):
         return context
 
 
-class CategoryCreateView(LoginRequiredMixin, CreateView):
+class CategoryCreateView(StructureManagerRequiredMixin, CreateView):
     model = Category
     form_class = CategoryForm
     template_name = 'cms/category_form.html'
@@ -79,7 +79,7 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
         return reverse('cms:category_list')
 
 
-class CategoryUpdateView(LoginRequiredMixin, UpdateView):
+class CategoryUpdateView(StructureManagerRequiredMixin, UpdateView):
     model = Category
     form_class = CategoryForm
     template_name = 'cms/category_form.html'
@@ -102,7 +102,7 @@ class CategoryUpdateView(LoginRequiredMixin, UpdateView):
         return reverse('cms:category_list')
 
 
-class CategoryDeleteView(LoginRequiredMixin, View):
+class CategoryDeleteView(StructureManagerRequiredMixin, View):
     """GET renders a confirmation page, POST performs the (soft) delete —
     same split as `NewsDeleteView`. Unlike News, delete is refused outright
     (not just warned about) when the category still has visible articles or
@@ -142,7 +142,7 @@ class CategoryDeleteView(LoginRequiredMixin, View):
         return redirect('cms:category_list')
 
 
-class CategoryRestoreView(LoginRequiredMixin, View):
+class CategoryRestoreView(StructureManagerRequiredMixin, View):
     def post(self, request, pk):
         category = get_object_or_404(Category, pk=pk, is_deleted=True)
         category.is_deleted = False
@@ -157,7 +157,7 @@ class CategoryRestoreView(LoginRequiredMixin, View):
         return redirect('cms:category_list')
 
 
-class CategoryPermanentDeleteView(LoginRequiredMixin, View):
+class CategoryPermanentDeleteView(StructureManagerRequiredMixin, View):
     """Only reachable from the "Silinənlər" trash tab — a real, hard
     delete, unlike `CategoryDeleteView`'s soft delete.
 
@@ -205,7 +205,7 @@ class CategoryPermanentDeleteView(LoginRequiredMixin, View):
         return redirect('cms:category_list')
 
 
-class CategoryReorderView(LoginRequiredMixin, View):
+class CategoryReorderView(StructureManagerRequiredMixin, View):
     """AJAX drag-and-drop reorder (CLAUDE.md ch.8 "CMS actions" is a named
     legitimate AJAX use case). Body: `{"parent": null|pk, "order": [pk, ...]}`
     — every pk must belong to that exact sibling group, or the request is

@@ -1,11 +1,11 @@
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, ListView, UpdateView
 
+from apps.core.mixins import NewsAccessRequiredMixin
 from apps.core.utils import get_client_ip
 from apps.logs.models import ActivityLog
 from apps.media_manager.services import collect_news_media_ids, delete_unused_media
@@ -16,7 +16,17 @@ from apps.news.services import sync_video_covers
 NEWS_LIST_PER_PAGE = 15
 
 
-class NewsListView(LoginRequiredMixin, ListView):
+def _scope_to_author(queryset, user):
+    """A Jurnalist only ever sees/touches their own articles — every other
+    role that can reach these screens at all can reach any article
+    (`User.is_senior_editor`, CLAUDE.md ch.9 "Each role has clearly
+    defined permissions")."""
+    if user.is_senior_editor:
+        return queryset
+    return queryset.filter(author=user)
+
+
+class NewsListView(NewsAccessRequiredMixin, ListView):
     template_name = 'cms/news_list.html'
     context_object_name = 'articles'
     paginate_by = NEWS_LIST_PER_PAGE
@@ -24,6 +34,7 @@ class NewsListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         self.show_deleted = self.request.GET.get('deleted') == '1'
         queryset = News.objects.select_related('category', 'author').filter(is_deleted=self.show_deleted)
+        queryset = _scope_to_author(queryset, self.request.user)
 
         self.category_id = self.request.GET.get('category', '')
         if self.category_id:
@@ -52,10 +63,15 @@ class NewsListView(LoginRequiredMixin, ListView):
         return context
 
 
-class NewsCreateView(LoginRequiredMixin, CreateView):
+class NewsCreateView(NewsAccessRequiredMixin, CreateView):
     model = News
     form_class = NewsForm
     template_name = 'cms/news_form.html'
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
     def form_valid(self, form):
         form.instance.author = self.request.user
@@ -74,13 +90,18 @@ class NewsCreateView(LoginRequiredMixin, CreateView):
         return reverse('cms:news_edit', kwargs={'pk': self.object.pk})
 
 
-class NewsUpdateView(LoginRequiredMixin, UpdateView):
+class NewsUpdateView(NewsAccessRequiredMixin, UpdateView):
     model = News
     form_class = NewsForm
     template_name = 'cms/news_form.html'
 
     def get_queryset(self):
-        return News.objects.filter(is_deleted=False)
+        return _scope_to_author(News.objects.filter(is_deleted=False), self.request.user)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -98,7 +119,7 @@ class NewsUpdateView(LoginRequiredMixin, UpdateView):
         return reverse('cms:news_edit', kwargs={'pk': self.object.pk})
 
 
-class NewsDeleteView(LoginRequiredMixin, View):
+class NewsDeleteView(NewsAccessRequiredMixin, View):
     """GET renders a confirmation page, POST performs the (soft) delete.
 
     A dedicated page rather than a JS modal — the shared Modal component
@@ -107,11 +128,11 @@ class NewsDeleteView(LoginRequiredMixin, View):
     """
 
     def get(self, request, pk):
-        article = get_object_or_404(News, pk=pk, is_deleted=False)
+        article = get_object_or_404(_scope_to_author(News.objects.filter(is_deleted=False), request.user), pk=pk)
         return render(request, 'cms/news_confirm_delete.html', {'article': article})
 
     def post(self, request, pk):
-        article = get_object_or_404(News, pk=pk, is_deleted=False)
+        article = get_object_or_404(_scope_to_author(News.objects.filter(is_deleted=False), request.user), pk=pk)
         article.is_deleted = True
         article.save(update_fields=['is_deleted'])
         ActivityLog.objects.create(
@@ -124,7 +145,7 @@ class NewsDeleteView(LoginRequiredMixin, View):
         return redirect('cms:news_list')
 
 
-class NewsPermanentDeleteView(LoginRequiredMixin, View):
+class NewsPermanentDeleteView(NewsAccessRequiredMixin, View):
     """Only reachable from the "Silinənlər" (trash) tab — a real, hard
     delete, unlike `NewsDeleteView`'s soft delete. This is the one point
     where attached media (featured/OG image, inline body-content images)
@@ -134,11 +155,11 @@ class NewsPermanentDeleteView(LoginRequiredMixin, View):
     (CLAUDE.md ch.10 "Deleted records should remain recoverable")."""
 
     def get(self, request, pk):
-        article = get_object_or_404(News, pk=pk, is_deleted=True)
+        article = get_object_or_404(_scope_to_author(News.objects.filter(is_deleted=True), request.user), pk=pk)
         return render(request, 'cms/news_confirm_permanent_delete.html', {'article': article})
 
     def post(self, request, pk):
-        article = get_object_or_404(News, pk=pk, is_deleted=True)
+        article = get_object_or_404(_scope_to_author(News.objects.filter(is_deleted=True), request.user), pk=pk)
         title = article.title
         media_ids = collect_news_media_ids(article)
 
@@ -158,9 +179,9 @@ class NewsPermanentDeleteView(LoginRequiredMixin, View):
         return redirect('cms:news_list')
 
 
-class NewsRestoreView(LoginRequiredMixin, View):
+class NewsRestoreView(NewsAccessRequiredMixin, View):
     def post(self, request, pk):
-        article = get_object_or_404(News, pk=pk, is_deleted=True)
+        article = get_object_or_404(_scope_to_author(News.objects.filter(is_deleted=True), request.user), pk=pk)
         article.is_deleted = False
         article.save(update_fields=['is_deleted'])
         ActivityLog.objects.create(
@@ -173,9 +194,9 @@ class NewsRestoreView(LoginRequiredMixin, View):
         return redirect('cms:news_list')
 
 
-class NewsDuplicateView(LoginRequiredMixin, View):
+class NewsDuplicateView(NewsAccessRequiredMixin, View):
     def post(self, request, pk):
-        original = get_object_or_404(News, pk=pk, is_deleted=False)
+        original = get_object_or_404(_scope_to_author(News.objects.filter(is_deleted=False), request.user), pk=pk)
         duplicate = News(
             title=f'{original.title} (surət)',
             short_description=original.short_description,
@@ -199,7 +220,7 @@ class NewsDuplicateView(LoginRequiredMixin, View):
         return redirect('cms:news_edit', pk=duplicate.pk)
 
 
-class NewsBulkActionView(LoginRequiredMixin, View):
+class NewsBulkActionView(NewsAccessRequiredMixin, View):
     ACTION_LABELS = {
         'delete': 'silindi',
         'publish': 'dərc olundu',
@@ -214,7 +235,11 @@ class NewsBulkActionView(LoginRequiredMixin, View):
             messages.error(request, 'Əməliyyat üçün xəbər seçilməyib.')
             return redirect('cms:news_list')
 
-        queryset = News.objects.filter(pk__in=ids, is_deleted=False)
+        if action != 'delete' and not request.user.is_senior_editor:
+            messages.error(request, 'Bu əməliyyat üçün səlahiyyətiniz yoxdur.')
+            return redirect('cms:news_list')
+
+        queryset = _scope_to_author(News.objects.filter(pk__in=ids, is_deleted=False), request.user)
         count = queryset.count()
 
         if action == 'delete':

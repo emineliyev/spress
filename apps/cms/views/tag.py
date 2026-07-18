@@ -1,13 +1,13 @@
 from urllib.parse import urlencode
 
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
 from django.views.generic import CreateView, ListView, UpdateView
 
+from apps.core.mixins import ContentManagerRequiredMixin
 from apps.core.utils import get_client_ip
 from apps.logs.models import ActivityLog
 from apps.tags.forms import TagForm
@@ -19,7 +19,7 @@ TAG_LIST_PER_PAGE = 30
 VISIBLE_NEWS_COUNT = Count('news', filter=Q(news__is_deleted=False))
 
 
-class TagListView(LoginRequiredMixin, ListView):
+class TagListView(ContentManagerRequiredMixin, ListView):
     template_name = 'cms/tag_list.html'
     context_object_name = 'tags'
     paginate_by = TAG_LIST_PER_PAGE
@@ -39,7 +39,7 @@ class TagListView(LoginRequiredMixin, ListView):
         return context
 
 
-class TagCreateView(LoginRequiredMixin, CreateView):
+class TagCreateView(ContentManagerRequiredMixin, CreateView):
     model = Tag
     form_class = TagForm
     template_name = 'cms/tag_form.html'
@@ -59,7 +59,7 @@ class TagCreateView(LoginRequiredMixin, CreateView):
         return reverse('cms:tag_list')
 
 
-class TagUpdateView(LoginRequiredMixin, UpdateView):
+class TagUpdateView(ContentManagerRequiredMixin, UpdateView):
     model = Tag
     form_class = TagForm
     template_name = 'cms/tag_form.html'
@@ -79,7 +79,7 @@ class TagUpdateView(LoginRequiredMixin, UpdateView):
         return reverse('cms:tag_list')
 
 
-class TagDeleteView(LoginRequiredMixin, View):
+class TagDeleteView(ContentManagerRequiredMixin, View):
     """Unlike Category, Tag has no PROTECT relation and isn't in CLAUDE.md's
     soft-delete list — a real delete, warned (not blocked) by usage count,
     the same pattern `MediaDeleteView` uses for `MediaFile.usage_count`."""
@@ -105,7 +105,7 @@ class TagDeleteView(LoginRequiredMixin, View):
         return redirect('cms:tag_list')
 
 
-class TagMergeView(LoginRequiredMixin, View):
+class TagMergeView(ContentManagerRequiredMixin, View):
     """GET renders a target-tag picker, POST reassigns every News row from
     the source tag to the target and removes the source — the only "safe"
     way to retire a tag that's still in active use (CLAUDE.md ch.9:

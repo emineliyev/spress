@@ -30,28 +30,52 @@
                 <a href="{% url 'cms:dashboard' %}" class="cms-sidebar__item{% if request.resolver_match.url_name == 'dashboard' %} is-active{% endif %}">
                     <i class="bi bi-speedometer2" aria-hidden="true"></i> Dashboard
                 </a>
-                <a href="{% url 'cms:news_list' %}" class="cms-sidebar__item{% if 'news_' in request.resolver_match.url_name %} is-active{% endif %}">
-                    <i class="bi bi-newspaper" aria-hidden="true"></i> Xəbərlər
-                </a>
-                <a href="{% url 'cms:category_list' %}" class="cms-sidebar__item{% if 'categor' in request.resolver_match.url_name %} is-active{% endif %}">
-                    <i class="bi bi-diagram-3" aria-hidden="true"></i> Kateqoriyalar
-                </a>
-                <a href="{% url 'cms:tag_list' %}" class="cms-sidebar__item{% if 'tag_' in request.resolver_match.url_name %} is-active{% endif %}">
-                    <i class="bi bi-tags" aria-hidden="true"></i> Etiketlər
-                </a>
+                {% if request.user.can_write_news %}
+                    <a href="{% url 'cms:news_list' %}" class="cms-sidebar__item{% if 'news_' in request.resolver_match.url_name %} is-active{% endif %}">
+                        <i class="bi bi-newspaper" aria-hidden="true"></i> Xəbərlər
+                    </a>
+                {% else %}
+                    <span class="cms-sidebar__item is-disabled" aria-disabled="true">
+                        <i class="bi bi-newspaper" aria-hidden="true"></i> Xəbərlər
+                    </span>
+                {% endif %}
+                {% if request.user.can_manage_structure %}
+                    <a href="{% url 'cms:category_list' %}" class="cms-sidebar__item{% if 'categor' in request.resolver_match.url_name %} is-active{% endif %}">
+                        <i class="bi bi-diagram-3" aria-hidden="true"></i> Kateqoriyalar
+                    </a>
+                {% else %}
+                    <span class="cms-sidebar__item is-disabled" aria-disabled="true">
+                        <i class="bi bi-diagram-3" aria-hidden="true"></i> Kateqoriyalar
+                    </span>
+                {% endif %}
+                {% if request.user.can_manage_content %}
+                    <a href="{% url 'cms:tag_list' %}" class="cms-sidebar__item{% if 'tag_' in request.resolver_match.url_name %} is-active{% endif %}">
+                        <i class="bi bi-tags" aria-hidden="true"></i> Etiketlər
+                    </a>
+                {% else %}
+                    <span class="cms-sidebar__item is-disabled" aria-disabled="true">
+                        <i class="bi bi-tags" aria-hidden="true"></i> Etiketlər
+                    </span>
+                {% endif %}
                 <a href="{% url 'cms:media_list' %}" class="cms-sidebar__item{% if 'media_' in request.resolver_match.url_name or request.resolver_match.url_name == 'folder_create' %} is-active{% endif %}">
                     <i class="bi bi-image" aria-hidden="true"></i> Media
                 </a>
-                <a href="{% url 'cms:page_list' %}" class="cms-sidebar__item{% if 'page_' in request.resolver_match.url_name %} is-active{% endif %}">
-                    <i class="bi bi-file-earmark-text" aria-hidden="true"></i> Səhifələr
-                </a>
+                {% if request.user.can_manage_content %}
+                    <a href="{% url 'cms:page_list' %}" class="cms-sidebar__item{% if 'page_' in request.resolver_match.url_name %} is-active{% endif %}">
+                        <i class="bi bi-file-earmark-text" aria-hidden="true"></i> Səhifələr
+                    </a>
+                {% else %}
+                    <span class="cms-sidebar__item is-disabled" aria-disabled="true">
+                        <i class="bi bi-file-earmark-text" aria-hidden="true"></i> Səhifələr
+                    </span>
+                {% endif %}
                 <a href="{% url 'cms:contact_message_list' %}" class="cms-sidebar__item{% if 'contact_message' in request.resolver_match.url_name %} is-active{% endif %}">
                     <i class="bi bi-envelope" aria-hidden="true"></i> Müraciətlər
                     {% if unread_contact_message_count %}
                         <span class="cms-sidebar__badge">{{ unread_contact_message_count }}</span>
                     {% endif %}
                 </a>
-                {% if request.user.is_superuser or request.user.role == request.user.Role.ADMINISTRATOR %}
+                {% if request.user.is_administrator %}
                     <a href="{% url 'cms:user_list' %}" class="cms-sidebar__item{% if 'user_' in request.resolver_match.url_name %} is-active{% endif %}">
                         <i class="bi bi-people" aria-hidden="true"></i> İstifadəçilər
                     </a>
@@ -60,16 +84,28 @@
                         <i class="bi bi-people" aria-hidden="true"></i> İstifadəçilər
                     </span>
                 {% endif %}
-                <a href="{% url 'cms:ad_list' %}" class="cms-sidebar__item{% if 'ad_' in request.resolver_match.url_name %} is-active{% endif %}">
-                    <i class="bi bi-megaphone" aria-hidden="true"></i> Reklam
-                </a>
-                <a href="{% url 'cms:seo_overview' %}" class="cms-sidebar__item{% if request.resolver_match.url_name == 'seo_overview' %} is-active{% endif %}">
-                    <i class="bi bi-search" aria-hidden="true"></i> SEO
-                </a>
+                {% if request.user.can_manage_structure %}
+                    <a href="{% url 'cms:ad_list' %}" class="cms-sidebar__item{% if 'ad_' in request.resolver_match.url_name %} is-active{% endif %}">
+                        <i class="bi bi-megaphone" aria-hidden="true"></i> Reklam
+                    </a>
+                {% else %}
+                    <span class="cms-sidebar__item is-disabled" aria-disabled="true">
+                        <i class="bi bi-megaphone" aria-hidden="true"></i> Reklam
+                    </span>
+                {% endif %}
+                {% if request.user.can_manage_content %}
+                    <a href="{% url 'cms:seo_overview' %}" class="cms-sidebar__item{% if request.resolver_match.url_name == 'seo_overview' %} is-active{% endif %}">
+                        <i class="bi bi-search" aria-hidden="true"></i> SEO
+                    </a>
+                {% else %}
+                    <span class="cms-sidebar__item is-disabled" aria-disabled="true">
+                        <i class="bi bi-search" aria-hidden="true"></i> SEO
+                    </span>
+                {% endif %}
                 <a href="{% url 'cms:activity_log' %}" class="cms-sidebar__item{% if request.resolver_match.url_name == 'activity_log' %} is-active{% endif %}">
                     <i class="bi bi-clock-history" aria-hidden="true"></i> Fəaliyyət jurnalı
                 </a>
-                {% if request.user.is_superuser or request.user.role == request.user.Role.ADMINISTRATOR %}
+                {% if request.user.is_administrator %}
                     <a href="{% url 'cms:settings_edit' %}" class="cms-sidebar__item cms-sidebar__item--bottom{% if request.resolver_match.url_name == 'settings_edit' %} is-active{% endif %}">
                         <i class="bi bi-gear" aria-hidden="true"></i> Tənzimləmələr
                     </a>

@@ -50,7 +50,7 @@ class NewsForm(forms.ModelForm):
             'og_description': forms.Textarea(attrs={'class': FIELD_CLASS, 'rows': 3}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['category'].choices = self._category_choices()
         self.fields['tags'].queryset = Tag.objects.all()
@@ -61,6 +61,17 @@ class NewsForm(forms.ModelForm):
         # blank — TZ "Slugs": "Automatically generated... Editable by
         # administrators." Required=False lets the auto-generation apply.
         self.fields['slug'].required = False
+
+        # A Jurnalist can save a Draft or submit for review, but publishing
+        # is a more senior call (apps.accounts.models.User.is_senior_editor,
+        # CLAUDE.md ch.9 "Each role has clearly defined permissions") — the
+        # choices are narrowed here (not just checked in clean()) so the
+        # dropdown never offers an option the server would reject anyway.
+        if not user.is_senior_editor:
+            self.fields['status'].choices = [
+                (value, label) for value, label in News.Status.choices
+                if value in (News.Status.DRAFT, News.Status.PENDING_REVIEW)
+            ]
 
     @staticmethod
     def _category_choices():

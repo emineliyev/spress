@@ -1,12 +1,12 @@
 from urllib.parse import urlencode
 
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
 from django.views.generic import CreateView, ListView, UpdateView
 
+from apps.core.mixins import ContentManagerRequiredMixin
 from apps.core.utils import get_client_ip
 from apps.logs.models import ActivityLog
 from apps.pages.forms import PageForm
@@ -15,7 +15,7 @@ from apps.pages.models import Page
 PAGE_LIST_PER_PAGE = 30
 
 
-class PageListView(LoginRequiredMixin, ListView):
+class PageListView(ContentManagerRequiredMixin, ListView):
     template_name = 'cms/page_list.html'
     context_object_name = 'pages'
     paginate_by = PAGE_LIST_PER_PAGE
@@ -35,7 +35,7 @@ class PageListView(LoginRequiredMixin, ListView):
         return context
 
 
-class PageCreateView(LoginRequiredMixin, CreateView):
+class PageCreateView(ContentManagerRequiredMixin, CreateView):
     model = Page
     form_class = PageForm
     template_name = 'cms/page_form.html'
@@ -55,7 +55,7 @@ class PageCreateView(LoginRequiredMixin, CreateView):
         return reverse('cms:page_edit', kwargs={'pk': self.object.pk})
 
 
-class PageUpdateView(LoginRequiredMixin, UpdateView):
+class PageUpdateView(ContentManagerRequiredMixin, UpdateView):
     model = Page
     form_class = PageForm
     template_name = 'cms/page_form.html'
@@ -75,7 +75,7 @@ class PageUpdateView(LoginRequiredMixin, UpdateView):
         return reverse('cms:page_edit', kwargs={'pk': self.object.pk})
 
 
-class PageDeleteView(LoginRequiredMixin, View):
+class PageDeleteView(ContentManagerRequiredMixin, View):
     """No soft delete (Page has no is_deleted, unlike News/Category) —
     plain hard delete, same shape as TagDeleteView."""
 
