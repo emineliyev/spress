@@ -48,7 +48,7 @@
                     <li class="nav__item">
                         <a href="{% url 'news:home' %}" class="nav__link{% if request.resolver_match.url_name == 'home' %} is-active{% endif %}">Ana səhifə</a>
                     </li>
-                    {% for category in main_categories %}
+                    {% for category in nav_categories %}
                         <li class="nav__item{% if category.children.all %} nav__item--has-dropdown{% endif %}">
                             <a href="{{ category.get_absolute_url }}" class="nav__link{% if nav_active_category.pk == category.pk or nav_active_category.parent_id == category.pk %} is-active{% endif %}">{{ category.name }}</a>
                             {% if category.children.all %}
@@ -60,6 +60,16 @@
                             {% endif %}
                         </li>
                     {% endfor %}
+                    {% if nav_overflow_categories %}
+                        <li class="nav__item nav__item--has-dropdown">
+                            <button type="button" class="nav__link">Digər kateqoriyalar</button>
+                            <ul class="nav__dropdown">
+                                {% for category in nav_overflow_categories %}
+                                    <li><a href="{{ category.get_absolute_url }}" class="nav__dropdown-link{% if nav_active_category.pk == category.pk or nav_active_category.parent_id == category.pk %} is-active{% endif %}">{{ category.name }}</a></li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                    {% endif %}
                     <li class="nav__item nav__item--has-dropdown">
                         <button type="button" class="nav__link{% if request.resolver_match.namespace == 'pages' %} is-active{% endif %}">Daha</button>
                         <ul class="nav__dropdown">

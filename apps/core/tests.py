@@ -1,7 +1,11 @@
 import pytest
+from django.test import RequestFactory
+from django.utils import timezone
 
 from apps.categories.models import Category
+from apps.core.context_processors import NAV_VISIBLE_CATEGORY_COUNT, site
 from apps.core.utils import az_slugify, generate_unique_slug, sanitize_rich_text_html
+from apps.news.models import News
 
 
 def test_az_slugify_transliterates_azerbaijani_letters():
@@ -65,3 +69,41 @@ def test_sanitize_rejects_iframe_from_a_non_youtube_host():
     html = '<iframe src="https://evil.example.com/embed"></iframe>'
     cleaned = sanitize_rich_text_html(html)
     assert 'evil.example.com' not in cleaned
+
+
+@pytest.mark.django_db
+def test_nav_category_split_caps_visible_count_and_keeps_full_list_for_footer(administrator):
+    """templates/components/header.html has no wrap/scroll handling for
+    the primary nav row — past NAV_VISIBLE_CATEGORY_COUNT top-level
+    categories, the rest must go into the "Digər kateqoriyalar" dropdown
+    instead of silently overflowing the container. footer.html still
+    needs every category (its own full sitemap-style listing), so
+    `main_categories` itself must stay uncapped."""
+    for i in range(NAV_VISIBLE_CATEGORY_COUNT + 3):
+        category = Category.objects.create(name=f'Kateqoriya {i}', order=i)
+        News.objects.create(
+            title=f'Xəbər {i}', short_description='d', content='<p>c</p>',
+            category=category, author=administrator,
+            status=News.Status.PUBLISHED, published_at=timezone.now(),
+        )
+
+    context = site(RequestFactory().get('/'))
+
+    assert len(context['main_categories']) == NAV_VISIBLE_CATEGORY_COUNT + 3
+    assert len(context['nav_categories']) == NAV_VISIBLE_CATEGORY_COUNT
+    assert len(context['nav_overflow_categories']) == 3
+    assert context['nav_categories'] + context['nav_overflow_categories'] == context['main_categories']
+
+
+@pytest.mark.django_db
+def test_nav_overflow_is_empty_when_categories_fit(administrator):
+    category = Category.objects.create(name='Siyasət')
+    News.objects.create(
+        title='Xəbər', short_description='d', content='<p>c</p>',
+        category=category, author=administrator,
+        status=News.Status.PUBLISHED, published_at=timezone.now(),
+    )
+
+    context = site(RequestFactory().get('/'))
+
+    assert context['nav_overflow_categories'] == []

@@ -2724,3 +2724,65 @@ through a real user creation; screenshotted the role hint block.
 195 tests still passing (no new tests needed — `phone` is a plain
 optional field with no validation logic of its own to cover). Test
 account removed from the dev database afterward.
+
+# Phase 28 (primary nav overflow — too many categories used to just spill off the screen)
+
+## What was asked
+
+User asked, hypothetically, what happens if there are enough categories
+that they don't fit in the nav bar. Checked the code rather than
+guessing: nothing handled it. `.nav__list` (`static/css/layout/
+navigation.css`) is a plain `flex` row with no `flex-wrap` and no
+`overflow-x`, and `main_categories` (`apps.core.context_processors.site`)
+had no cap — every active top-level category with at least one
+published article got rendered, unconditionally. Past a certain count,
+items would silently overflow the container's right edge (no clipping,
+since nothing up the ancestor chain sets `overflow: hidden` either) —
+broken-looking, not a graceful degradation.
+
+## How many actually fit — measured, not guessed
+
+Seeded 8 extra temporary categories (16 total) and measured each nav
+item's rendered right edge against the container's right edge with
+Playwright at both 1440px and the narrowest standard desktop width,
+1280px (`--container-max-width`). Roughly 12 items fit at 1280px before
+the first overflow — but that measurement didn't yet account for the
+overflow-trigger button itself needing room, which would eat further
+into that budget. Landed on a fixed count of 8
+(`NAV_VISIBLE_CATEGORY_COUNT`, `apps/core/context_processors.py`)
+rather than a JS-measured dynamic threshold — deterministic and simple
+(CLAUDE.md ch.8 "JavaScript is responsible for interactivity only"),
+and it happens to match the site's real current category count exactly,
+so nothing changes visually today; the overflow menu only appears once
+a 9th category is added.
+
+## Implementation
+
+`site()`'s `main_categories` is now materialized to a `list` and split
+into `nav_categories` (first 8) and `nav_overflow_categories` (the
+rest) — `main_categories` itself stays the full, uncapped list, since
+`footer.html` uses it as a complete sitemap-style listing with no
+overflow concern of its own. `header.html` loops over `nav_categories`
+for the direct nav items, then — only if `nav_overflow_categories` is
+non-empty — adds one more `<li class="nav__item--has-dropdown">`
+("Digər kateqoriyalar") holding the rest, built from the exact same
+markup pattern the existing "Daha" static-pages dropdown already uses.
+No JS or CSS changes needed: `static/js/components/dropdown.js` already
+generically wires up every `.nav__item--has-dropdown` (mobile tap-to-
+open; desktop already uses CSS `:hover`/`:focus-within`), and the
+dropdown styling is shared, not duplicated.
+
+## Verification
+
+`pytest`: `apps/core/tests.py` — with more than 8 published-and-active
+top-level categories, `nav_categories` caps at 8, `nav_overflow_categories`
+holds the remainder, and `nav_categories + nav_overflow_categories ==
+main_categories` (nothing lost, just split); with few categories,
+`nav_overflow_categories` is empty. 197 passed total.
+
+Playwright: reproduced the real overflow scenario (16 categories) —
+confirmed all 16 nav items combined (8 direct + "Digər kateqoriyalar" +
+"Daha") fit within the container with zero overflow, confirmed hovering
+"Digər kateqoriyalar" reveals exactly the 8 overflow categories, and
+separately confirmed `footer.html` still lists all 16. Temporary
+categories and their articles removed from the dev database afterward.
