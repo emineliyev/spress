@@ -62,13 +62,33 @@ sudo nginx -t && sudo systemctl reload nginx
 # 10. HTTPS (certbot edits the Nginx config in place to add the 443/ssl_certificate directives)
 sudo apt install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d spress.az -d www.spress.az
+
+# 11. Cron — two management commands expect to run periodically; neither
+#     has a Celery Beat schedule (see below), so both run via plain cron.
+sudo -u spress crontab -e
+# Add these two lines:
+#   */5 * * * * cd /opt/spress && .venv/bin/python manage.py publish_scheduled >> logs/cron.log 2>&1
+#   0 3 * * *   cd /opt/spress && .venv/bin/python manage.py clean_temp_uploads >> logs/cron.log 2>&1
 ```
 
-No Celery Beat service — nothing in this project schedules a periodic
-task; scheduled publishing is a query-time filter
-(`News.objects.published()` checks `published_at <= now()` on every
-request), not a Celery Beat job. Add one later only if a real periodic
-task shows up.
+No Celery Beat service — nothing in this project runs on a recurring
+schedule via Celery. Two things still need to happen periodically
+regardless, so they run as plain cron jobs instead (step 11 above):
+
+- `publish_scheduled` flips a Scheduled article to Published once its
+  `published_at` arrives. **This is not automatic otherwise** —
+  `News.objects.published()` only ever matches `status=PUBLISHED`, so a
+  Scheduled article whose time has passed just sits there forever,
+  invisible to readers, until this command (or a manual status edit)
+  runs. Every 5 minutes is a reasonable default; tighten it if same-
+  minute scheduling accuracy matters.
+- `clean_temp_uploads` deletes `media/temp/` uploads older than 24
+  hours (crop-flow uploads that were never confirmed or discarded).
+  Once a day is plenty.
+
+Add a real Celery Beat schedule later only if a task shows up that
+genuinely needs sub-minute precision or Celery's own retry/monitoring —
+cron is simpler and sufficient for both of these today.
 
 ## Updating production (every deploy after the first)
 

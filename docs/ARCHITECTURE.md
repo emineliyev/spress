@@ -2937,3 +2937,117 @@ correctly after the restructuring. Confirmed the footer shows the real
 `mailto:`/`tel:` links, and confirmed the page's `Organization` JSON-LD
 now includes a matching `contactPoint`.
 
+# Phase 30 (pre-deployment audit — one deploy-blocking bug, one real functional gap)
+
+## What was asked
+
+User is deploying to the VPS today and asked for a thorough audit of
+the whole project for anything missing or broken before going live —
+not a specific feature request. Checked systematically rather than
+just re-reading docs: `manage.py check --deploy`, `makemigrations
+--check`, `collectstatic --dry-run`, every `{% static %}` reference in
+every template cross-checked against a real file on disk, every env
+var actually read by `config/settings/*.py` cross-checked against
+`.env.example`, every third-party import in `apps/`+`config/` cross-
+checked against `requirements/base.txt`, a search for leftover
+`console.log`/`TODO`/`FIXME`/stray `print()`, the full `pytest` suite,
+and the full `e2e/` Playwright suite (not just ad-hoc scripts written
+during the session) — plus reading `docs/DEPLOYMENT.md` and `deploy/*`
+side by side with what the code actually does, rather than trusting
+the doc's own claims about itself.
+
+## Found and fixed: `SECURE_PROXY_SSL_HEADER` was never set — this would have broken HTTPS entirely
+
+The most serious finding. `deploy/nginx.conf` correctly forwards
+`X-Forwarded-Proto` to Gunicorn, but `config/settings/production.py`
+never told Django to trust that header. Without it, Django has no way
+to know a request arrived over HTTPS — Gunicorn only ever sees plain
+HTTP from Nginx — which breaks three things simultaneously the moment
+HTTPS is enabled:
+
+1. **An infinite redirect loop.** `SECURE_SSL_REDIRECT` (on by default)
+   checks `request.is_secure()`, which would always be `False` without
+   the proxy header — Django redirects every request to HTTPS, Nginx
+   terminates it and forwards to Gunicorn as HTTP again, Django
+   redirects again, forever. This alone would have made the entire
+   site completely unreachable the moment `certbot` finished.
+2. **CSRF validation** compares the request's detected scheme against
+   the `Referer` header's scheme — mismatched (again because Django
+   always thinks it's HTTP) means every form submission on the live
+   site would have been rejected.
+3. **`request.scheme` in templates** — used directly in canonical URLs,
+   Open Graph tags, the sitemap, and every page's structured data —
+   would render `http://` instead of `https://` sitewide, undermining
+   the SEO work from earlier phases.
+
+Fixed with one line: `SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')`
+in `production.py`. Confirmed `manage.py check --deploy` still reports
+zero issues with a realistic env afterward.
+
+## Found and fixed: Scheduled articles never actually get published
+
+`News.objects.published()` (`apps/news/models.py`) only ever matches
+`status=News.Status.PUBLISHED` — confirmed nothing anywhere in the
+project (no signal, no Celery task, no management command) ever
+transitions a `SCHEDULED` article to `PUBLISHED` once its
+`published_at` arrives. `docs/DEPLOYMENT.md` had actually documented
+the opposite — a comment claiming "scheduled publishing is a query-
+time filter" — which doesn't match the code at all and would have left
+a real editor confused the first time they scheduled an article and it
+never went live.
+
+New `apps.news.management.commands.publish_scheduled` — the same
+"plain cron, no Celery Beat" pattern `clean_temp_uploads` already
+established (Phase ~10): finds every `Scheduled`, non-deleted article
+whose `published_at` has passed, bulk-updates their status to
+`Published`, and logs one `ActivityLog` entry per article (`actor=None`
+— a system action, not a human one) so the CMS activity feed shows
+*why* an article's status changed without an editor touching it.
+
+Also discovered and fixed a second, smaller gap while here:
+`clean_temp_uploads` itself has run this whole project with **no cron
+entry ever actually documented** in `DEPLOYMENT.md`, despite its own
+`help` text saying it needs one — the one-time VPS setup steps never
+mentioned crontab at all. Added a new step 11 with both commands'
+crontab lines together.
+
+## Everything else checked came back clean
+
+- `makemigrations --check --dry-run`: no missing migrations.
+- `collectstatic --dry-run`: 281 files, no errors.
+- Every `{% static %}` reference in every template (55 unique paths):
+  all resolve to a real file.
+- Every third-party import across `apps/`+`config/`: all present in
+  `requirements/base.txt` (Django, psycopg, django-environ, django-redis,
+  redis, celery, Pillow, django-ckeditor-5, bleach — nothing missing,
+  nothing unused-but-still-installed).
+- No stray `console.log`, `TODO`, `FIXME`, or debug `print()` anywhere
+  in `apps/` or `static/js/`.
+- Django's `LOGGING` config already separates application/security/
+  error/task logs into rotating files per CLAUDE.md ch.5 — no gap.
+- `.env` (the real local file, not `.env.example`) confirmed still
+  correctly gitignored — never at risk of being committed.
+- The one real documentation gap found in `.env.example`:
+  `DJANGO_SECURE_HSTS_SECONDS` is read (with a safe 1-year default) but
+  was never listed — added, with a note about starting with a short
+  value for the first few days after enabling HTTPS.
+
+## Verification
+
+`pytest`: new `apps/news/tests/test_publish_scheduled.py` — publishes a
+due Scheduled article and logs it, leaves a not-yet-due one alone,
+ignores a soft-deleted one, confirms the newly-published article
+actually appears in `News.objects.published()` afterward, and confirms
+running with nothing due creates no log noise. 207 passed total.
+
+Also ran the full `e2e/` Playwright suite (not just this session's ad-
+hoc verification scripts) for the first time in a while — all 15
+passed, including the mobile-nav test, which exercises Phase 29's
+header restructuring end-to-end.
+
+Manually verified `publish_scheduled` against the real dev database:
+created an article with `status=SCHEDULED` and a `published_at` two
+minutes in the past, ran `manage.py publish_scheduled`, confirmed its
+status flipped to `PUBLISHED` and it immediately appeared in
+`News.objects.published()`. Test article and its log entry removed
+afterward.

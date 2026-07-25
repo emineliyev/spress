@@ -9,6 +9,16 @@ ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS')
 # Security hardening (CLAUDE.md ch.12 — HTTPS, secure cookies, HSTS)
 # ---------------------------------------------------------------------------
 
+# Required behind Nginx (deploy/nginx.conf sets X-Forwarded-Proto) — Gunicorn
+# only ever receives plain HTTP from Nginx, so without this Django can never
+# tell a request arrived over HTTPS. That breaks three things at once: an
+# infinite redirect loop with SECURE_SSL_REDIRECT below (Django thinks every
+# request is insecure and keeps redirecting to HTTPS, which Nginx again
+# forwards as HTTP), CSRF validation (compares the Referer's scheme against
+# request.is_secure()), and request.scheme in templates (canonical URLs, Open
+# Graph, sitemap, structured data all render "http://" instead of "https://").
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 SECURE_SSL_REDIRECT = env.bool('DJANGO_SECURE_SSL_REDIRECT', default=True)
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
