@@ -2786,3 +2786,154 @@ confirmed all 16 nav items combined (8 direct + "Digər kateqoriyalar" +
 "Digər kateqoriyalar" reveals exactly the 8 overflow categories, and
 separately confirmed `footer.html` still lists all 16. Temporary
 categories and their articles removed from the dev database afterward.
+
+# Phase 28 (footer category overflow — a real "Bütün bölmələr" index page)
+
+## What was asked
+
+Follow-up to Phase 26's nav overflow fix, discussed and agreed with the
+user before implementing: `footer.html`'s "Bölmələr" column stacks one
+`<a>` per category vertically with no cap — unlike the nav row (bound
+by width), the footer column is bound by *height*, so past a handful of
+categories it just grows taller and taller, visually lopsided against
+the much shorter "Şirkət"/"Hüquqi" columns next to it. Two options were
+discussed (cap-with-link-out vs. reflowing into pills/multi-column);
+went with the more durable one — a real dedicated category index page,
+matching how larger news sites handle this, with the added benefit of
+a proper crawlable/linkable category listing (CLAUDE.md ch.14 internal
+linking) that didn't exist before at all.
+
+## Deduplicating the "does this category lead anywhere" query
+
+Before adding a third caller of the same nav-visibility logic (nav,
+footer, and now the index page), the query itself moved out of
+`apps.core.context_processors.site()` and into a new
+`Category.objects.navigable()` queryset method — top-level categories
+with at least one published article (own or via a subcategory), each
+with its visible+published subcategories prefetched. `site()` now just
+calls `list(Category.objects.navigable())` once; the index page's
+`CategoryIndexView.get_queryset()` calls the exact same method (CLAUDE.md
+ch.15 "Never duplicate business logic" — this rule now lives in exactly
+one place instead of being copy-pasted a third time).
+
+## Footer cap + index page
+
+A second constant, `FOOTER_VISIBLE_CATEGORY_COUNT` (also 8, same
+reasoning as the nav's — matches today's real count, so nothing visibly
+changes until a 9th category exists), caps `footer_categories` the same
+way `NAV_VISIBLE_CATEGORY_COUNT` already caps `nav_categories` — both
+sliced from the same uncapped `main_categories` list, no extra queries.
+A new `footer_has_more_categories` flag shows a "Bütün bölmələr →" link
+(bold, matches the column's other links otherwise) only when there's
+actually overflow.
+
+New `apps.categories.views.CategoryIndexView` at `/category/` (the
+categories app's own URL root, alongside its existing `/category/<slug>/`
+detail route) — a plain `ListView` with no pagination (a bounded,
+editor-curated list, not user-generated content), rendering every
+navigable category as a card with its subcategories linked underneath.
+New `templates/categories/category_index.html` +
+`static/css/pages/category-index.css` (a responsive 3/2/1-column grid),
+following the same breadcrumbs/container/empty-state conventions as
+`category_detail.html`.
+
+## An unrelated environment hiccup surfaced along the way
+
+While running the full suite to verify this change, `pytest` started
+failing across dozens of unrelated tests with `redis.exceptions.ConnectionError`
+— the local Memurai (Redis-compatible) Windows service had stopped at
+some point during the session, unrelated to this feature (`apps.accounts.services`'s
+login-lockout counter, and Django's own cache-backed sessions, both
+need it). Restarted the service (`Start-Service Memurai`) and confirmed
+a clean run afterward — not a regression from this change, just an
+environment hiccup that happened to surface while testing it.
+
+## Verification
+
+`pytest`: `Category.objects.navigable()` covered indirectly through the
+existing nav tests (unchanged assertions, same method now used
+underneath) plus new ones — footer caps at `FOOTER_VISIBLE_CATEGORY_COUNT`
+and flags overflow correctly, is empty-flagged when everything fits;
+`CategoryIndexView` lists a populated category, excludes an empty one,
+and shows subcategory links. 202 passed total.
+
+Playwright: created 4 extra categories (12 total), confirmed the footer
+showed exactly 8 plus the "Bütün bölmələr" link, clicked it and
+confirmed `/category/` listed all 12 in the grid. Temporary categories
+and their articles removed from the dev database afterward.
+
+# Phase 29 (sticky category nav; contact info in the footer + structured data)
+
+## Sticky nav — a real CSS containing-block gotcha, not just "add position: sticky"
+
+Reported: scrolling down a long page leaves the category row behind,
+so switching categories means scrolling back to the top first. Discussed
+scope with the user first — only the category row should stick, not the
+logo/social/search topbar or the breaking-news ticker above it, so it
+keeps a fixed screen-space cost instead of the full header permanently
+eating the top of the viewport.
+
+The first attempt — just adding `position: sticky; top: 0;` to
+`.site-header__navbar` — measurably failed: Playwright showed the
+navbar's `boundingBox().y` at -1084 after scrolling 1200px, i.e. it had
+scrolled away entirely, not stuck. Root cause, confirmed by walking the
+computed-style ancestor chain rather than guessing: a sticky element
+can only remain stuck for as long as its *containing block* (in the
+simple case, its parent) is intersecting the viewport. `.site-header__navbar`
+was nested inside `<header class="site-header">` alongside the topbar —
+and that `<header>` was only exactly as tall as topbar+navbar combined
+(134px), with nothing else inside it. Once the user scrolled past the
+topbar's own height (~80px), the header itself had fully exited
+upward, leaving the sticky navbar with no more containing block to
+anchor against — so it started scrolling away again immediately after
+a brief ~80px stick.
+
+Fixed by restructuring `templates/components/header.html`: `</header>`
+now closes right after the topbar, and `.site-header__navbar` (plus the
+search form) become siblings of `<header>` instead of children —
+`<body>` is now their containing block, which spans the entire page, so
+the sticky row has room to stay stuck for the whole scroll. Confirmed
+no CSS selector or JS depended on the navbar being nested inside
+`.site-header` (checked directly, not assumed) before making the
+change — `<nav>` is still a proper semantic landmark either way, just
+no longer inside the same top-level `<header>` as the topbar, which
+HTML5 doesn't require.
+
+New `z-index: 40` on the sticky row (existing scale: dropdown 50,
+mobile off-canvas drawer 200, toast 1000 — sits below both, above plain
+page content). Degrades to a no-op on mobile: `.nav` becomes a
+`position: fixed` off-canvas drawer there (Phase before this one), so
+`.site-header__navbar` has no in-flow content left to stick once that
+kicks in.
+
+## Contact info: footer + structured data
+
+Discussed where else `SiteSettings.contact_phone`/`contact_email`
+(previously shown only on the Contact page) should appear; picked the
+two highest-value, lowest-risk spots over a header/topbar addition
+(rejected — no room, and CLAUDE.md ch.7 minimalism):
+
+- **Footer** — a new `.site-footer__contact` list in the brand column
+  (phone + email, icon + link, `mailto:`/`tel:`), shown only when set.
+- **Structured data** (invisible to readers, SEO-only) — `base.html`'s
+  site-wide `Organization` JSON-LD gained a `contactPoint` block
+  (`contactType: "customer service"` + phone/email), each field only
+  emitted when the corresponding `SiteSettings` field is filled in —
+  can help Google's Knowledge Panel / rich results (CLAUDE.md ch.14).
+
+## Verification
+
+`pytest`: 202 passed, unaffected by any of this (no new Python logic —
+template/CSS changes only).
+
+Playwright: scrolled 1200px and confirmed the navbar's bounding box
+sits at `y: 0` (genuinely stuck, not just "hasn't scrolled past yet"),
+confirmed a category link stays clickable without scrolling back up,
+confirmed the "Digər kateqoriyalar" dropdown still opens correctly
+while the nav is stuck, and separately confirmed the mobile off-canvas
+hamburger menu (a completely different code path) still opens
+correctly after the restructuring. Confirmed the footer shows the real
+`contact_email`/`contact_phone` from `SiteSettings` with working
+`mailto:`/`tel:` links, and confirmed the page's `Organization` JSON-LD
+now includes a matching `contactPoint`.
+

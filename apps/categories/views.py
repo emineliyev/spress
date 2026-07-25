@@ -9,6 +9,24 @@ CATEGORY_ARTICLES_PER_PAGE = 9
 SIDEBAR_POPULAR_COUNT = 5
 
 
+class CategoryIndexView(ListView):
+    """The footer's "Bütün bölmələr" destination (apps.core.context_processors.site's
+    FOOTER_VISIBLE_CATEGORY_COUNT cap) — every category that leads
+    somewhere for a reader, not just the handful shown directly in the
+    nav/footer."""
+
+    template_name = 'categories/category_index.html'
+    context_object_name = 'categories'
+
+    def get_queryset(self):
+        return Category.objects.navigable()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['breadcrumb_items'] = [('Bölmələr', None)]
+        return context
+
+
 class CategoryDetailView(ListView):
     """Serves both /category/<slug>/ and /category/<slug>/<slug>/ (same template)."""
 

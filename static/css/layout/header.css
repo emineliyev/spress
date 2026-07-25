@@ -152,6 +152,18 @@
 }
 
 .site-header__navbar {
+    /* Stays reachable while reading down a long page instead of
+       requiring a scroll back to the top just to switch category
+       (user-reported) — only this row sticks, not the logo/social/
+       search topbar or the breaking-news ticker above it, so it keeps
+       a fixed screen-space cost while scrolling instead of the full
+       header eating the top of the viewport permanently. Harmless on
+       mobile: `.nav` becomes a `position: fixed` off-canvas drawer
+       there (responsive/mobile.css), so this row has no in-flow
+       content left to stick. */
+    position: sticky;
+    top: 0;
+    z-index: 40;
     border-top: 1px solid var(--color-border);
     border-bottom: 1px solid var(--color-border);
     background: var(--color-surface);

@@ -40,59 +40,59 @@
             {% endif %}
         </div>
     </div>
+</header>
 
-    <div class="site-header__navbar">
-        <div class="container">
-            <nav class="nav" id="primary-navigation" aria-label="Əsas naviqasiya">
-                <ul class="nav__list">
-                    <li class="nav__item">
-                        <a href="{% url 'news:home' %}" class="nav__link{% if request.resolver_match.url_name == 'home' %} is-active{% endif %}">Ana səhifə</a>
-                    </li>
-                    {% for category in nav_categories %}
-                        <li class="nav__item{% if category.children.all %} nav__item--has-dropdown{% endif %}">
-                            <a href="{{ category.get_absolute_url }}" class="nav__link{% if nav_active_category.pk == category.pk or nav_active_category.parent_id == category.pk %} is-active{% endif %}">{{ category.name }}</a>
-                            {% if category.children.all %}
-                                <ul class="nav__dropdown">
-                                    {% for subcategory in category.children.all %}
-                                        <li><a href="{{ subcategory.get_absolute_url }}" class="nav__dropdown-link{% if nav_active_category.pk == subcategory.pk %} is-active{% endif %}">{{ subcategory.name }}</a></li>
-                                    {% endfor %}
-                                </ul>
-                            {% endif %}
-                        </li>
-                    {% endfor %}
-                    {% if nav_overflow_categories %}
-                        <li class="nav__item nav__item--has-dropdown">
-                            <button type="button" class="nav__link">Digər kateqoriyalar</button>
+<div class="site-header__navbar">
+    <div class="container">
+        <nav class="nav" id="primary-navigation" aria-label="Əsas naviqasiya">
+            <ul class="nav__list">
+                <li class="nav__item">
+                    <a href="{% url 'news:home' %}" class="nav__link{% if request.resolver_match.url_name == 'home' %} is-active{% endif %}">Ana səhifə</a>
+                </li>
+                {% for category in nav_categories %}
+                    <li class="nav__item{% if category.children.all %} nav__item--has-dropdown{% endif %}">
+                        <a href="{{ category.get_absolute_url }}" class="nav__link{% if nav_active_category.pk == category.pk or nav_active_category.parent_id == category.pk %} is-active{% endif %}">{{ category.name }}</a>
+                        {% if category.children.all %}
                             <ul class="nav__dropdown">
-                                {% for category in nav_overflow_categories %}
-                                    <li><a href="{{ category.get_absolute_url }}" class="nav__dropdown-link{% if nav_active_category.pk == category.pk or nav_active_category.parent_id == category.pk %} is-active{% endif %}">{{ category.name }}</a></li>
+                                {% for subcategory in category.children.all %}
+                                    <li><a href="{{ subcategory.get_absolute_url }}" class="nav__dropdown-link{% if nav_active_category.pk == subcategory.pk %} is-active{% endif %}">{{ subcategory.name }}</a></li>
                                 {% endfor %}
                             </ul>
-                        </li>
-                    {% endif %}
+                        {% endif %}
+                    </li>
+                {% endfor %}
+                {% if nav_overflow_categories %}
                     <li class="nav__item nav__item--has-dropdown">
-                        <button type="button" class="nav__link{% if request.resolver_match.namespace == 'pages' %} is-active{% endif %}">Daha</button>
+                        <button type="button" class="nav__link">Digər kateqoriyalar</button>
                         <ul class="nav__dropdown">
-                            <li><a href="{% url 'pages:about' %}" class="nav__dropdown-link{% if request.resolver_match.url_name == 'about' %} is-active{% endif %}">Haqqımızda</a></li>
-                            <li><a href="{% url 'pages:contact' %}" class="nav__dropdown-link{% if request.resolver_match.url_name == 'contact' %} is-active{% endif %}">Əlaqə</a></li>
-                            <li><a href="{% url 'pages:detail' slug='privacy-policy' %}" class="nav__dropdown-link{% if request.resolver_match.kwargs.slug == 'privacy-policy' %} is-active{% endif %}">Məxfilik siyasəti</a></li>
-                            <li><a href="{% url 'pages:detail' slug='terms-of-use' %}" class="nav__dropdown-link{% if request.resolver_match.kwargs.slug == 'terms-of-use' %} is-active{% endif %}">İstifadə şərtləri</a></li>
+                            {% for category in nav_overflow_categories %}
+                                <li><a href="{{ category.get_absolute_url }}" class="nav__dropdown-link{% if nav_active_category.pk == category.pk or nav_active_category.parent_id == category.pk %} is-active{% endif %}">{{ category.name }}</a></li>
+                            {% endfor %}
                         </ul>
                     </li>
-                </ul>
-
-                {% if social_links %}
-                    <div class="nav__social">
-                        {% for link in social_links %}
-                            <a href="{{ link.url }}" class="nav__social-link" target="_blank" rel="noopener" aria-label="{{ link.get_platform_display }}">
-                                <i class="bi {{ link.icon_class }}" aria-hidden="true"></i>
-                            </a>
-                        {% endfor %}
-                    </div>
                 {% endif %}
-            </nav>
-        </div>
-    </div>
+                <li class="nav__item nav__item--has-dropdown">
+                    <button type="button" class="nav__link{% if request.resolver_match.namespace == 'pages' %} is-active{% endif %}">Daha</button>
+                    <ul class="nav__dropdown">
+                        <li><a href="{% url 'pages:about' %}" class="nav__dropdown-link{% if request.resolver_match.url_name == 'about' %} is-active{% endif %}">Haqqımızda</a></li>
+                        <li><a href="{% url 'pages:contact' %}" class="nav__dropdown-link{% if request.resolver_match.url_name == 'contact' %} is-active{% endif %}">Əlaqə</a></li>
+                        <li><a href="{% url 'pages:detail' slug='privacy-policy' %}" class="nav__dropdown-link{% if request.resolver_match.kwargs.slug == 'privacy-policy' %} is-active{% endif %}">Məxfilik siyasəti</a></li>
+                        <li><a href="{% url 'pages:detail' slug='terms-of-use' %}" class="nav__dropdown-link{% if request.resolver_match.kwargs.slug == 'terms-of-use' %} is-active{% endif %}">İstifadə şərtləri</a></li>
+                    </ul>
+                </li>
+            </ul>
 
-    {% include "components/search_form.html" %}
-</header>
+            {% if social_links %}
+                <div class="nav__social">
+                    {% for link in social_links %}
+                        <a href="{{ link.url }}" class="nav__social-link" target="_blank" rel="noopener" aria-label="{{ link.get_platform_display }}">
+                            <i class="bi {{ link.icon_class }}" aria-hidden="true"></i>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </nav>
+    </div>
+</div>
+
+{% include "components/search_form.html" %}

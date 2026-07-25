@@ -1,7 +1,4 @@
-from django.db.models import Exists, OuterRef, Prefetch, Q
-
 from apps.categories.models import Category
-from apps.news.models import News
 from apps.settings_app.models import SiteSettings, SocialLink
 
 # The primary nav row (templates/components/header.html) has no wrap/
@@ -17,6 +14,13 @@ from apps.settings_app.models import SiteSettings, SocialLink
 # kateqoriyalar" dropdown only appears once a 9th one is added.
 NAV_VISIBLE_CATEGORY_COUNT = 8
 
+# footer.html's "Bölmələr" column stacks one link per line — a separate
+# cap from the nav's (bound by row width, not column height), even
+# though both default to the same number today. Past this many, the
+# rest are reachable via the "Bütün bölmələr →" link to
+# CategoryIndexView instead of stacking the footer taller indefinitely.
+FOOTER_VISIBLE_CATEGORY_COUNT = 8
+
 
 def site(request):
     """Global template context: site chrome settings + main navigation.
@@ -25,42 +29,18 @@ def site(request):
     Performance-phase concern, CLAUDE.md ch.13 "Caching Strategy").
     """
 
-    # An empty category (no published articles of its own, and — for a
-    # top-level category — none in its subcategories either) is a dead
-    # end for a reader, so it's left out of the nav entirely rather than
-    # linking to a page that just shows "no articles" (user-requested).
-    # `Exists` subqueries keep this to the same 2-query shape as before
-    # (one for the top-level list, one for the prefetched children) —
-    # no per-category `.exists()` calls, no N+1.
-    own_published = News.objects.published().filter(category=OuterRef('pk'))
-    visible_children = Prefetch(
-        'children',
-        queryset=(
-            Category.objects.active().visible()
-            .annotate(has_news=Exists(own_published))
-            .filter(has_news=True)
-        ),
-    )
-
-    published_here_or_in_children = News.objects.published().filter(
-        Q(category=OuterRef('pk')) | Q(category__parent=OuterRef('pk'))
-    )
-    main_categories = list(
-        Category.objects.active().visible().top_level()
-        .annotate(has_news=Exists(published_here_or_in_children))
-        .filter(has_news=True)
-        .prefetch_related(visible_children)
-    )
+    main_categories = list(Category.objects.navigable())
 
     return {
         'site_settings': SiteSettings.get_solo(),
-        # footer.html lists every category (its own "sitemap" column, no
-        # overflow concern there) — header.html uses the two split-out
-        # values below instead, so the primary nav row never exceeds the
-        # width it can actually render without overflowing.
+        # The full list — used by CategoryIndexView (apps/categories/views.py)
+        # as its own queryset, and kept here in case a future template
+        # needs the uncapped set again.
         'main_categories': main_categories,
         'nav_categories': main_categories[:NAV_VISIBLE_CATEGORY_COUNT],
         'nav_overflow_categories': main_categories[NAV_VISIBLE_CATEGORY_COUNT:],
+        'footer_categories': main_categories[:FOOTER_VISIBLE_CATEGORY_COUNT],
+        'footer_has_more_categories': len(main_categories) > FOOTER_VISIBLE_CATEGORY_COUNT,
         # Already ordered via SocialLink.Meta.ordering — footer.html just
         # iterates it (CLAUDE.md ch.9 "Social Links" — flexible list, not
         # a fixed field per platform).

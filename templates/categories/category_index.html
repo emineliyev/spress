@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Bütün bölmələr — {{ site_settings.site_name }}{% endblock %}
+{% block meta_description %}{{ site_settings.site_name }} saytının bütün xəbər bölmələri.{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/pages/category-index.css' %}">
+{% endblock %}
+
+{% block content %}
+{% include "components/breadcrumbs.html" with items=breadcrumb_items %}
+
+<div class="container category-index">
+    <header class="category-index__header">
+        <h1 class="category-index__title">Bütün bölmələr</h1>
+    </header>
+
+    {% if categories %}
+        <div class="category-index__grid">
+            {% for category in categories %}
+                <div class="category-index__card">
+                    <a href="{{ category.get_absolute_url }}" class="category-index__card-title">{{ category.name }}</a>
+                    {% if category.children.all %}
+                        <ul class="category-index__card-children">
+                            {% for subcategory in category.children.all %}
+                                <li><a href="{{ subcategory.get_absolute_url }}">{{ subcategory.name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="bi bi-diagram-3 empty-state__icon" aria-hidden="true"></i>
+            <p class="empty-state__title">Hələ bölmə yoxdur</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

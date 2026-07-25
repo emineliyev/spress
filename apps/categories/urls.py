@@ -5,6 +5,7 @@ from . import views
 app_name = 'categories'
 
 urlpatterns = [
+    path('', views.CategoryIndexView.as_view(), name='index'),
     path('<slug:category_slug>/', views.CategoryDetailView.as_view(), name='category_detail'),
     path('<slug:category_slug>/<slug:subcategory_slug>/', views.CategoryDetailView.as_view(), name='subcategory_detail'),
 ]

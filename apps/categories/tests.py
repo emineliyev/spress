@@ -88,3 +88,31 @@ def test_deleted_category_returns_404(client, category):
     category.save()
     response = client.get(reverse('categories:category_detail', kwargs={'category_slug': category.slug}))
     assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_category_index_lists_populated_category(client, category, administrator):
+    News.objects.create(
+        title='İndeks testi', short_description='d', content='<p>c</p>',
+        category=category, author=administrator, status=News.Status.PUBLISHED, published_at=timezone.now(),
+    )
+    response = client.get(reverse('categories:index'))
+    assert response.status_code == 200
+    assert category in response.context['categories']
+
+
+@pytest.mark.django_db
+def test_category_index_excludes_empty_category(client, category):
+    # `category` fixture has no published news at all.
+    response = client.get(reverse('categories:index'))
+    assert category not in response.context['categories']
+
+
+@pytest.mark.django_db
+def test_category_index_shows_subcategory_links(client, category, subcategory, administrator):
+    News.objects.create(
+        title='Alt kateqoriya xəbəri', short_description='d', content='<p>c</p>',
+        category=subcategory, author=administrator, status=News.Status.PUBLISHED, published_at=timezone.now(),
+    )
+    response = client.get(reverse('categories:index'))
+    assert subcategory.name.encode() in response.content

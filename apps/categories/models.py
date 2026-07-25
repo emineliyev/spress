@@ -19,6 +19,44 @@ class CategoryQuerySet(models.QuerySet):
     def top_level(self):
         return self.filter(parent__isnull=True)
 
+    def navigable(self):
+        """Top-level categories that actually lead somewhere for a reader
+        — at least one published article of their own or in a
+        subcategory — each with its visible+published subcategories
+        prefetched. An empty category is a dead end (CLAUDE.md ch.6), so
+        it's left out entirely rather than linking to a page that just
+        shows "no articles."
+
+        Shared by `apps.core.context_processors.site()` (main nav +
+        footer) and `apps.categories.views.CategoryIndexView` (the
+        "Bütün bölmələr" page) — this business rule lives in exactly one
+        place rather than three (CLAUDE.md ch.15 "Never duplicate
+        business logic").
+        """
+        from django.db.models import Exists, OuterRef, Prefetch, Q
+
+        from apps.news.models import News
+
+        own_published = News.objects.published().filter(category=OuterRef('pk'))
+        visible_children = Prefetch(
+            'children',
+            queryset=(
+                Category.objects.active().visible()
+                .annotate(has_news=Exists(own_published))
+                .filter(has_news=True)
+            ),
+        )
+
+        published_here_or_in_children = News.objects.published().filter(
+            Q(category=OuterRef('pk')) | Q(category__parent=OuterRef('pk'))
+        )
+        return (
+            self.active().visible().top_level()
+            .annotate(has_news=Exists(published_here_or_in_children))
+            .filter(has_news=True)
+            .prefetch_related(visible_children)
+        )
+
 
 class Category(BaseModel):
     """Two-level category hierarchy only (CLAUDE.md ch.4/10 — no deeper nesting)."""

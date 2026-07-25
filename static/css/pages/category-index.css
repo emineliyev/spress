@@ -1,0 +1,66 @@
+/* "Bütün bölmələr" page (templates/categories/category_index.html) —
+   the footer's overflow destination once it caps how many categories
+   it lists directly (apps.core.context_processors.site). */
+
+.category-index__header {
+    padding: var(--space-8) 0 var(--space-6);
+}
+
+.category-index__title {
+    font-size: 32px;
+    font-weight: 800;
+}
+
+.category-index__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-6);
+    padding-bottom: var(--space-16);
+}
+
+.category-index__card {
+    padding: var(--space-6);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+}
+
+.category-index__card-title {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-3);
+}
+
+.category-index__card-title:hover {
+    color: var(--color-primary);
+}
+
+.category-index__card-children {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.category-index__card-children a {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.category-index__card-children a:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
+@media (max-width: 992px) {
+    .category-index__grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .category-index__grid {
+        grid-template-columns: 1fr;
+    }
+}
