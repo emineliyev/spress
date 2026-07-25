@@ -29,6 +29,10 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 SECURE_REFERRER_POLICY = 'same-origin'
 
+# Only set in production — Django's own CSRF failure page includes a
+# helpful DEBUG-mode explanation locally that a custom view would hide.
+CSRF_FAILURE_VIEW = 'apps.core.views.csrf_failure'
+
 # ---------------------------------------------------------------------------
 # Email (CLAUDE.md ch.9 CMS Settings — SMTP)
 # ---------------------------------------------------------------------------

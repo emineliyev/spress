@@ -1,0 +1,40 @@
+{% load static %}<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Server xətası</title>
+    <meta name="robots" content="noindex, nofollow">
+
+    {# Standalone on purpose — no {% extends "base.html" %} here. A 500 can #}
+    {# itself mean the database is unreachable, and base.html's header/footer #}
+    {# depend on apps.core.context_processors.site() querying it. Only #}
+    {# static-file-based tags (no DB, no request context) are safe to use #}
+    {# in this template — see apps/core/views.py's handler500 docstring. #}
+    <link rel="stylesheet" href="{% static 'vendors/bootstrap-icons/bootstrap-icons.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base/reset.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base/variables.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base/typography.css' %}">
+    <link rel="stylesheet" href="{% static 'css/layout/container.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/buttons.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components/alerts.css' %}">
+    <link rel="stylesheet" href="{% static 'css/pages/errors.css' %}">
+</head>
+<body>
+    <main id="main-content">
+        <div class="container error-page error-page--standalone">
+            <div class="empty-state error-page__hero">
+                <span class="error-page__code">500</span>
+                <i class="bi bi-exclamation-octagon empty-state__icon" aria-hidden="true"></i>
+                <p class="empty-state__title">Bir xəta baş verdi</p>
+                <p class="empty-state__description">
+                    Server tərəfində gözlənilməz bir problem yarandı. Bir azdan yenidən cəhd edin.
+                </p>
+                <div class="error-page__actions">
+                    <a href="{% url 'news:home' %}" class="btn btn--primary">Ana səhifəyə qayıt</a>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

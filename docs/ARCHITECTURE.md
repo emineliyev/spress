@@ -3051,3 +3051,81 @@ minutes in the past, ran `manage.py publish_scheduled`, confirmed its
 status flipped to `PUBLISHED` and it immediately appeared in
 `News.objects.published()`. Test article and its log entry removed
 afterward.
+
+# Phase 31 (custom 404 / 500 / CSRF-403 error pages — none existed until now)
+
+## What was asked
+
+User noticed, right after finishing the live VPS deploy, that the
+project had no custom error pages at all — a direct gap against
+CLAUDE.md ch.6 ("Create custom templates for: 403, 404, 500 ... Do not
+display technical details") and ch.14's 404 requirements (search,
+popular articles, categories, homepage link).
+
+## Found
+
+`templates/errors/` existed but was completely empty, and
+`config/urls.py` set no `handler404`/`handler500`. Only
+`templates/403.html` existed at the template root — not a global
+handler, just Django's own convention of auto-discovering a template
+literally named `403.html` for any unhandled `PermissionDenied`
+(confirmed no explicit view ever renders it by name). It extends
+`cms/base.html` and is only ever reachable from `apps/core/mixins.py`'s
+CMS-only permission mixins (`AdministratorRequiredMixin` etc.) — no
+public view raises `PermissionDenied`, confirmed by grep. That left one
+real public-facing 403 uncovered: a CSRF failure (e.g. the contact form
+submitted from a tab left open past the session/cookie lifetime), which
+Django routes through the separate `CSRF_FAILURE_VIEW` setting, not
+`handler403` — unset, it would have shown Django's unstyled built-in
+`csrf_403.html`.
+
+## Fixed
+
+- `apps/core/views.py` — three new views: `handler404` (queries
+  `News.objects.published()` for 3 popular articles; categories are
+  already free via the `site()` context processor), `handler500`, and
+  `csrf_failure` (branches on `request.path.startswith('/cms/')` — CMS
+  gets the existing `templates/403.html`, public gets the new
+  `templates/errors/403.html`).
+- `config/urls.py` — `handler404`/`handler500` wired as module-level
+  string paths (Django's documented convention; both are inert in
+  `DEBUG=True`, so local dev behavior is unchanged).
+- `config/settings/production.py` — `CSRF_FAILURE_VIEW`, set only here
+  (not `base.py`) so `DEBUG=True` locally still gets Django's own more
+  helpful CSRF debug explanation instead of the styled production page.
+- `templates/errors/404.html`, `templates/errors/403.html` — extend
+  `base.html` normally (reusing `.empty-state` from `alerts.css`,
+  `news_card.html`, and the `site()` context processor's
+  `main_categories` — no new components needed for either).
+- `templates/errors/500.html` — deliberately **not** `{% extends
+  "base.html" %}`. A 500 can itself mean the database is unreachable,
+  and `base.html`'s header/footer depend on `site()` querying it.
+  `handler500` renders via `render_to_string()` with no `request=`
+  argument — `django.shortcuts.render()` always forwards the request
+  into a `RequestContext`, which runs every context processor
+  (including that DB query) regardless of whether the template ends up
+  using the result, so omitting `request` entirely was the only way to
+  actually keep this page DB-independent. Matches Django's own
+  `server_error` view, which follows the same rule for the same reason.
+- `static/css/pages/errors.css` — new, shared by all three templates.
+
+## Verification
+
+`pytest`: `apps/core/tests.py` — `handler404` returns 3 popular
+*published* articles only (a draft with a higher view count is
+confirmed absent from the response); `handler500` asserted via
+`django_assert_num_queries(0)` to actually prove the no-DB claim, not
+just assume it; `csrf_failure` returns the CMS-styled page for `/cms/`
+paths and the public-styled page otherwise. 211 passed total.
+
+Also confirmed the `handler404 = 'apps.core.views.handler404'` string
+wired in `config/urls.py` resolves correctly through a real request
+cycle, not just a direct function call: `Client().get()` under
+`override_settings(DEBUG=False, ALLOWED_HOSTS=['testserver'])` against
+a nonexistent URL returned a full 404 page (20,689 bytes — header,
+footer and popular articles all present), confirming the URLconf
+wiring itself works, not just the view function in isolation.
+
+No visual browser check this time — this environment has no
+screenshot/browser tool available. Recommend a quick real-browser check
+of `https://spress.az/bu-səhifə-yoxdur/` after this deploys.

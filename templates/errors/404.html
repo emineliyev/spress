@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Səhifə tapılmadı — {{ site_settings.site_name }}{% endblock %}
+{% block meta_description %}Axtardığınız səhifə tapılmadı.{% endblock %}
+{% block robots %}noindex, follow{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/pages/errors.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container error-page">
+    <div class="empty-state error-page__hero">
+        <span class="error-page__code">404</span>
+        <i class="bi bi-compass empty-state__icon" aria-hidden="true"></i>
+        <p class="empty-state__title">Bu səhifə tapılmadı</p>
+        <p class="empty-state__description">
+            Axtardığınız səhifə silinmiş, ünvanı dəyişdirilmiş və ya heç vaxt mövcud olmayıb.
+        </p>
+        <div class="error-page__actions">
+            <a href="{% url 'news:home' %}" class="btn btn--primary">Ana səhifəyə qayıt</a>
+            <a href="{% url 'news:search' %}" class="btn btn--secondary">Axtarış səhifəsi</a>
+        </div>
+    </div>
+
+    {% if main_categories %}
+    <section class="error-page__section">
+        <h2 class="error-page__section-title">Bölmələr</h2>
+        <div class="error-page__categories">
+            {% for category in main_categories %}
+                <a href="{{ category.get_absolute_url }}" class="error-page__category-link">{{ category.name }}</a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    {% if popular_news %}
+    <section class="error-page__section">
+        <h2 class="error-page__section-title">Ən çox oxunan xəbərlər</h2>
+        <div class="grid">
+            {% for article in popular_news %}
+                <div class="col-span-4">
+                    {% include "components/news_card.html" with article=article layout="vertical" %}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

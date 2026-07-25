@@ -42,3 +42,9 @@ if settings.DEBUG:
         path('django-admin/', admin.site.urls),
     ]
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Only used when DEBUG=False — Django shows its own interactive
+# traceback page in DEBUG mode regardless of these (CLAUDE.md ch.5
+# "Error Handling" — never expose stack traces to users).
+handler404 = 'apps.core.views.handler404'
+handler500 = 'apps.core.views.handler500'
