@@ -54,6 +54,16 @@ sudo cp deploy/celery-worker.service /etc/systemd/system/spress-celery-worker.se
 sudo systemctl daemon-reload
 sudo systemctl enable --now spress-gunicorn spress-celery-worker
 
+# 8b. Let `spress` restart its own services without a password — deploy.sh
+#     (step 12 below) does this on every deploy, and `spress` (a system
+#     account, adduser --system --group) has no password of its own for
+#     an interactive sudo prompt to even check against. Scoped to just
+#     these two exact commands (principle of least privilege, CLAUDE.md
+#     ch.12), not blanket sudo access.
+echo 'spress ALL=(root) NOPASSWD: /usr/bin/systemctl restart spress-gunicorn, /usr/bin/systemctl restart spress-celery-worker' | sudo tee /etc/sudoers.d/spress-deploy
+sudo chmod 0440 /etc/sudoers.d/spress-deploy
+sudo visudo -c
+
 # 9. Nginx
 sudo cp deploy/nginx.conf /etc/nginx/sites-available/spress.az
 sudo ln -s /etc/nginx/sites-available/spress.az /etc/nginx/sites-enabled/

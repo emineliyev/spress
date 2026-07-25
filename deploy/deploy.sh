@@ -31,7 +31,13 @@ sudo systemctl restart spress-celery-worker
 
 echo "==> Health check"
 sleep 2
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Host: spress.az" http://127.0.0.1/)
+# HTTPS, not plain HTTP — since certbot ran (docs/DEPLOYMENT.md step 10),
+# Nginx itself redirects every port-80 request to https://, so a plain
+# "http://127.0.0.1/" check here always gets a 301 regardless of whether
+# the app is actually healthy. --resolve points the real spress.az
+# hostname (correct SNI + Host header + a certificate that actually
+# validates) at the loopback address instead of hitting port 80 directly.
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" --resolve spress.az:443:127.0.0.1 https://spress.az/)
 if [ "$STATUS" != "200" ]; then
     echo "Health check FAILED — homepage returned HTTP $STATUS" >&2
     echo "Check: sudo journalctl -u spress-gunicorn -n 50" >&2
