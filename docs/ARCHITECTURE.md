@@ -3129,3 +3129,75 @@ wiring itself works, not just the view function in isolation.
 No visual browser check this time — this environment has no
 screenshot/browser tool available. Recommend a quick real-browser check
 of `https://spress.az/bu-səhifə-yoxdur/` after this deploys.
+
+# Phase 32 (a real N+1 query, hiding in every subcategory article link)
+
+## What was asked
+
+User asked to check whether the site has any N+1 query problems, and
+whether django-debug-toolbar was worth installing to find out.
+Recommended checking directly with `CaptureQueriesContext` instead — no
+new dependency (CLAUDE.md ch.3), no risk of it ever being left enabled
+in production, and it becomes a permanent regression test instead of a
+one-time interactive look.
+
+## Found: `Category.get_absolute_url()` needs `.parent.slug` for a subcategory — nothing selected it
+
+Built a throwaway diagnostic (data with articles deliberately filed
+under a *subcategory*, not just any category) and ran it against six
+public pages, capturing every real query and flagging any exact SQL
+repeated more than once. Every page that renders `news_card.html` (or a
+category breadcrumb) for a subcategory article showed the same pattern:
+one extra `SELECT ... FROM categories_category` per article, scaling
+linearly with article count. Root cause: `Category.get_absolute_url()`
+needs `self.parent.slug` for a subcategory (`categories:subcategory_detail`
+takes both slugs), but every affected queryset only had
+`select_related('category', ...)` — one join short of the one that
+actually mattered.
+
+Confirmed on: `HomeView.category_sections` (a top-level section shows
+its subcategories' articles too), `NewsDetailView` (the article's own
+breadcrumb, and `related_articles`' fallback-by-category query),
+`NewsSearchView`, `CategoryDetailView` (both the page's own breadcrumb
+and its article list), `TagDetailView`, and this session's own
+`apps.core.views.handler404`. Two spots that looked like candidates but
+weren't: `HomeView`'s hero/`popular_news` and `breaking_articles` — grep
+confirmed neither of their templates ever calls `category.get_absolute_url`,
+so no fix needed there.
+
+## Fixed
+
+Changed `select_related('category', ...)` to `select_related('category__parent', ...)`
+in all six spots above (`apps/news/views.py` ×4, `apps/core/views.py`,
+`apps/tags/views.py`) — `category__parent` implies `category` in the
+same JOIN, no need to list both. `CategoryDetailView._resolve_category()`
+(`apps/categories/views.py`) also got `.select_related('parent')` on the
+category lookup itself, fixing the one-time (not N+1, but still free to
+fix) query for the page's own breadcrumb.
+
+Measured before/after with the throwaway diagnostic: HOME 20→17 queries,
+ARTICLE DETAIL 20→15, CATEGORY TOP-LEVEL 20→14, CATEGORY SUBCATEGORY
+21→14, SEARCH 17→11, 404 15→12 — and zero exact-duplicate queries left
+on any of them, for a dataset with several articles filed under a
+subcategory (the specific shape needed to surface this at all; a single
+test article per category, as most existing tests use, never would
+have shown it).
+
+## Verification
+
+`pytest`: six new regression tests (one per affected view/app —
+`apps/news/tests/test_public_views.py` ×3, `apps/categories/tests.py`,
+`apps/tags/tests.py`, `apps/core/tests.py`), each comparing real query
+counts for 1 vs 3+ subcategory articles and asserting they're equal —
+proving no N+1 directly, not asserting a magic fixed number unrelated to
+the bug. Two false failures along the way, both test-design artifacts
+rather than real regressions, worth recording since they'd trip up the
+same approach again: `SiteSettings.get_solo()` (`apps.core.context_processors.site`)
+lazily creates its one row on first access, so the *first* of two
+captures in the same test always paid a one-time SELECT+INSERT the
+second didn't — fixed by calling `SiteSettings.get_solo()` once before
+either capture. Separately, the article-detail test reused the same
+`client` (and therefore the same session) for both captures, so the
+view-count-once-per-session logic (`NewsDetailView.get_object()`)
+shaved one UPDATE off the second capture — fixed with an extra warm-up
+request before either capture. 217 passed total (211 + 6).

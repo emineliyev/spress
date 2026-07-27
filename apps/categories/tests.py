@@ -1,5 +1,7 @@
 import pytest
 from django.core.exceptions import ValidationError
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
@@ -116,3 +118,40 @@ def test_category_index_shows_subcategory_links(client, category, subcategory, a
     )
     response = client.get(reverse('categories:index'))
     assert subcategory.name.encode() in response.content
+
+
+@pytest.mark.django_db
+def test_category_page_query_count_does_not_scale_with_article_count(client, category, subcategory, administrator):
+    """A top-level category page shows its subcategories' articles too
+    (News.objects.in_category), each rendered via news_card.html — whose
+    category link needs category.parent.slug. Without
+    select_related('category__parent') on CategoryDetailView.get_queryset,
+    that's one extra query per article instead of one join."""
+
+    from apps.settings_app.models import SiteSettings
+
+    # SiteSettings.get_solo() lazily creates its one row on first access
+    # (apps.core.context_processors.site, run on every page) — without
+    # this warm-up, the first capture below pays that one-time cost and
+    # the second doesn't, a false mismatch unrelated to select_related.
+    SiteSettings.get_solo()
+
+    def make(n, prefix):
+        return [
+            News.objects.create(
+                title=f'{prefix} {i}', short_description='d', content='<p>c</p>',
+                category=subcategory, author=administrator,
+                status=News.Status.PUBLISHED, published_at=timezone.now(),
+            )
+            for i in range(n)
+        ]
+
+    make(1, 'Xəbər')
+    with CaptureQueriesContext(connection) as one:
+        client.get(category.get_absolute_url())
+
+    make(2, 'Başqa xəbər')
+    with CaptureQueriesContext(connection) as three:
+        client.get(category.get_absolute_url())
+
+    assert len(three.captured_queries) == len(one.captured_queries)

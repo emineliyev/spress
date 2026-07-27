@@ -19,7 +19,7 @@ def handler404(request, exception):
 
     context = {
         'popular_news': News.objects.published()
-        .select_related('category', 'featured_image')
+        .select_related('category__parent', 'featured_image')
         .order_by('-view_count')[:ERROR_PAGE_POPULAR_NEWS_COUNT],
     }
     return render(request, 'errors/404.html', context, status=404)

@@ -18,7 +18,7 @@ class TagDetailView(ListView):
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
-        return News.objects.published().filter(tags=self.tag).select_related('category', 'featured_image')
+        return News.objects.published().filter(tags=self.tag).select_related('category__parent', 'featured_image')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

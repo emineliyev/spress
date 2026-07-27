@@ -1,8 +1,11 @@
 import pytest
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
 from apps.news.models import News
+from apps.settings_app.models import SiteSettings
 
 
 @pytest.mark.django_db
@@ -103,3 +106,86 @@ def test_robots_txt_renders(client):
     response = client.get(reverse('seo:robots_txt'))
     assert response.status_code == 200
     assert b'Disallow: /cms/' in response.content
+
+
+def _make_articles(n, category, administrator, title_prefix='Xəbər'):
+    return [
+        News.objects.create(
+            title=f'{title_prefix} {i}', short_description='d', content='<p>c</p>',
+            category=category, author=administrator,
+            status=News.Status.PUBLISHED, published_at=timezone.now(),
+        )
+        for i in range(n)
+    ]
+
+
+@pytest.mark.django_db
+def test_home_page_query_count_does_not_scale_with_article_count(client, subcategory, administrator):
+    """category_sections (HomeView.get_context_data) shows subcategory
+    articles too (News.objects.in_category on the parent top-level
+    category) — each renders via news_card.html, whose category link
+    needs category.parent.slug. Without select_related('category__parent')
+    that was one extra query per article instead of one join: invisible
+    with a single article in a smoke test, real at any actual traffic
+    scale. Asserting the query count is identical for 1 vs 3 articles is
+    what actually proves it, not a fixed expected count (which would just
+    be a magic number unrelated to the bug this guards against)."""
+
+    # SiteSettings.get_solo() lazily creates its one row on first access
+    # (apps.core.context_processors.site, run on every page) — without
+    # this warm-up, the *first* capture below would pay that one-time
+    # SELECT+INSERT cost and the second wouldn't, a false mismatch with
+    # nothing to do with select_related.
+    SiteSettings.get_solo()
+
+    _make_articles(1, subcategory, administrator)
+    with CaptureQueriesContext(connection) as one:
+        client.get(reverse('news:home'))
+
+    _make_articles(2, subcategory, administrator, title_prefix='Başqa xəbər')
+    with CaptureQueriesContext(connection) as three:
+        client.get(reverse('news:home'))
+
+    assert len(three.captured_queries) == len(one.captured_queries)
+
+
+@pytest.mark.django_db
+def test_article_detail_related_articles_query_count_does_not_scale(client, subcategory, administrator):
+    """related_articles (NewsDetailView.get_context_data) falls back to
+    News.objects.in_category(article.category) when the article has no
+    manually curated related_articles — same category.parent.slug
+    concern as above, this time for a subcategory article's siblings."""
+
+    SiteSettings.get_solo()  # see test_home_page_query_count_... above
+    articles = _make_articles(4, subcategory, administrator)
+    main = articles[0]
+
+    # NewsDetailView.get_object() only fires the view_count UPDATE once
+    # per session (SESSION_VIEWED_KEY, see test_viewing_an_article_
+    # increments_view_count_once_per_session above) — this warm-up visit
+    # spends that one-time query so it doesn't fall unevenly on whichever
+    # capture happens to run first below.
+    client.get(main.get_absolute_url())
+
+    with CaptureQueriesContext(connection) as few_siblings:
+        client.get(main.get_absolute_url())
+
+    _make_articles(3, subcategory, administrator, title_prefix='Əlavə xəbər')
+    with CaptureQueriesContext(connection) as more_siblings:
+        client.get(main.get_absolute_url())
+
+    assert len(more_siblings.captured_queries) == len(few_siblings.captured_queries)
+
+
+@pytest.mark.django_db
+def test_search_results_query_count_does_not_scale_with_match_count(client, subcategory, administrator):
+    SiteSettings.get_solo()  # see test_home_page_query_count_... above
+    _make_articles(1, subcategory, administrator, title_prefix='Axtarışlıq xəbər')
+    with CaptureQueriesContext(connection) as one_match:
+        client.get(reverse('news:search'), {'q': 'Axtarışlıq'})
+
+    _make_articles(3, subcategory, administrator, title_prefix='Axtarışlıq xəbər')
+    with CaptureQueriesContext(connection) as four_matches:
+        client.get(reverse('news:search'), {'q': 'Axtarışlıq'})
+
+    assert len(four_matches.captured_queries) == len(one_match.captured_queries)

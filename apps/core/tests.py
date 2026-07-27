@@ -167,6 +167,43 @@ def test_handler404_lists_only_published_articles_by_popularity(category, admini
 
 
 @pytest.mark.django_db
+def test_handler404_query_count_does_not_scale_with_popular_article_count(subcategory, administrator):
+    """Same category.parent.slug concern as the public-facing views —
+    handler404's popular_news needs select_related('category__parent')."""
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    from apps.settings_app.models import SiteSettings
+
+    # SiteSettings.get_solo() lazily creates its one row on first access
+    # (apps.core.context_processors.site, run by every base.html render)
+    # — without this warm-up, the first capture below pays that one-time
+    # cost and the second doesn't, a false mismatch unrelated to
+    # select_related.
+    SiteSettings.get_solo()
+
+    def make(n, prefix):
+        return [
+            News.objects.create(
+                title=f'{prefix} {i}', short_description='d', content='<p>c</p>',
+                category=subcategory, author=administrator, view_count=100 - i,
+                status=News.Status.PUBLISHED, published_at=timezone.now(),
+            )
+            for i in range(n)
+        ]
+
+    make(1, 'Xəbər')
+    with CaptureQueriesContext(connection) as one:
+        handler404(RequestFactory().get('/no-such-page/'), Exception('not found'))
+
+    make(2, 'Başqa xəbər')
+    with CaptureQueriesContext(connection) as three:
+        handler404(RequestFactory().get('/no-such-page/'), Exception('not found'))
+
+    assert len(three.captured_queries) == len(one.captured_queries)
+
+
+@pytest.mark.django_db
 def test_handler500_returns_500_without_touching_the_database(django_assert_num_queries):
     with django_assert_num_queries(0):
         response = handler500(RequestFactory().get('/'))

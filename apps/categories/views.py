@@ -43,12 +43,15 @@ class CategoryDetailView(ListView):
         subcategory_slug = self.kwargs.get('subcategory_slug')
         if subcategory_slug:
             return get_object_or_404(
-                Category.objects.active().visible(), slug=subcategory_slug, parent__slug=category_slug,
+                Category.objects.active().visible().select_related('parent'),
+                slug=subcategory_slug, parent__slug=category_slug,
             )
-        return get_object_or_404(Category.objects.active().visible().top_level(), slug=category_slug)
+        return get_object_or_404(
+            Category.objects.active().visible().top_level().select_related('parent'), slug=category_slug,
+        )
 
     def get_queryset(self):
-        return News.objects.in_category(self.category).select_related('category', 'featured_image')
+        return News.objects.in_category(self.category).select_related('category__parent', 'featured_image')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

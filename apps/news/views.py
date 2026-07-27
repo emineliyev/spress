@@ -32,7 +32,7 @@ class HomeView(TemplateView):
             items = list(
                 News.objects.in_category(category)
                 .exclude(pk__in=excluded_ids)
-                .select_related('category', 'featured_image')[:HOME_SECTION_ARTICLES]
+                .select_related('category__parent', 'featured_image')[:HOME_SECTION_ARTICLES]
             )
             if items:
                 category_sections.append({'category': category, 'articles': items})
@@ -60,7 +60,7 @@ class NewsDetailView(DetailView):
     context_object_name = 'article'
 
     def get_queryset(self):
-        base = News.objects.select_related('category', 'author', 'featured_image').prefetch_related('tags')
+        base = News.objects.select_related('category__parent', 'author', 'featured_image').prefetch_related('tags')
         if self.request.user.is_authenticated:
             # CMS staff (the only accounts that exist — see Phase 2 ARCHITECTURE.md
             # "Login destination") can preview any non-deleted status via the
@@ -85,7 +85,7 @@ class NewsDetailView(DetailView):
         related = article.related_articles.published()
         if not related.exists():
             related = News.objects.in_category(article.category).exclude(pk=article.pk)
-        context['related_articles'] = related.select_related('category', 'featured_image')[:4]
+        context['related_articles'] = related.select_related('category__parent', 'featured_image')[:4]
         context['nav_active_category'] = article.category
         context['video_covers'] = {
             cover.video_id: cover.cover_image.file.url
@@ -111,7 +111,7 @@ class NewsSearchView(ListView):
                 | Q(short_description__icontains=self.query)
                 | Q(content__icontains=self.query)
             )
-            .select_related('category', 'featured_image')
+            .select_related('category__parent', 'featured_image')
             .distinct()
         )
 
