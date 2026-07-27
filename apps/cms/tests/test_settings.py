@@ -92,3 +92,43 @@ def test_settings_form_accepts_a_count_within_range(admin_client):
     response = admin_client.post(reverse('cms:settings_edit'), _valid_settings_payload(home_category_sections_count=8))
     assert response.status_code == 302
     assert SiteSettings.get_solo().home_category_sections_count == 8
+
+
+@pytest.mark.django_db
+def test_home_page_shows_every_populated_top_level_category_when_show_all_is_enabled(client, administrator):
+    """home_category_sections_count is capped at 8 (HOME_CATEGORY_SECTIONS_MAX)
+    — home_show_all_categories exists precisely so a site with more than
+    8 populated top-level categories can still show every one of them,
+    not just the max the plain count field allows."""
+    settings = SiteSettings.get_solo()
+    settings.home_show_all_categories = True
+    settings.home_category_sections_count = 1  # must be ignored entirely
+    settings.save()
+
+    for i in range(10):
+        category = Category.objects.create(name=f'Kateqoriya {i}', order=i)
+        for j in range(2):
+            News.objects.create(
+                title=f'Xəbər {i}-{j}', short_description='d', content='<p>c</p>',
+                category=category, author=administrator,
+                status=News.Status.PUBLISHED, published_at=timezone.now(),
+            )
+
+    response = client.get(reverse('news:home'))
+
+    assert len(response.context['category_sections']) == 10
+
+
+@pytest.mark.django_db
+def test_settings_form_saves_show_all_categories_toggle(admin_client):
+    response = admin_client.post(
+        reverse('cms:settings_edit'),
+        _valid_settings_payload(home_show_all_categories='on'),
+    )
+    assert response.status_code == 302
+    assert SiteSettings.get_solo().home_show_all_categories is True
+
+    # Omitting the field entirely (as an unchecked HTML checkbox does)
+    # must turn it back off, not leave the previous value in place.
+    admin_client.post(reverse('cms:settings_edit'), _valid_settings_payload())
+    assert SiteSettings.get_solo().home_show_all_categories is False

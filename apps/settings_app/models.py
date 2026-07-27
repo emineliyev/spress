@@ -96,7 +96,10 @@ class SiteSettings(BaseModel):
     # it without a code change. Capped at 8, same reasoning as
     # NAV_VISIBLE_CATEGORY_COUNT (apps/core/context_processors.py): a
     # sane upper bound on how much one page reasonably shows, not a hard
-    # technical limit.
+    # technical limit. Ignored entirely when home_show_all_categories is
+    # True — a separate boolean rather than a "0 means unlimited" sentinel
+    # value on this field, so the settings screen reads as an explicit
+    # choice instead of a magic number an editor has to already know about.
     home_category_sections_count = models.PositiveSmallIntegerField(
         default=2,
         validators=[
@@ -104,6 +107,7 @@ class SiteSettings(BaseModel):
             MaxValueValidator(HOME_CATEGORY_SECTIONS_MAX),
         ],
     )
+    home_show_all_categories = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Site Settings'

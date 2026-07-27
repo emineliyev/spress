@@ -14,7 +14,7 @@ class SiteSettingsForm(forms.ModelForm):
             'site_name', 'footer_text', 'contact_email',
             'logo', 'favicon',
             'contact_phone', 'contact_address',
-            'home_category_sections_count',
+            'home_category_sections_count', 'home_show_all_categories',
         ]
         # USE_I18N = False (apps/core/forms.py docstring)
         error_messages = {
@@ -36,7 +36,9 @@ class SiteSettingsForm(forms.ModelForm):
                 'class': FIELD_CLASS,
                 'min': HOME_CATEGORY_SECTIONS_MIN,
                 'max': HOME_CATEGORY_SECTIONS_MAX,
+                'data-role': 'category-sections-count',
             }),
+            'home_show_all_categories': forms.CheckboxInput(attrs={'data-role': 'toggle-all-categories'}),
         }
 
 

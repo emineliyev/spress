@@ -27,9 +27,13 @@ class HomeView(TemplateView):
         hero = published.filter(is_featured=True).first() or published.first()
         excluded_ids = [hero.pk] if hero else []
 
-        sections_count = SiteSettings.get_solo().home_category_sections_count
+        home_settings = SiteSettings.get_solo()
+        top_level_categories = Category.objects.active().visible().top_level().order_by('order')
+        if not home_settings.home_show_all_categories:
+            top_level_categories = top_level_categories[:home_settings.home_category_sections_count]
+
         category_sections = []
-        for category in Category.objects.active().visible().top_level().order_by('order')[:sections_count]:
+        for category in top_level_categories:
             items = list(
                 News.objects.in_category(category)
                 .exclude(pk__in=excluded_ids)

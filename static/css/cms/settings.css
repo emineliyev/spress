@@ -58,3 +58,15 @@
 .media-picker--square .media-picker__choose {
     aspect-ratio: 1 / 1;
 }
+
+/* static/js/cms/settings.js toggles this when "Bütün kateqoriyaları
+   göstər" is checked — the count field stays readOnly (so it still
+   submits, apps/news/views.py ignores its value either way) but visibly
+   inert. */
+.form-field--disabled {
+    opacity: 0.5;
+}
+
+.form-field--disabled label {
+    color: var(--color-text-muted);
+}

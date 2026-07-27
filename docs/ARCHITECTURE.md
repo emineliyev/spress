@@ -3315,3 +3315,52 @@ own category's section, that category's section came out empty (and
 therefore dropped) by chance — fixed by giving each test category two
 articles, unrelated to the setting being tested. 232 passed total
 (217 + 10 + 5).
+
+# Phase 34 ("show all categories" toggle for the homepage)
+
+## What was asked
+
+Follow-up to Phase 33's `home_category_sections_count` setting (capped
+at 1–8): user has more than a couple of populated top-level categories
+and wants a way to show all of them on the homepage, not just up to the
+cap.
+
+## Added: `SiteSettings.home_show_all_categories`
+
+Considered a "0 means unlimited" sentinel on the existing count field
+instead — rejected as a magic number an editor would have to already
+know about, when the settings screen can just state the choice
+directly. Added a separate `BooleanField` (default `False`, matching
+prior behavior exactly):
+
+- `apps/settings_app/models.py` — new field + migration
+  `0007_sitesettings_home_show_all_categories`.
+- `apps/settings_app/forms.py` — added to `SiteSettingsForm`, a plain
+  `CheckboxInput` with a `data-role` for the JS below to target.
+- `templates/cms/settings.html` — checkbox above the existing count
+  field, reusing the `.cms-checkbox` label pattern already used for
+  `is_featured`/`is_breaking` on the News form.
+- `apps/news/views.py`'s `HomeView` — when the toggle is on, the
+  top-level-categories queryset is left unsliced entirely; the count
+  field is only applied (`[:count]`) when it's off.
+- New `static/js/cms/settings.js` — toggles the count field between
+  interactive and visually inert as the checkbox changes. Deliberately
+  sets `readOnly`, not `disabled`: a `disabled` input is excluded from
+  form submission outright, which would leave this required field
+  empty and fail validation the moment "show all" is checked — `readOnly`
+  keeps submitting its last value, which `HomeView` ignores anyway once
+  the toggle is on. New `.form-field--disabled` style in
+  `static/css/cms/settings.css` for the visual half of this (opacity,
+  muted label) since `readOnly` alone doesn't grey anything out the way
+  `disabled` natively would.
+
+## Verification
+
+`pytest`: `apps/cms/tests/test_settings.py` — homepage shows all 10 of
+10 populated top-level categories when the toggle is on even though
+`home_category_sections_count` is simultaneously set to 1 (proving the
+count is genuinely ignored, not coincidentally satisfied); the toggle
+itself saves correctly both on and back off (an unchecked HTML checkbox
+sends nothing at all, which must reset the field to `False`, not leave
+the previous value in place — confirmed explicitly rather than assumed).
+234 passed total (232 + 2).
