@@ -13,6 +13,18 @@ VENV="$PROJECT_ROOT/.venv"
 
 cd "$PROJECT_ROOT"
 
+# manage.py's own fallback (os.environ.setdefault, manage.py) is
+# 'config.settings.development' — only gunicorn.service's
+# EnvironmentFile=/opt/spress/.env sets this correctly on its own.
+# Every manage.py call below was silently running under *development*
+# settings until this line existed (confirmed the hard way: migrate/
+# collectstatic still "worked" since dev and prod share the same
+# DATABASE_URL via .env, so nothing looked wrong — until
+# ManifestStaticFilesStorage, a production-only setting, needed
+# collectstatic to actually run under production for its manifest to
+# be built at all).
+export DJANGO_SETTINGS_MODULE=config.settings.production
+
 echo "==> Pulling latest code"
 git pull --ff-only origin main
 

@@ -3710,3 +3710,64 @@ suite re-run after the settings change anyway, to confirm nothing
 elsewhere assumed the old storage backend: 247 passed, unchanged (test
 settings never touch `production.py`, so this was expected, not a
 meaningful signal either way).
+
+# Phase 41 (real outage — deploy.sh's manage.py calls were silently running under development settings all along)
+
+## What happened
+
+Deploying Phase 40's `ManifestStaticFilesStorage` change took the live
+site down: `deploy.sh`'s health check failed with HTTP 500, and the raw
+response was Django's absolute last-resort fallback ("Internal Server
+Error", not even this project's own `errors/500.html`) — meaning
+`errors/500.html`'s *own* `{% static %}` references failed too, while
+handling the first failure.
+
+## Root cause
+
+`manage.py`'s own fallback is `os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.development')`.
+`deploy.sh`'s `manage.py migrate`/`collectstatic` calls never set this
+explicitly — only `deploy/gunicorn.service`'s `EnvironmentFile=/opt/spress/.env`
+correctly puts Gunicorn itself on `production`. This gap has existed
+since `deploy.sh` was first written and stayed invisible for every prior
+deploy: `development.py` and `production.py` both read the same
+`DATABASE_URL`/`REDIS_URL` from `.env` via `django-environ`, so
+`migrate` and plain `collectstatic` "worked" under either module with
+no visible difference. `STORAGES` (Phase 40) was the first
+production-only setting an actual `manage.py` subcommand's *behavior*
+depended on — `collectstatic`, run under `development.py`, used the
+default `StaticFilesStorage` and never built `staticfiles.json` at all.
+Every `{% static %}` lookup at request time then raised
+`ValueError: Missing staticfiles manifest entry for '...'` — including
+inside `errors/500.html` itself, which is why even the custom error
+page couldn't render and Django fell all the way back to its bare
+built-in fallback.
+
+Confirmed directly, not guessed: `manage.py collectstatic --noinput`
+run by hand printed `283 static files copied` with **no** "post-
+processed" count and no manifest file on disk; the exact same command
+with `DJANGO_SETTINGS_MODULE=config.settings.production` forced in
+front of it printed `283 static files copied, 283 post-processed` and
+created `staticfiles.json` immediately.
+
+## Fixed
+
+- **Immediate recovery** (VPS, by hand): `rm -rf staticfiles`, re-ran
+  `collectstatic` with `DJANGO_SETTINGS_MODULE=config.settings.production`
+  forced explicitly, restarted Gunicorn. Confirmed `200` again within
+  minutes of the outage starting.
+- **Permanent fix**: `deploy/deploy.sh` now does
+  `export DJANGO_SETTINGS_MODULE=config.settings.production` immediately
+  after `cd "$PROJECT_ROOT"`, before any `manage.py` call — every
+  command deploy.sh runs is now guaranteed to match what Gunicorn
+  actually serves, closing this entire class of "which settings module
+  is this actually running under" gap for good, not just the one
+  symptom that happened to surface it.
+
+## Verification
+
+Manual, on the live server — this is deploy-script/ops territory, not
+something `pytest` (which never invokes `deploy.sh` or shells out to
+`manage.py` as a subprocess) could have caught. Re-confirmed `200` via
+the same `curl --resolve` health-check command `deploy.sh` itself uses,
+both immediately after the manual recovery and is expected to self-
+verify on every future run now that the fix is in `deploy.sh` itself.
