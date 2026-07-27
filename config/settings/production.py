@@ -34,6 +34,36 @@ SECURE_REFERRER_POLICY = 'same-origin'
 CSRF_FAILURE_VIEW = 'apps.core.views.csrf_failure'
 
 # ---------------------------------------------------------------------------
+# Static files (CLAUDE.md ch.13 "Static Assets" — "Use cache versioning
+# for updates")
+# ---------------------------------------------------------------------------
+
+# deploy/nginx.conf caches /static/ for 30 days with no revalidation — a
+# CSS/JS edit that reused the same filename (every deploy, since none of
+# them are hashed) meant every visitor's browser kept serving the old
+# cached copy for up to 30 days after the fix actually shipped (found
+# after a rich-text.css fix "didn't work" — it had, the browser just
+# never re-fetched it). ManifestStaticFilesStorage appends a content
+# hash to every static filename during collectstatic (deploy.sh already
+# runs this every deploy) and rewrites every {% static %} reference to
+# match, so an unchanged file keeps the same URL (still cached, no
+# wasted re-downloads) while a changed one gets a new URL the 30-day
+# cache can't possibly have — no nginx change needed, it just serves
+# whatever filenames exist on disk.
+STORAGES = {
+    # STORAGES is a full replacement, not a merge with Django's own
+    # defaults — 'default' (MediaFile uploads) must be restated
+    # explicitly here or every file upload would break, not just
+    # static files.
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage',
+    },
+}
+
+# ---------------------------------------------------------------------------
 # Email (CLAUDE.md ch.9 CMS Settings — SMTP)
 # ---------------------------------------------------------------------------
 

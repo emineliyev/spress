@@ -3643,3 +3643,70 @@ the link text in CKEditor and replace it with something meaningful
 
 Visual/CSS only — no Python behavior changed, nothing for `pytest` to
 cover here.
+
+# Phase 40 (static files had no cache-busting — deployed CSS/JS fixes could take up to 30 days to actually reach a browser)
+
+## What was asked
+
+Nothing directly — surfaced while confirming Phase 39's link-color fix:
+user reported the color still wasn't showing after deploying and hard-
+refreshing wasn't mentioned as tried yet, which raised the question of
+whether the browser could even be seeing the new file at all.
+
+## Found
+
+`deploy/nginx.conf`'s `location /static/ { expires 30d; }` tells every
+browser to cache static assets for 30 days with no revalidation. Neither
+`config/settings/base.py` nor `production.py` set `STORAGES`/
+`STATICFILES_STORAGE` — Django's default `StaticFilesStorage` keeps a
+CSS/JS file's filename identical across every deploy. Combined, editing
+`rich-text.css` and redeploying doesn't change its URL at all — a
+browser that already cached it has no signal to re-fetch, and would
+keep serving the pre-fix version for up to 30 days regardless of how
+many times the fix is redeployed. A direct, confirmed miss against
+CLAUDE.md ch.13 "Static Assets": "Use cache versioning for updates."
+
+## Fixed
+
+`config/settings/production.py` — added `STORAGES` with
+`'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'}`,
+which appends a content hash to every static filename during
+`collectstatic` (already run every deploy, `deploy.sh`) and rewrites
+every `{% static %}` reference to match — an unchanged file keeps its
+URL (still cached, no wasted re-downloads), a changed one gets a new URL
+the old 30-day cache entry is irrelevant to. `nginx.conf` needed no
+change at all — it just serves whatever filenames exist on disk.
+
+Caught and fixed one mistake before it shipped: `STORAGES` is a full
+replacement of Django's own default, not a merge — an initial version
+that set only the `'staticfiles'` key would have silently dropped the
+`'default'` key entirely, breaking every `MediaFile` upload (not just
+static files) the moment this deployed. Restated `'default':
+{'BACKEND': 'django.core.files.storage.FileSystemStorage'}` explicitly
+alongside it.
+
+Scoped to `production.py` only, not `base.py`/`development.py` — dev
+never runs `collectstatic` in the workflow this project uses (`runserver`
+serves static files directly via `STATICFILES_FINDERS`), so hashed
+filenames would add friction there for no benefit.
+
+## Verification
+
+No `pytest` coverage — this only matters under `DEBUG=False` with a
+real `collectstatic` run, which the test suite's settings
+(`config.settings.test` → `development.py`) never exercises. Verified
+by hand instead: ran `collectstatic` locally against
+`config.settings.production` (`DJANGO_SECRET_KEY`/`DJANGO_ALLOWED_HOSTS`
+set inline, `STATIC_ROOT` monkey-patched to a scratch temp directory so
+nothing in the real project tree was touched) — "283 static files
+copied, 283 post-processed", zero errors, confirming every `url(...)`
+reference inside every CSS file (self-hosted Noto Sans/Serif `@font-face`
+rules, Bootstrap Icons' own already-hashed font URLs) resolves to a real
+file on disk; a manifest-storage failure here throws loudly rather than
+silently 404ing later. Then confirmed `{% static %}` itself resolves
+through the manifest correctly: `static('css/components/rich-text.css')`
+→ `/static/css/components/rich-text.d13c9d89757a.css`. Full `pytest`
+suite re-run after the settings change anyway, to confirm nothing
+elsewhere assumed the old storage backend: 247 passed, unchanged (test
+settings never touch `production.py`, so this was expected, not a
+meaningful signal either way).
