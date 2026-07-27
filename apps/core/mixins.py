@@ -1,4 +1,29 @@
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+
+
+class FormErrorToastMixin:
+    """Adds a toast notification alongside a ModelForm's usual inline
+    field errors when validation fails (CLAUDE.md ch.9 "Notifications" —
+    every action should give clear feedback). Inline errors alone are
+    easy to miss on a long form (the News editor, for instance, prompted
+    this — a missing required Category showed its inline error exactly
+    as intended, but nothing else on the page signaled that anything had
+    gone wrong) — this adds the same visible signal every other CMS
+    action already gets for success/failure.
+
+    Placed before the CreateView/UpdateView in the MRO so this
+    form_invalid() runs first and still calls super() through to
+    Django's own (which re-renders the template with the form's inline
+    errors intact) — this only adds a toast, never replaces the
+    field-level messages.
+    """
+
+    form_error_message = 'Formada xətalar var — bütün məcburi sahələri düzgün doldurun.'
+
+    def form_invalid(self, form):
+        messages.error(self.request, self.form_error_message)
+        return super().form_invalid(form)
 
 
 class AdministratorRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):

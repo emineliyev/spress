@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import CreateView, ListView, UpdateView
 
-from apps.core.mixins import ContentManagerRequiredMixin
+from apps.core.mixins import ContentManagerRequiredMixin, FormErrorToastMixin
 from apps.core.utils import get_client_ip
 from apps.logs.models import ActivityLog
 from apps.tags.forms import TagForm
@@ -39,7 +39,7 @@ class TagListView(ContentManagerRequiredMixin, ListView):
         return context
 
 
-class TagCreateView(ContentManagerRequiredMixin, CreateView):
+class TagCreateView(FormErrorToastMixin, ContentManagerRequiredMixin, CreateView):
     model = Tag
     form_class = TagForm
     template_name = 'cms/tag_form.html'
@@ -59,7 +59,7 @@ class TagCreateView(ContentManagerRequiredMixin, CreateView):
         return reverse('cms:tag_list')
 
 
-class TagUpdateView(ContentManagerRequiredMixin, UpdateView):
+class TagUpdateView(FormErrorToastMixin, ContentManagerRequiredMixin, UpdateView):
     model = Tag
     form_class = TagForm
     template_name = 'cms/tag_form.html'

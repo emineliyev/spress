@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import CreateView, ListView, UpdateView
 
-from apps.core.mixins import AdministratorRequiredMixin
+from apps.core.mixins import AdministratorRequiredMixin, FormErrorToastMixin
 from apps.core.utils import get_client_ip
 from apps.logs.models import ActivityLog
 from apps.settings_app.forms import SocialLinkForm
@@ -22,7 +22,7 @@ class SocialLinkListView(AdministratorRequiredMixin, ListView):
     context_object_name = 'social_links'
 
 
-class SocialLinkCreateView(AdministratorRequiredMixin, CreateView):
+class SocialLinkCreateView(FormErrorToastMixin, AdministratorRequiredMixin, CreateView):
     model = SocialLink
     form_class = SocialLinkForm
     template_name = 'cms/social_link_form.html'
@@ -42,7 +42,7 @@ class SocialLinkCreateView(AdministratorRequiredMixin, CreateView):
         return reverse('cms:social_link_list')
 
 
-class SocialLinkUpdateView(AdministratorRequiredMixin, UpdateView):
+class SocialLinkUpdateView(FormErrorToastMixin, AdministratorRequiredMixin, UpdateView):
     model = SocialLink
     form_class = SocialLinkForm
     template_name = 'cms/social_link_form.html'

@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import CreateView, ListView, UpdateView
 
-from apps.core.mixins import ContentManagerRequiredMixin
+from apps.core.mixins import ContentManagerRequiredMixin, FormErrorToastMixin
 from apps.core.utils import get_client_ip
 from apps.logs.models import ActivityLog
 from apps.pages.forms import PageForm
@@ -35,7 +35,7 @@ class PageListView(ContentManagerRequiredMixin, ListView):
         return context
 
 
-class PageCreateView(ContentManagerRequiredMixin, CreateView):
+class PageCreateView(FormErrorToastMixin, ContentManagerRequiredMixin, CreateView):
     model = Page
     form_class = PageForm
     template_name = 'cms/page_form.html'
@@ -55,7 +55,7 @@ class PageCreateView(ContentManagerRequiredMixin, CreateView):
         return reverse('cms:page_edit', kwargs={'pk': self.object.pk})
 
 
-class PageUpdateView(ContentManagerRequiredMixin, UpdateView):
+class PageUpdateView(FormErrorToastMixin, ContentManagerRequiredMixin, UpdateView):
     model = Page
     form_class = PageForm
     template_name = 'cms/page_form.html'

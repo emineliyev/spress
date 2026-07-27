@@ -3561,3 +3561,47 @@ Manual only — this is nginx config, not Django/pytest territory.
 Re-ran the same `curl -w` timing command after reloading, plus
 `curl -sI -H "Accept-Encoding: gzip" ... | grep -i content-encoding` to
 confirm `Content-Encoding: gzip` is actually present on the response.
+
+# Phase 38 (a CMS-wide toast on any form validation error)
+
+## What was asked
+
+Chasing what looked at first like a create-article redirect bug turned
+out to be a real save succeeding exactly as designed — the actual report
+underneath it was: submitting the News form without a Category shows its
+inline red error correctly, but nothing else on the page signals that
+anything went wrong, and that inline message is easy to miss on a long
+form. Asked for a toast/popup in addition. Confirmed with the user this
+should apply CMS-wide, not just News.
+
+## Added: `FormErrorToastMixin`
+
+`apps/core/mixins.py` — a small mixin overriding `form_invalid()` to add
+`messages.error(...)` before calling `super().form_invalid(form)`, so the
+existing toast pipeline (`components/toast.html`, already included in
+`cms/base.html`) picks it up alongside the untouched inline field errors
+— this only adds a signal, never replaces the field-level one.
+
+Applied to all 13 CMS `CreateView`/`UpdateView` classes across the
+project (grepped for every one, not just News, per the user's "all
+forms" choice): `AdCreateView`/`AdUpdateView`, `CategoryCreateView`/
+`CategoryUpdateView`, `NewsCreateView`/`NewsUpdateView`,
+`PageCreateView`/`PageUpdateView`, `SettingsUpdateView`,
+`SocialLinkCreateView`/`SocialLinkUpdateView`, `TagCreateView`/
+`TagUpdateView`, `UserCreateView`/`UserUpdateView`. Placed first in each
+MRO (`class NewsCreateView(FormErrorToastMixin, NewsAccessRequiredMixin, CreateView)`)
+so its `form_invalid()` runs before Django's own re-render.
+`FolderCreateView`/`FolderUpdateView` (`apps/cms/views/media.py`)
+deliberately excluded — plain `View` subclasses that already call
+`messages.error()` directly in their own `post()`, not
+`ModelFormMixin.form_invalid()`, so the mixin wouldn't apply to them
+architecturally.
+
+## Verification
+
+`pytest`: `apps/core/tests.py` (2 new tests) — an invalid News
+submission (missing Category) returns 200 (not a redirect), the inline
+`form.errors['category']` is still present, and the toast message is in
+`response.context['messages']`; a second test repeats the same shape
+against `CategoryCreateView` to confirm this isn't special-cased to
+News. 247 passed total (245 + 2).

@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, ListView, UpdateView
 
-from apps.core.mixins import NewsAccessRequiredMixin
+from apps.core.mixins import FormErrorToastMixin, NewsAccessRequiredMixin
 from apps.core.utils import get_client_ip
 from apps.logs.models import ActivityLog
 from apps.media_manager.services import collect_news_media_ids, delete_unused_media
@@ -65,7 +65,7 @@ class NewsListView(NewsAccessRequiredMixin, ListView):
         return context
 
 
-class NewsCreateView(NewsAccessRequiredMixin, CreateView):
+class NewsCreateView(FormErrorToastMixin, NewsAccessRequiredMixin, CreateView):
     model = News
     form_class = NewsForm
     template_name = 'cms/news_form.html'
@@ -92,7 +92,7 @@ class NewsCreateView(NewsAccessRequiredMixin, CreateView):
         return reverse('cms:news_list')
 
 
-class NewsUpdateView(NewsAccessRequiredMixin, UpdateView):
+class NewsUpdateView(FormErrorToastMixin, NewsAccessRequiredMixin, UpdateView):
     model = News
     form_class = NewsForm
     template_name = 'cms/news_form.html'

@@ -10,7 +10,7 @@ from django.views.generic import CreateView, ListView, UpdateView
 
 from apps.advertisements.forms import AdvertisementForm
 from apps.advertisements.models import Advertisement
-from apps.core.mixins import StructureManagerRequiredMixin
+from apps.core.mixins import FormErrorToastMixin, StructureManagerRequiredMixin
 from apps.core.utils import get_client_ip
 from apps.logs.models import ActivityLog
 from apps.media_manager.services import delete_unused_media
@@ -63,7 +63,7 @@ class AdListView(StructureManagerRequiredMixin, ListView):
         return context
 
 
-class AdCreateView(StructureManagerRequiredMixin, CreateView):
+class AdCreateView(FormErrorToastMixin, StructureManagerRequiredMixin, CreateView):
     model = Advertisement
     form_class = AdvertisementForm
     template_name = 'cms/ad_form.html'
@@ -83,7 +83,7 @@ class AdCreateView(StructureManagerRequiredMixin, CreateView):
         return reverse('cms:ad_edit', kwargs={'pk': self.object.pk})
 
 
-class AdUpdateView(StructureManagerRequiredMixin, UpdateView):
+class AdUpdateView(FormErrorToastMixin, StructureManagerRequiredMixin, UpdateView):
     model = Advertisement
     form_class = AdvertisementForm
     template_name = 'cms/ad_form.html'

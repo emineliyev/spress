@@ -11,7 +11,7 @@ from django.views.generic import CreateView, ListView, UpdateView
 
 from apps.accounts.forms import UserForm
 from apps.accounts.services import send_password_setup_email
-from apps.core.mixins import AdministratorRequiredMixin
+from apps.core.mixins import AdministratorRequiredMixin, FormErrorToastMixin
 from apps.core.utils import get_client_ip
 from apps.logs.models import ActivityLog
 
@@ -49,7 +49,7 @@ class UserListView(AdministratorRequiredMixin, ListView):
         return context
 
 
-class UserCreateView(AdministratorRequiredMixin, CreateView):
+class UserCreateView(FormErrorToastMixin, AdministratorRequiredMixin, CreateView):
     model = User
     form_class = UserForm
     template_name = 'cms/user_form.html'
@@ -72,7 +72,7 @@ class UserCreateView(AdministratorRequiredMixin, CreateView):
         return reverse('cms:user_list')
 
 
-class UserUpdateView(AdministratorRequiredMixin, UpdateView):
+class UserUpdateView(FormErrorToastMixin, AdministratorRequiredMixin, UpdateView):
     model = User
     form_class = UserForm
     template_name = 'cms/user_form.html'

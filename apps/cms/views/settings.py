@@ -2,14 +2,14 @@ from django.contrib import messages
 from django.urls import reverse
 from django.views.generic import UpdateView
 
-from apps.core.mixins import AdministratorRequiredMixin
+from apps.core.mixins import AdministratorRequiredMixin, FormErrorToastMixin
 from apps.core.utils import get_client_ip
 from apps.logs.models import ActivityLog
 from apps.settings_app.forms import SiteSettingsForm
 from apps.settings_app.models import SiteSettings
 
 
-class SettingsUpdateView(AdministratorRequiredMixin, UpdateView):
+class SettingsUpdateView(FormErrorToastMixin, AdministratorRequiredMixin, UpdateView):
     """Singleton screen — no pk in the URL, `get_object()` always resolves
     to `SiteSettings.get_solo()` (CLAUDE.md ch.9 "Settings"). Same access
     level as user management (`AdministratorRequiredMixin`): site-wide

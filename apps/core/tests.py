@@ -325,3 +325,40 @@ def test_category_reorder_invalidates_the_site_context_cache_despite_using_bulk_
     )
 
     assert cache.get(SITE_CONTEXT_CACHE_KEY) is None
+
+
+@pytest.mark.django_db
+def test_invalid_news_submission_shows_an_error_toast_alongside_the_inline_field_error(admin_client):
+    """Prompted by a real report: a missing required Category showed its
+    inline field error exactly as designed, but nothing else on the page
+    signaled that anything had gone wrong — easy to miss on a long form.
+    FormErrorToastMixin (apps/core/mixins.py) adds a toast without
+    replacing the inline error, applied across every CMS ModelForm view,
+    not just News."""
+    from django.urls import reverse
+
+    response = admin_client.post(reverse('cms:news_create'), {
+        'title': 'Kateqoriyasız xəbər', 'short_description': 'd', 'content': '<p>c</p>',
+        # 'category' deliberately omitted — the field FormErrorToastMixin
+        # was added for.
+        'status': News.Status.DRAFT,
+    })
+
+    assert response.status_code == 200  # form_invalid() re-renders, no redirect
+    assert 'category' in response.context['form'].errors  # inline error still there
+    toast_messages = [str(message) for message in response.context['messages']]
+    assert any('bütün məcburi sahələri' in message.lower() for message in toast_messages)
+
+
+@pytest.mark.django_db
+def test_invalid_category_submission_also_shows_the_error_toast(admin_client):
+    """Same mixin, a different CMS form — confirms this isn't special-
+    cased to News."""
+    from django.urls import reverse
+
+    response = admin_client.post(reverse('cms:category_create'), {'name': ''})
+
+    assert response.status_code == 200
+    assert 'name' in response.context['form'].errors
+    toast_messages = [str(message) for message in response.context['messages']]
+    assert any('bütün məcburi sahələri' in message.lower() for message in toast_messages)

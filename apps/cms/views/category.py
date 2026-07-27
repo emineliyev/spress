@@ -12,7 +12,7 @@ from django.views.generic import CreateView, ListView, UpdateView
 from apps.categories.forms import CategoryForm
 from apps.categories.models import Category
 from apps.core.context_processors import SITE_CONTEXT_CACHE_KEY
-from apps.core.mixins import StructureManagerRequiredMixin
+from apps.core.mixins import FormErrorToastMixin, StructureManagerRequiredMixin
 from apps.core.utils import get_client_ip
 from apps.logs.models import ActivityLog
 
@@ -57,7 +57,7 @@ class CategoryListView(StructureManagerRequiredMixin, ListView):
         return context
 
 
-class CategoryCreateView(StructureManagerRequiredMixin, CreateView):
+class CategoryCreateView(FormErrorToastMixin, StructureManagerRequiredMixin, CreateView):
     model = Category
     form_class = CategoryForm
     template_name = 'cms/category_form.html'
@@ -81,7 +81,7 @@ class CategoryCreateView(StructureManagerRequiredMixin, CreateView):
         return reverse('cms:category_list')
 
 
-class CategoryUpdateView(StructureManagerRequiredMixin, UpdateView):
+class CategoryUpdateView(FormErrorToastMixin, StructureManagerRequiredMixin, UpdateView):
     model = Category
     form_class = CategoryForm
     template_name = 'cms/category_form.html'
