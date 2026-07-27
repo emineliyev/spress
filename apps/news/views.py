@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.db.models import F, Q
 from django.utils.http import urlencode
 from django.views.generic import DetailView, ListView, TemplateView
@@ -16,13 +17,32 @@ SEARCH_RESULTS_PER_PAGE = 10
 SESSION_VIEWED_KEY = 'viewed_articles'
 SESSION_VIEWED_MAX = 200
 
+# CLAUDE.md ch.13 "Caching Strategy" lists the homepage as a prime cache
+# target — with home_show_all_categories (Phase 34) an admin can put
+# dozens of category sections on one page, each costing its own query,
+# so the render cost is now uncapped without this. Invalidated
+# explicitly (apps/news/signals.py, plus the two places that publish
+# articles via a bulk .update() that no signal ever sees:
+# NewsBulkActionView and publish_scheduled) rather than relied on to
+# expire — TIMEOUT is a backstop for any path that isn't, not the
+# primary invalidation mechanism.
+HOME_CACHE_KEY = 'news:home:context'
+HOME_CACHE_TIMEOUT = 300
+
 
 class HomeView(TemplateView):
     template_name = 'news/home.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        home_context = cache.get(HOME_CACHE_KEY)
+        if home_context is None:
+            home_context = self._build_home_context()
+            cache.set(HOME_CACHE_KEY, home_context, HOME_CACHE_TIMEOUT)
+        context.update(home_context)
+        return context
 
+    def _build_home_context(self):
         published = News.objects.published().select_related('category', 'featured_image')
         hero = published.filter(is_featured=True).first() or published.first()
         excluded_ids = [hero.pk] if hero else []
@@ -44,7 +64,7 @@ class HomeView(TemplateView):
 
         breaking_articles = list(News.objects.breaking().select_related('category')[:BREAKING_TICKER_MAX])
 
-        context.update({
+        return {
             'breaking_articles': breaking_articles,
             # Constant scroll *speed* regardless of how many headlines are
             # queued — a fixed duration would make 2 headlines crawl by
@@ -54,9 +74,8 @@ class HomeView(TemplateView):
             ),
             'hero': hero,
             'category_sections': category_sections,
-            'popular_news': published.order_by('-view_count')[:POPULAR_NEWS_COUNT],
-        })
-        return context
+            'popular_news': list(published.order_by('-view_count')[:POPULAR_NEWS_COUNT]),
+        }
 
 
 class NewsDetailView(DetailView):

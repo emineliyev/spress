@@ -3364,3 +3364,75 @@ itself saves correctly both on and back off (an unchecked HTML checkbox
 sends nothing at all, which must reset the field to `False`, not leave
 the previous value in place — confirmed explicitly rather than assumed).
 234 passed total (232 + 2).
+
+# Phase 35 (homepage caching — home_show_all_categories made its render cost uncapped)
+
+## What was asked
+
+Direct follow-up to Phase 34: user pointed out that with 15+ populated
+top-level categories and "show all" enabled, the homepage would build
+15 × 3 = 45+ article cards in one request — more DB queries (one per
+category section, in `HomeView`'s loop) and a much heavier page than
+before the toggle existed. Discussed three options (Redis-cache the
+homepage, cap the total article count, reduce per-category count); user
+chose caching only.
+
+## Added: `HOME_CACHE_KEY` — the homepage's context cached in Redis, invalidated explicitly rather than left to expire
+
+Redis was already configured (`config/settings/base.py`'s `CACHES`,
+already used for sessions and `apps.accounts.services`' login-lockout
+counters) — nothing new to provision, just the first view to actually
+use it for content.
+
+- `apps/news/views.py`'s `HomeView.get_context_data` — the expensive
+  part (hero, category sections, popular news, breaking ticker) moved
+  into `_build_home_context()`, cached under `HOME_CACHE_KEY` for
+  `HOME_CACHE_TIMEOUT` (300s, a backstop — not the primary invalidation
+  mechanism, see below). All querysets fully evaluated to lists before
+  caching (`popular_news` needed an explicit `list()` it didn't have
+  before; everything else already was) — a cached lazy queryset would
+  just re-query on first access later, defeating the point.
+- New `apps/news/signals.py` — `post_save`/`post_delete` on `News`
+  invalidate the cache unconditionally. Wired via `apps/news/apps.py`'s
+  new `ready()`. Deliberately does **not** cover the view-count
+  increment in `NewsDetailView.get_object()` — that's a bulk
+  `News.objects.filter(pk=...).update(...)`, which Django never routes
+  through signals at all, and that turns out to be exactly right here:
+  busting the homepage cache on every single article view (by far the
+  highest-frequency write to this model) would defeat caching entirely.
+- Two *other* bulk-`.update()` call sites do need to affect the
+  homepage and don't fire signals either — grepped for every
+  `News.objects...update(` in the codebase to find them both:
+  `NewsBulkActionView`'s delete/publish/archive actions
+  (`apps/cms/views/news.py`) and `publish_scheduled`
+  (`apps/news/management/commands/publish_scheduled.py`, the cron job
+  that flips a due Scheduled article to Published — see Phase 30). Both
+  now call `cache.delete(HOME_CACHE_KEY)` directly right after their
+  `.update()`. This last one matters most for staleness: the entire
+  point of that command is an article going live with nobody touching
+  the CMS, so it needs to appear immediately, not after the 300s
+  backstop.
+
+## Found and fixed while implementing: cache state was leaking across the entire test suite
+
+`config/settings/development.py`/`test.py` never override `CACHES` —
+every test hits the same real Redis instance dev/production use.
+`apps/accounts/tests.py` already had its own module-scoped
+`autouse=True` `cache.clear()` fixture for exactly this reason (login-
+lockout counters), but scoped only to that one file — the new homepage
+cache would have leaked between *any* two tests that both touch
+`news:home`, in either direction, anywhere in the suite. Promoted that
+fixture to the root `conftest.py` (global `autouse=True`, applies to
+every test now) and removed the now-redundant duplicate from
+`apps/accounts/tests.py`.
+
+## Verification
+
+`pytest`: new `apps/news/tests/test_home_cache.py` (6 tests) — a second
+request doesn't call `_build_home_context` again (`unittest.mock.patch`,
+not a fragile query-count comparison); creating a published article
+invalidates the cache and the very next request reflects it without
+anything manually clearing it; `NewsPermanentDeleteView`,
+`NewsBulkActionView`'s publish action, and `publish_scheduled` each
+invalidate correctly despite two of those three going through a bulk
+`.update()` that no signal ever sees. 240 passed total (234 + 6).

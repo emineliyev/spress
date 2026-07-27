@@ -5,3 +5,6 @@ class NewsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'apps.news'
     label = 'news'
+
+    def ready(self):
+        from . import signals  # noqa: F401

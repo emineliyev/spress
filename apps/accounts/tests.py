@@ -1,19 +1,8 @@
 import pytest
-from django.core.cache import cache
 from django.urls import reverse
 
 from apps.accounts.services import LOGIN_ATTEMPT_LIMIT
 from apps.logs.models import ActivityLog
-
-
-@pytest.fixture(autouse=True)
-def _clear_cache():
-    # Login-lockout counters live in the same Redis cache as everything
-    # else (apps/accounts/services.py) — never let one test's failed
-    # attempts bleed into the next.
-    cache.clear()
-    yield
-    cache.clear()
 
 
 @pytest.mark.django_db

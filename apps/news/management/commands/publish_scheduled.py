@@ -1,8 +1,10 @@
+from django.core.cache import cache
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from apps.logs.models import ActivityLog
 from apps.news.models import News
+from apps.news.views import HOME_CACHE_KEY
 
 
 class Command(BaseCommand):
@@ -28,6 +30,13 @@ class Command(BaseCommand):
             News.objects.filter(pk__in=[article.pk for article in due_articles]).update(
                 status=News.Status.PUBLISHED,
             )
+            # A bulk .update() above, not .save() — apps/news/signals.py
+            # never sees it, so the homepage cache needs invalidating by
+            # hand. This is the one path where staleness matters most:
+            # the entire point of this command is a scheduled article
+            # becoming visible without anyone touching it, so it should
+            # actually appear immediately, not after HOME_CACHE_TIMEOUT.
+            cache.delete(HOME_CACHE_KEY)
             for article in due_articles:
                 ActivityLog.objects.create(
                     action=ActivityLog.Action.ARTICLE_UPDATED,

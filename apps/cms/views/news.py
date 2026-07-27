@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.core.cache import cache
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -12,6 +13,7 @@ from apps.media_manager.services import collect_news_media_ids, delete_unused_me
 from apps.news.forms import NewsForm
 from apps.news.models import News
 from apps.news.services import sync_video_covers
+from apps.news.views import HOME_CACHE_KEY
 
 NEWS_LIST_PER_PAGE = 15
 
@@ -251,6 +253,11 @@ class NewsBulkActionView(NewsAccessRequiredMixin, View):
         else:
             queryset.update(status=News.Status.ARCHIVED)
             log_action = ActivityLog.Action.ARTICLE_UPDATED
+
+        # A bulk .update() above, not .save() — apps/news/signals.py
+        # never sees it, so the homepage cache needs invalidating here
+        # by hand (any of the three actions can change what's published).
+        cache.delete(HOME_CACHE_KEY)
 
         ActivityLog.objects.create(
             actor=request.user,

@@ -1,8 +1,22 @@
 import io
 
 import pytest
+from django.core.cache import cache
 from django.core.files.base import ContentFile
 from PIL import Image
+
+
+@pytest.fixture(autouse=True)
+def _clear_cache():
+    # Every test shares the same real Redis-backed cache as dev/prod
+    # (config/settings/base.py — no LocMemCache override for tests) —
+    # login-lockout counters (apps/accounts/services.py) and the
+    # homepage context cache (apps/news/views.py's HOME_CACHE_KEY) both
+    # live there, so one test's state could otherwise leak into the
+    # next entirely unrelated one.
+    cache.clear()
+    yield
+    cache.clear()
 
 
 @pytest.fixture
