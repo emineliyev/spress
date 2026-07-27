@@ -7,6 +7,22 @@
  * type (CLAUDE.md ch.7 "component-based architecture").
  */
 
+/* base/reset.css resets every <a> to `color: inherit; text-decoration:
+   none;` so UI chrome (nav, buttons, cards) can style links per
+   component — but that leaves an editor-pasted link inside article
+   body text visually identical to plain paragraph text. Scoped to rich
+   text only, so the UI-wide reset elsewhere is untouched. */
+.rich-text-content a {
+    color: var(--color-info);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: var(--transition-fast);
+}
+
+.rich-text-content a:hover {
+    color: var(--color-primary);
+}
+
 .rich-text-content figure.image {
     margin: 0;
 }

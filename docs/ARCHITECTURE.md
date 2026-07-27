@@ -3605,3 +3605,41 @@ submission (missing Category) returns 200 (not a redirect), the inline
 `response.context['messages']`; a second test repeats the same shape
 against `CategoryCreateView` to confirm this isn't special-cased to
 News. 247 passed total (245 + 2).
+
+# Phase 39 (a pasted CKEditor link was invisible in article body text)
+
+## What was asked
+
+Screenshot showed a link pasted into an article's CKEditor content
+rendering as plain black text, indistinguishable from surrounding
+paragraph text, plus a request to not show the raw `https://` prefix.
+
+## Found
+
+`static/css/base/reset.css`'s global `a { color: inherit; text-decoration: none; }`
+(intentional — lets UI chrome like nav/buttons/cards style links per
+component) also silently applied to editor-pasted links inside article
+body text, which `static/css/components/rich-text.css` (shared by
+`.article__content` and static-page prose) never overrode.
+
+## Fixed
+
+`.rich-text-content a` — `color: var(--color-info)` (blue, the
+conventional "this is a link" signal, distinct from the site's brand
+red already used for CTAs/buttons elsewhere) plus underline and a hover
+color shift to `--color-primary`. Scoped to rich text only — the
+UI-wide reset everywhere else is untouched.
+
+The `https://` prefix wasn't changed in code — explained to the user
+instead why: the link's visible text and its actual `href` were
+identical here (CKEditor autolinked the pasted raw URL), so removing
+the prefix from the displayed text would make it diverge from the
+underlying URL, which is a real accessibility/SEO regression, not a
+cosmetic win — the correct fix is editorial, not technical: reselect
+the link text in CKEditor and replace it with something meaningful
+("rəsmi sayt", "ətraflı bura") while keeping the same href.
+
+## Verification
+
+Visual/CSS only — no Python behavior changed, nothing for `pytest` to
+cover here.
