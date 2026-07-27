@@ -73,6 +73,16 @@ sudo nginx -t && sudo systemctl reload nginx
 sudo apt install -y certbot python3-certbot-nginx
 sudo certbot --nginx -d spress.az -d www.spress.az
 
+# 10b. Confirm certbot's `listen 443 ssl;` line actually includes `http2`
+#      — some certbot/nginx combinations don't add it automatically, and
+#      without it every asset on a page (CLAUDE.md ch.7's ~15 CSS files
+#      alone) competes over far fewer parallel connections than HTTP/2
+#      allows, which shows up as real perceived slowness even though
+#      Django itself responds in milliseconds. If it's missing:
+#      sudo nano /etc/nginx/sites-available/spress.az
+#      change `listen 443 ssl;` to `listen 443 ssl http2;`, then:
+sudo nginx -t && sudo systemctl reload nginx
+
 # 11. Cron — two management commands expect to run periodically; neither
 #     has a Celery Beat schedule (see below), so both run via plain cron.
 sudo -u spress crontab -e

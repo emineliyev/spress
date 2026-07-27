@@ -3506,3 +3506,58 @@ call `_build_site_context` again; creating a `Category`, updating
 `SiteSettings`, and creating/deleting a `SocialLink` each invalidate the
 cache; `CategoryReorderView`'s bulk reorder invalidates it despite the
 `bulk_update()` gap. 245 passed total (240 + 5).
+
+# Phase 37 (real production slowness — nginx had neither gzip nor HTTP/2)
+
+## What was asked
+
+User reported the live site feels slow in real use and asked how to
+actually check why, rather than guess.
+
+## Diagnosed
+
+`curl -w` timing breakdown against the live site, run from the VPS
+itself against its own public IP (`--resolve spress.az:443:127.0.0.1`,
+same technique used earlier to test HTTPS before DNS had propagated):
+TTFB was 56ms, total 56.5ms. That ruled out Django/Gunicorn/Postgres —
+the backend itself responds fast — and pointed at either network
+distance or asset delivery. `sudo cat /etc/nginx/sites-available/spress.az`
+(the live, certbot-edited file — different from `deploy/nginx.conf`'s
+un-edited template, since certbot only ever edits the copy on the
+server, never the repo) confirmed two real gaps at once:
+
+1. **No gzip anywhere.** `deploy/nginx.conf` never had a `gzip` directive
+   — a genuine, direct miss against CLAUDE.md ch.13 "Compression: Enable
+   server compression... Gzip". `base.html` alone loads ~15 CSS files
+   and ~6 JS files (CLAUDE.md ch.7/ch.8's one-file-per-concern rule) —
+   every one of those transferred at full uncompressed size.
+2. **No HTTP/2.** `listen 443 ssl;` — certbot added the SSL directives
+   but not the `http2` keyword this time. Without it, that same pile of
+   small CSS/JS files competes over HTTP/1.1's much smaller effective
+   parallelism instead of one multiplexed HTTP/2 connection — exactly
+   the shape of problem that reads as "the page feels slow" while the
+   TTFB measurement says the opposite.
+
+## Fixed
+
+- `deploy/nginx.conf` — added a `gzip on` block (`text/plain, text/css,
+  text/xml, application/json, application/javascript, application/xml+rss,
+  image/svg+xml`; `text/html` needs no explicit entry — nginx always
+  gzips it once `gzip on` regardless of `gzip_types`; images/fonts left
+  out deliberately since WebP/WOFF2 are already compressed formats,
+  regzipping them just burns CPU for no size win).
+- `docs/DEPLOYMENT.md` step 10 — added 10b: confirm certbot's
+  `listen 443 ssl;` line actually got `http2` added, with the exact
+  manual fix if it didn't (this VPS's certbot run didn't).
+- Live server: both applied by hand directly to
+  `/etc/nginx/sites-available/spress.az` (not `deploy.sh` — this file
+  lives outside the Django code deploy.sh manages entirely) — `listen 443
+  ssl http2;`, plus the same gzip block — then `nginx -t && systemctl
+  reload nginx`.
+
+## Verification
+
+Manual only — this is nginx config, not Django/pytest territory.
+Re-ran the same `curl -w` timing command after reloading, plus
+`curl -sI -H "Accept-Encoding: gzip" ... | grep -i content-encoding` to
+confirm `Content-Encoding: gzip` is actually present on the response.
