@@ -17,6 +17,7 @@ urlpatterns = [
     path('xeberler/<int:pk>/dublikat/', views.NewsDuplicateView.as_view(), name='news_duplicate'),
     path('media/', views.MediaLibraryListView.as_view(), name='media_list'),
     path('media/yukle/', views.MediaUploadStageView.as_view(), name='media_upload_stage'),
+    path('media/muveqqeti/<str:temp_id>/', views.MediaTempPreviewView.as_view(), name='media_temp_preview'),
     path('media/ckeditor-yukle/', views.CKEditorImageUploadView.as_view(), name='ckeditor_image_upload'),
     path('media/kadrla/', views.MediaCropConfirmView.as_view(), name='media_crop_confirm'),
     path('media/<int:pk>/sil/', views.MediaDeleteView.as_view(), name='media_delete'),

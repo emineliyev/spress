@@ -1,8 +1,8 @@
 from django import forms
 
-from apps.core.forms import INVALID_URL_MESSAGE, REQUIRED_MESSAGE
+from apps.core.forms import INVALID_URL_MESSAGE, MAX_VALUE_MESSAGE, MIN_VALUE_MESSAGE, REQUIRED_MESSAGE
 
-from .models import SiteSettings, SocialLink
+from .models import HOME_CATEGORY_SECTIONS_MAX, HOME_CATEGORY_SECTIONS_MIN, SiteSettings, SocialLink
 
 FIELD_CLASS = 'form-input'
 
@@ -14,9 +14,13 @@ class SiteSettingsForm(forms.ModelForm):
             'site_name', 'footer_text', 'contact_email',
             'logo', 'favicon',
             'contact_phone', 'contact_address',
+            'home_category_sections_count',
         ]
         # USE_I18N = False (apps/core/forms.py docstring)
-        error_messages = {'site_name': REQUIRED_MESSAGE}
+        error_messages = {
+            'site_name': REQUIRED_MESSAGE,
+            'home_category_sections_count': {**MIN_VALUE_MESSAGE, **MAX_VALUE_MESSAGE},
+        }
         widgets = {
             'site_name': forms.TextInput(attrs={'class': FIELD_CLASS}),
             'footer_text': forms.TextInput(attrs={'class': FIELD_CLASS}),
@@ -28,6 +32,11 @@ class SiteSettingsForm(forms.ModelForm):
             'favicon': forms.HiddenInput(attrs={'data-role': 'picker-input'}),
             'contact_phone': forms.TextInput(attrs={'class': FIELD_CLASS}),
             'contact_address': forms.TextInput(attrs={'class': FIELD_CLASS}),
+            'home_category_sections_count': forms.NumberInput(attrs={
+                'class': FIELD_CLASS,
+                'min': HOME_CATEGORY_SECTIONS_MIN,
+                'max': HOME_CATEGORY_SECTIONS_MAX,
+            }),
         }
 
 

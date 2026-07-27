@@ -1,6 +1,10 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from apps.core.models import BaseModel
+
+HOME_CATEGORY_SECTIONS_MIN = 1
+HOME_CATEGORY_SECTIONS_MAX = 8
 
 
 class SocialLink(BaseModel):
@@ -85,6 +89,21 @@ class SiteSettings(BaseModel):
     contact_email = models.EmailField(blank=True)
     contact_phone = models.CharField(max_length=30, blank=True)
     contact_address = models.CharField(max_length=255, blank=True)
+
+    # How many top-level categories HomeView.get_context_data (apps/news/
+    # views.py) turns into a section on the homepage — was a hardcoded
+    # constant (HOME_CATEGORY_SECTIONS=2) until an admin asked to control
+    # it without a code change. Capped at 8, same reasoning as
+    # NAV_VISIBLE_CATEGORY_COUNT (apps/core/context_processors.py): a
+    # sane upper bound on how much one page reasonably shows, not a hard
+    # technical limit.
+    home_category_sections_count = models.PositiveSmallIntegerField(
+        default=2,
+        validators=[
+            MinValueValidator(HOME_CATEGORY_SECTIONS_MIN),
+            MaxValueValidator(HOME_CATEGORY_SECTIONS_MAX),
+        ],
+    )
 
     class Meta:
         verbose_name = 'Site Settings'

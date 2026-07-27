@@ -1,10 +1,13 @@
+import mimetypes
+import re
 from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ValidationError
+from django.core.files.storage import default_storage
 from django.db.models import Count, ProtectedError, Sum
-from django.http import JsonResponse
+from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
@@ -13,9 +16,14 @@ from django.views.generic import ListView
 from apps.core.utils import get_client_ip
 from apps.logs.models import ActivityLog
 from apps.media_manager.models import Folder, MediaFile
-from apps.media_manager.services import delete_media_file, process_crop, stage_upload
+from apps.media_manager.services import TEMP_DIR, delete_media_file, process_crop, stage_upload
 
 MEDIA_LIST_PER_PAGE = 24
+
+# Matches exactly what stage_upload() generates (uuid.uuid4().hex + '.' +
+# one of ALLOWED_CONTENT_TYPES' extensions) — deliberately strict, since
+# this is untrusted input used to build a filesystem path.
+TEMP_ID_PATTERN = re.compile(r'^[0-9a-f]{32}\.(jpg|png|webp|svg)$')
 
 
 class MediaLibraryListView(LoginRequiredMixin, ListView):
@@ -84,7 +92,34 @@ class MediaUploadStageView(LoginRequiredMixin, View):
             result = stage_upload(uploaded_file)
         except ValidationError as exc:
             return JsonResponse({'error': exc.message}, status=400)
+
+        # stage_upload() returns the raw /media/temp/ storage URL, but
+        # deploy/nginx.conf denies that path entirely (CLAUDE.md ch.12 —
+        # temp uploads must never be servable publicly). The cropper
+        # still needs the browser to load *this specific* temp file
+        # before it's confirmed, so it's swapped here for a login-gated
+        # proxy URL instead of loosening that nginx rule.
+        result['url'] = reverse('cms:media_temp_preview', kwargs={'temp_id': result['temp_id']})
         return JsonResponse(result)
+
+
+class MediaTempPreviewView(LoginRequiredMixin, View):
+    """Serves a single not-yet-confirmed upload from media/temp/ to the
+    Cropper.js preview — the only legitimate reason to read that
+    directory back out (see MediaUploadStageView above). Login-gated
+    exactly like every other CMS media view, standing in for the public
+    nginx `/media/` serving that ch.12 deliberately excludes this
+    directory from.
+    """
+
+    def get(self, request, temp_id):
+        if not TEMP_ID_PATTERN.match(temp_id):
+            raise Http404
+        temp_path = f'{TEMP_DIR}/{temp_id}'
+        if not default_storage.exists(temp_path):
+            raise Http404
+        content_type = mimetypes.guess_type(temp_id)[0] or 'application/octet-stream'
+        return FileResponse(default_storage.open(temp_path, 'rb'), content_type=content_type)
 
 
 class MediaCropConfirmView(LoginRequiredMixin, View):

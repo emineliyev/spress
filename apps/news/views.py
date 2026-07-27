@@ -3,11 +3,11 @@ from django.utils.http import urlencode
 from django.views.generic import DetailView, ListView, TemplateView
 
 from apps.categories.models import Category
+from apps.settings_app.models import SiteSettings
 
 from .models import News
 
 POPULAR_NEWS_COUNT = 5
-HOME_CATEGORY_SECTIONS = 2
 HOME_SECTION_ARTICLES = 3
 BREAKING_TICKER_MAX = 8
 BREAKING_TICKER_SECONDS_PER_ITEM = 6
@@ -27,8 +27,9 @@ class HomeView(TemplateView):
         hero = published.filter(is_featured=True).first() or published.first()
         excluded_ids = [hero.pk] if hero else []
 
+        sections_count = SiteSettings.get_solo().home_category_sections_count
         category_sections = []
-        for category in Category.objects.active().visible().top_level().order_by('order')[:HOME_CATEGORY_SECTIONS]:
+        for category in Category.objects.active().visible().top_level().order_by('order')[:sections_count]:
             items = list(
                 News.objects.in_category(category)
                 .exclude(pk__in=excluded_ids)

@@ -38,6 +38,7 @@ from .media import (
     MediaLibraryListView,
     MediaMoveView,
     MediaPickerListView,
+    MediaTempPreviewView,
     MediaUploadStageView,
 )
 from .news import (

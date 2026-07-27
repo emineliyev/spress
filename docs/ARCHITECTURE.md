@@ -3201,3 +3201,117 @@ either capture. Separately, the article-detail test reused the same
 view-count-once-per-session logic (`NewsDetailView.get_object()`)
 shaved one UPDATE off the second capture — fixed with an extra warm-up
 request before either capture. 217 passed total (211 + 6).
+
+# Phase 33 (crop preview 403 in production; create-success redirect; homepage section count in Settings)
+
+## What was asked
+
+User reported three things after using the CMS on the live VPS deploy,
+plus a question about homepage logic:
+
+1. Cropping an image in the CMS worked locally but the cropped preview
+   didn't show after the real deploy, with a browser console error:
+   `https://spress.az/media/temp/<uuid>.jpg 403 (Forbidden)`.
+2. Publishing a News article seemed to make it "featured" automatically.
+3. After successfully creating a News article, redirect to the news list
+   instead of the article's own edit page.
+4. What decides which categories appear on the homepage — user has 8
+   populated categories but only 2 show as sections.
+
+## 1. Fixed: crop preview 403 — nginx correctly denies /media/temp/, but the browser still needs to load it
+
+Root cause, found by tracing the full stage→crop→confirm flow end to
+end (JS ↔ view ↔ service, comparing every JSON field name against every
+JS access site — no mismatch found there): `deploy/nginx.conf` has
+`location /media/temp/ { deny all; }`, added deliberately in an earlier
+phase per CLAUDE.md ch.12 ("temporary files... never served even by
+accident"). Locally this is invisible because `DEBUG=True` serves
+`MEDIA_URL` through Django's own `static()` helper (`config/urls.py`),
+never touching nginx at all — in production, Cropper.js's preview
+legitimately needs the browser to load that exact not-yet-confirmed
+file, and nginx was blocking it outright.
+
+Rejected fix: loosening the nginx rule — that would undo a deliberate
+security decision for the sake of one feature. Instead:
+
+- New `apps.cms.views.media.MediaTempPreviewView` — login-gated (same
+  `LoginRequiredMixin` as every other media view), validates `temp_id`
+  against `TEMP_ID_PATTERN` (exactly what `stage_upload()` generates:
+  32 lowercase hex chars + `.` + a known extension) before it ever
+  touches the filesystem, 404s otherwise, then serves the file via
+  `FileResponse`. `/media/temp/` in nginx stays fully denied — nothing
+  about that changes.
+- `MediaUploadStageView.post()` now overwrites `stage_upload()`'s raw
+  `/media/temp/...` URL with `reverse('cms:media_temp_preview', ...)`
+  before returning the JSON. No JS changes needed at all —
+  `media-uploader.js` just uses whatever `url` the response contains.
+- Found and fixed one adjacent, real (if unrelated-to-the-report) bug
+  while in this code: `templates/cms/partials/media_picker_grid.html`'s
+  `data-thumbnail-url` attribute read `media_file.thumbnail.url|default:media_file.file.url`
+  unguarded — for an SVG (`thumbnail` is always `None` for those,
+  `apps/media_manager/services.py`), `FieldFile.url` raises `ValueError`
+  *before* `|default` ever runs, potentially breaking the "Kitabxanadan
+  seç" AJAX grid whenever an SVG is in the library. Matched the `<img>`
+  tag two lines below, which already used `{% if %}`/`{% else %}`
+  correctly.
+
+## 2. Not a bug — clarified, no change made
+
+Traced every mutation of `is_featured` in the codebase (model, form,
+both `NewsCreateView`/`NewsUpdateView.form_valid`, the bulk-publish
+action, `NewsDuplicateView`) — nothing ever sets it besides the admin's
+own "Seçilmiş xəbər" checkbox. User confirmed after asking: the
+checkbox itself was never getting checked — what looked like
+auto-featuring was `HomeView`'s hero fallback (`apps/news/views.py`):
+`published.filter(is_featured=True).first() or published.first()`,
+which shows the latest article as the hero display whenever nothing is
+actually marked featured, without writing anything to the database.
+User chose to keep this fallback as-is (the alternative — no hero at
+all when nothing's featured — was offered and declined).
+
+## 3. Fixed: redirect after creating a News article
+
+`NewsCreateView.get_success_url()` (`apps/cms/views/news.py`) changed
+from `reverse('cms:news_edit', kwargs={'pk': self.object.pk})` to
+`reverse('cms:news_list')`. `NewsUpdateView`'s equivalent (staying on
+the edit page after an *edit*) was deliberately left alone — only asked
+about the create flow.
+
+## 4. Turned into a real setting: `SiteSettings.home_category_sections_count`
+
+`HomeView.category_sections` used to cap at a hardcoded
+`HOME_CATEGORY_SECTIONS = 2` constant (`apps/news/views.py`) — how many
+top-level categories become a homepage section. User has 8 populated
+categories and wanted to control this without a code change every time.
+Added `SiteSettings.home_category_sections_count` (default 2, matching
+prior behavior exactly — `MinValueValidator(1)`/`MaxValueValidator(8)`,
+the upper bound matching the user's own current category count so "show
+everything" is reachable), exposed in `templates/cms/settings.html`'s
+"Ümumi" section, `HomeView` now reads `SiteSettings.get_solo().home_category_sections_count`
+instead of the constant. New migration
+`0006_sitesettings_home_category_sections_count`. Also added
+`MIN_VALUE_MESSAGE`/`MAX_VALUE_MESSAGE` to `apps/core/forms.py` (USE_I18N=False
+means every validated field needs an explicit Azerbaijani override,
+same reasoning as the existing `MAX_LENGTH_MESSAGE`) — the first numeric
+range-validated field in the project, so these didn't exist yet.
+
+## Verification
+
+`pytest`: `apps/cms/tests/test_media_upload.py` (new, 10 tests) —
+stage/preview both require login, the staged response's `url` points at
+`media_temp_preview` not a raw `/media/temp/` path, a freshly staged
+file round-trips byte-for-byte through the preview view with the right
+`Content-Type`, and four flavors of malformed/nonexistent `temp_id`
+(wrong case, wrong length, wrong extension, a literal path-traversal
+attempt that doesn't even match the URL pattern) all 404 rather than
+touching the filesystem. `apps/cms/tests/test_settings.py` (new, 5
+tests) — the homepage actually renders exactly N sections for a
+configured N (both lower and higher than the old hardcoded default),
+and the settings form rejects 0 and 9 while accepting 8. One test-design
+mistake caught and fixed along the way: the "higher count" test
+originally gave each category only one article, and since `HomeView`
+excludes whichever article becomes the hero from also appearing in its
+own category's section, that category's section came out empty (and
+therefore dropped) by chance — fixed by giving each test category two
+articles, unrelated to the setting being tested. 232 passed total
+(217 + 10 + 5).

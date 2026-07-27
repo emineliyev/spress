@@ -12,7 +12,7 @@ re-fetched by JS rather than navigated to.
         <button type="button" class="media-card media-card--pickable"
                 data-action="pick-media"
                 data-media-id="{{ media_file.pk }}"
-                data-thumbnail-url="{{ media_file.thumbnail.url|default:media_file.file.url }}">
+                data-thumbnail-url="{% if media_file.thumbnail %}{{ media_file.thumbnail.url }}{% else %}{{ media_file.file.url }}{% endif %}">
             <div class="media-card__thumb">
                 {% if media_file.thumbnail %}
                     <img src="{{ media_file.thumbnail.url }}" alt="{{ media_file.alt_text }}" loading="lazy">

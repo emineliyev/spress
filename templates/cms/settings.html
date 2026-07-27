@@ -48,6 +48,13 @@
                 {{ form.contact_email }}
                 {% for error in form.contact_email.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
             </div>
+
+            <div class="form-field{% if form.home_category_sections_count.errors %} form-field--error{% endif %}">
+                <label for="{{ form.home_category_sections_count.id_for_label }}">Ana səhifədə kateqoriya blokları</label>
+                {{ form.home_category_sections_count }}
+                {% for error in form.home_category_sections_count.errors %}<p class="form-field__error">{{ error }}</p>{% endfor %}
+                <p class="editor__hint">Ana səhifədə xəbərləri ayrıca bölmə kimi göstəriləcək üst-səviyyə kateqoriyaların sayı (1–8).</p>
+            </div>
         </div>
     </section>
 

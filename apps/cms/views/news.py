@@ -87,7 +87,7 @@ class NewsCreateView(NewsAccessRequiredMixin, CreateView):
         return response
 
     def get_success_url(self):
-        return reverse('cms:news_edit', kwargs={'pk': self.object.pk})
+        return reverse('cms:news_list')
 
 
 class NewsUpdateView(NewsAccessRequiredMixin, UpdateView):

@@ -13,3 +13,5 @@ REQUIRED_MESSAGE = {'required': 'Bu sahənin doldurulması mütləqdir.'}
 MAX_LENGTH_MESSAGE = {'max_length': 'Bu sahə ən çoxu %(limit_value)d simvol ola bilər.'}
 INVALID_URL_MESSAGE = {'invalid': 'Düzgün URL daxil edin (məsələn, https://misal.az).'}
 INVALID_EMAIL_MESSAGE = {'invalid': 'Düzgün e-poçt ünvanı daxil edin.'}
+MIN_VALUE_MESSAGE = {'min_value': 'Bu sahə ən azı %(limit_value)d ola bilər.'}
+MAX_VALUE_MESSAGE = {'max_value': 'Bu sahə ən çoxu %(limit_value)d ola bilər.'}
