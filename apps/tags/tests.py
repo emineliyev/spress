@@ -50,14 +50,11 @@ def test_tag_detail_query_count_does_not_scale_with_article_count(client, subcat
     not just 'category', once a tagged article's category is itself a
     subcategory."""
 
-    from apps.settings_app.models import SiteSettings
-
-    # See apps/categories/tests.py's identical comment: SiteSettings.get_solo()
-    # lazily creates its one row on first access, which would otherwise
-    # make the first capture below pay a one-time cost the second doesn't.
-    SiteSettings.get_solo()
-
     tag = Tag.objects.create(name='Sınaq mövzusu')
+
+    # Warm-up request, not just SiteSettings.get_solo() — see
+    # apps/categories/tests.py's identical comment.
+    client.get(reverse('tags:detail', kwargs={'slug': tag.slug}))
 
     def make(n, prefix):
         articles = [

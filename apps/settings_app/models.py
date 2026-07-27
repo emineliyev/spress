@@ -125,5 +125,10 @@ class SiteSettings(BaseModel):
 
     @classmethod
     def get_solo(cls):
-        obj, _ = cls.objects.get_or_create(pk=1)
+        # select_related so the instance apps.core.context_processors.site()
+        # caches in Redis carries logo/favicon already resolved — without
+        # it, base.html's site_settings.logo.file.url would still fire a
+        # fresh query on every cache *hit*, quietly undermining the point
+        # of caching this at all.
+        obj, _ = cls.objects.select_related('logo', 'favicon').get_or_create(pk=1)
         return obj

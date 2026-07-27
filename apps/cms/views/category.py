@@ -1,6 +1,7 @@
 import json
 
 from django.contrib import messages
+from django.core.cache import cache
 from django.db.models import Count, Max, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -10,6 +11,7 @@ from django.views.generic import CreateView, ListView, UpdateView
 
 from apps.categories.forms import CategoryForm
 from apps.categories.models import Category
+from apps.core.context_processors import SITE_CONTEXT_CACHE_KEY
 from apps.core.mixins import StructureManagerRequiredMixin
 from apps.core.utils import get_client_ip
 from apps.logs.models import ActivityLog
@@ -230,5 +232,10 @@ class CategoryReorderView(StructureManagerRequiredMixin, View):
         for index, category_id in enumerate(ordered_ids):
             categories_by_id[int(category_id)].order = index
         Category.objects.bulk_update(categories, ['order'])
+
+        # bulk_update(), not .save() — apps/core/signals.py never sees it,
+        # so the site-wide nav cache needs invalidating by hand (nav order
+        # is exactly what just changed).
+        cache.delete(SITE_CONTEXT_CACHE_KEY)
 
         return JsonResponse({'ok': True})

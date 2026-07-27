@@ -173,14 +173,13 @@ def test_handler404_query_count_does_not_scale_with_popular_article_count(subcat
     from django.db import connection
     from django.test.utils import CaptureQueriesContext
 
-    from apps.settings_app.models import SiteSettings
-
-    # SiteSettings.get_solo() lazily creates its one row on first access
-    # (apps.core.context_processors.site, run by every base.html render)
-    # — without this warm-up, the first capture below pays that one-time
-    # cost and the second doesn't, a false mismatch unrelated to
-    # select_related.
-    SiteSettings.get_solo()
+    # Warm-up call, not just SiteSettings.get_solo() — two things lazily
+    # populate on first access and must not fall unevenly across the two
+    # captures below: SiteSettings' own row (get_or_create), and
+    # apps.core.context_processors.site()'s Redis cache (Phase 36), which
+    # only a real render through the context processor actually
+    # populates.
+    handler404(RequestFactory().get('/no-such-page/'), Exception('not found'))
 
     def make(n, prefix):
         return [
@@ -233,3 +232,96 @@ def test_csrf_failure_uses_public_styled_page_for_public_paths():
 
     assert response.status_code == 403
     assert 'Bu əməliyyatı tamamlamaq mümkün olmadı' in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_second_request_does_not_rebuild_the_site_context(client):
+    from unittest.mock import patch
+
+    from apps.core import context_processors
+    from apps.core.context_processors import SITE_CONTEXT_CACHE_KEY
+    from django.core.cache import cache
+
+    client.get('/')  # populates SITE_CONTEXT_CACHE_KEY
+    assert cache.get(SITE_CONTEXT_CACHE_KEY) is not None
+
+    with patch.object(context_processors, '_build_site_context') as build_mock:
+        client.get('/')
+        build_mock.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_creating_a_category_invalidates_the_site_context_cache(client):
+    from django.core.cache import cache
+
+    from apps.core.context_processors import SITE_CONTEXT_CACHE_KEY
+
+    client.get('/')
+    assert cache.get(SITE_CONTEXT_CACHE_KEY) is not None
+
+    Category.objects.create(name='Yeni bölmə')
+
+    assert cache.get(SITE_CONTEXT_CACHE_KEY) is None
+
+
+@pytest.mark.django_db
+def test_updating_site_settings_invalidates_the_site_context_cache(client):
+    from django.core.cache import cache
+
+    from apps.core.context_processors import SITE_CONTEXT_CACHE_KEY
+    from apps.settings_app.models import SiteSettings
+
+    client.get('/')
+    assert cache.get(SITE_CONTEXT_CACHE_KEY) is not None
+
+    settings = SiteSettings.get_solo()
+    settings.site_name = 'Yenilənmiş ad'
+    settings.save()
+
+    assert cache.get(SITE_CONTEXT_CACHE_KEY) is None
+
+
+@pytest.mark.django_db
+def test_creating_and_deleting_a_social_link_invalidates_the_site_context_cache(client):
+    from django.core.cache import cache
+
+    from apps.core.context_processors import SITE_CONTEXT_CACHE_KEY
+    from apps.settings_app.models import SocialLink
+
+    client.get('/')
+    assert cache.get(SITE_CONTEXT_CACHE_KEY) is not None
+
+    link = SocialLink.objects.create(platform=SocialLink.Platform.FACEBOOK, url='https://facebook.com/spress')
+    assert cache.get(SITE_CONTEXT_CACHE_KEY) is None
+
+    client.get('/')
+    assert cache.get(SITE_CONTEXT_CACHE_KEY) is not None
+
+    link.delete()
+    assert cache.get(SITE_CONTEXT_CACHE_KEY) is None
+
+
+@pytest.mark.django_db
+def test_category_reorder_invalidates_the_site_context_cache_despite_using_bulk_update(admin_client, category):
+    """CategoryReorderView uses Category.objects.bulk_update(), which
+    post_save never fires for — this only passes if the view invalidates
+    by hand (apps/cms/views/category.py)."""
+    import json
+
+    from django.core.cache import cache
+    from django.urls import reverse
+
+    from apps.core.context_processors import SITE_CONTEXT_CACHE_KEY
+
+    sibling = Category.objects.create(name='Bacı kateqoriya', order=1)
+
+    admin_client.get('/')
+    assert cache.get(SITE_CONTEXT_CACHE_KEY) is not None
+
+    admin_client.post(
+        reverse('cms:category_reorder'),
+        data=json.dumps({'parent': None, 'order': [sibling.pk, category.pk]}),
+        content_type='application/json',
+    )
+
+    assert cache.get(SITE_CONTEXT_CACHE_KEY) is None

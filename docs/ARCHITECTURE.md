@@ -3436,3 +3436,73 @@ anything manually clearing it; `NewsPermanentDeleteView`,
 `NewsBulkActionView`'s publish action, and `publish_scheduled` each
 invalidate correctly despite two of those three going through a bulk
 `.update()` that no signal ever sees. 240 passed total (234 + 6).
+
+# Phase 36 (site-wide nav/settings context cached in Redis)
+
+## What was asked
+
+Direct follow-up to Phase 35: user asked whether the other public pages
+needed caching the same way. Recommended against it for category/tag/
+article pages — already bounded by pagination (`LIMIT`/`OFFSET`, cost
+doesn't grow with total row count) and confirmed as much together by
+walking through exactly how Django's `ListView` pagination executes SQL.
+Pointed at a better target instead:
+`apps.core.context_processors.site()` — 3 queries (top-level categories,
+`SiteSettings`, `SocialLink`) that run on literally every single page on
+the site, for data that only changes when an editor touches the CMS.
+User agreed to cache that.
+
+## Added: `SITE_CONTEXT_CACHE_KEY`
+
+Same pattern as Phase 35's `HOME_CACHE_KEY`, generalized:
+
+- `apps/core/context_processors.py`'s `site()` — the query-building part
+  moved into `_build_site_context()`, cached under `SITE_CONTEXT_CACHE_KEY`
+  (300s backstop, same reasoning as the homepage — invalidation is the
+  real mechanism). `social_links` needed an explicit `list()` it didn't
+  have before (same lesson as `HomeView`'s `popular_news` in Phase 35 —
+  a cached lazy queryset just re-queries on first access later).
+- `apps/settings_app/models.py`'s `SiteSettings.get_solo()` — added
+  `select_related('logo', 'favicon')`. Without it, the *cached* instance
+  would still fire a fresh query for `site_settings.logo.file.url` on
+  every cache hit in `base.html` — caching the row itself doesn't cache
+  its foreign keys unless they're actually joined in.
+- New `apps/core/signals.py` — `post_save`/`post_delete` on `Category`
+  and `SocialLink`, `post_save` only on `SiteSettings` (its `delete()` is
+  overridden to a no-op, so `post_delete` would never fire for it
+  anyway). Wired via `apps/core/apps.py`'s new `ready()`.
+- `CategoryReorderView` (`apps/cms/views/category.py`) uses
+  `Category.objects.bulk_update(categories, ['order'])` for its drag-
+  and-drop reorder — grepped for it specifically, since Phase 35 already
+  established that Django never routes `bulk_update()`/`update()` through
+  signals. Added an explicit `cache.delete(SITE_CONTEXT_CACHE_KEY)` right
+  after it — nav order is exactly what that view changes.
+
+## Found and fixed while implementing: 5 existing N+1 regression tests broke
+
+Phase 32's `category__parent` regression tests (`apps/news`,
+`apps/categories`, `apps/tags`, `apps/core`) each warmed up
+`SiteSettings.get_solo()` directly to spend its one-time lazy-row-
+creation cost before comparing two query captures. That warm-up never
+went through an actual request, so it never touched
+`apps.core.context_processors.site()` at all — meaning the *new* site-
+context cache's own one-time populate cost (3 queries) now fell
+entirely on whichever of the two captures ran first in each of those 5
+tests, the exact same category of false mismatch Phase 32 had already
+solved once for `SiteSettings.get_solo()` alone. Fixed by replacing each
+manual `SiteSettings.get_solo()` call with a real warm-up HTTP request
+(or a direct `handler404()` call, for the one test that doesn't use a
+client) — any full render through `site()` populates both the
+lazily-created row and the new cache in one pass. One test
+(`test_article_detail_related_articles_query_count_does_not_scale`) was
+already safe by coincidence — it already had its own warm-up request for
+an unrelated reason (the view-count-once-per-session check) that happened
+to cover this too.
+
+## Verification
+
+`pytest`: `apps/core/tests.py` (5 new tests) — a second request doesn't
+call `_build_site_context` again; creating a `Category`, updating
+`SiteSettings`, and creating/deleting a `SocialLink` each invalidate the
+cache; `CategoryReorderView`'s bulk reorder invalidates it despite the
+`bulk_update()` gap. 245 passed total (240 + 5).

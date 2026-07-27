@@ -1,5 +1,17 @@
+from django.core.cache import cache
+
 from apps.categories.models import Category
 from apps.settings_app.models import SiteSettings, SocialLink
+
+# Runs on every single page across the whole site (base.html always
+# includes header.html/footer.html) — the highest-frequency repeated
+# query in the project, for data (categories, site settings, social
+# links) that only ever changes when an editor touches the CMS.
+# Invalidated explicitly by apps/core/signals.py, plus
+# CategoryReorderView (apps/cms/views/category.py) directly — that one
+# uses Category.objects.bulk_update(), which post_save never fires for.
+SITE_CONTEXT_CACHE_KEY = 'core:site_context'
+SITE_CONTEXT_CACHE_TIMEOUT = 300
 
 # The primary nav row (templates/components/header.html) has no wrap/
 # scroll handling — past this many top-level categories, items would
@@ -25,10 +37,20 @@ FOOTER_VISIBLE_CATEGORY_COUNT = 8
 def site(request):
     """Global template context: site chrome settings + main navigation.
 
-    Cached per-request only (no cross-request caching yet — that is a
-    Performance-phase concern, CLAUDE.md ch.13 "Caching Strategy").
+    Cached across requests in Redis (CLAUDE.md ch.13 "Caching Strategy")
+    — every page on the site triggers this, for data that changes only
+    when an editor touches Categories, Settings or Social Links in the
+    CMS.
     """
 
+    context = cache.get(SITE_CONTEXT_CACHE_KEY)
+    if context is None:
+        context = _build_site_context()
+        cache.set(SITE_CONTEXT_CACHE_KEY, context, SITE_CONTEXT_CACHE_TIMEOUT)
+    return context
+
+
+def _build_site_context():
     main_categories = list(Category.objects.navigable())
 
     return {
@@ -43,8 +65,10 @@ def site(request):
         'footer_has_more_categories': len(main_categories) > FOOTER_VISIBLE_CATEGORY_COUNT,
         # Already ordered via SocialLink.Meta.ordering — footer.html just
         # iterates it (CLAUDE.md ch.9 "Social Links" — flexible list, not
-        # a fixed field per platform).
-        'social_links': SocialLink.objects.all(),
+        # a fixed field per platform). list()'d for the same reason as
+        # everything else here: a cached lazy queryset just re-queries on
+        # first access later, defeating the point of caching it at all.
+        'social_links': list(SocialLink.objects.all()),
     }
 
 

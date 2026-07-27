@@ -5,7 +5,6 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.news.models import News
-from apps.settings_app.models import SiteSettings
 
 
 @pytest.mark.django_db
@@ -131,12 +130,13 @@ def test_home_page_query_count_does_not_scale_with_article_count(client, subcate
     what actually proves it, not a fixed expected count (which would just
     be a magic number unrelated to the bug this guards against)."""
 
-    # SiteSettings.get_solo() lazily creates its one row on first access
-    # (apps.core.context_processors.site, run on every page) — without
-    # this warm-up, the *first* capture below would pay that one-time
-    # SELECT+INSERT cost and the second wouldn't, a false mismatch with
-    # nothing to do with select_related.
-    SiteSettings.get_solo()
+    # A warm-up request, not just SiteSettings.get_solo() — two things
+    # lazily populate on first access and must not fall unevenly across
+    # the two captures below: SiteSettings' own row (get_or_create), and
+    # now also apps.core.context_processors.site()'s Redis cache (Phase
+    # 36), which only a real request through the context processor
+    # actually populates.
+    client.get(reverse('news:home'))
 
     _make_articles(1, subcategory, administrator)
     with CaptureQueriesContext(connection) as one:
@@ -156,7 +156,6 @@ def test_article_detail_related_articles_query_count_does_not_scale(client, subc
     manually curated related_articles — same category.parent.slug
     concern as above, this time for a subcategory article's siblings."""
 
-    SiteSettings.get_solo()  # see test_home_page_query_count_... above
     articles = _make_articles(4, subcategory, administrator)
     main = articles[0]
 
@@ -179,7 +178,9 @@ def test_article_detail_related_articles_query_count_does_not_scale(client, subc
 
 @pytest.mark.django_db
 def test_search_results_query_count_does_not_scale_with_match_count(client, subcategory, administrator):
-    SiteSettings.get_solo()  # see test_home_page_query_count_... above
+    # Warm-up request, not just SiteSettings.get_solo() — see
+    # test_home_page_query_count_does_not_scale_with_article_count above.
+    client.get(reverse('news:search'))
     _make_articles(1, subcategory, administrator, title_prefix='Axtarışlıq xəbər')
     with CaptureQueriesContext(connection) as one_match:
         client.get(reverse('news:search'), {'q': 'Axtarışlıq'})

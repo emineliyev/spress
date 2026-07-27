@@ -128,13 +128,13 @@ def test_category_page_query_count_does_not_scale_with_article_count(client, cat
     select_related('category__parent') on CategoryDetailView.get_queryset,
     that's one extra query per article instead of one join."""
 
-    from apps.settings_app.models import SiteSettings
-
-    # SiteSettings.get_solo() lazily creates its one row on first access
-    # (apps.core.context_processors.site, run on every page) — without
-    # this warm-up, the first capture below pays that one-time cost and
-    # the second doesn't, a false mismatch unrelated to select_related.
-    SiteSettings.get_solo()
+    # Warm-up request, not just SiteSettings.get_solo() — two things
+    # lazily populate on first access and must not fall unevenly across
+    # the two captures below: SiteSettings' own row (get_or_create), and
+    # apps.core.context_processors.site()'s Redis cache (Phase 36), which
+    # only a real request through the context processor actually
+    # populates.
+    client.get(category.get_absolute_url())
 
     def make(n, prefix):
         return [
