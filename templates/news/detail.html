@@ -70,6 +70,9 @@
     <header class="article__header">
         <a href="{{ article.category.get_absolute_url }}" class="type-caption">{{ article.category.name }}</a>
         <h1 class="article__title">{{ article.title }}</h1>
+        {% if article.short_description %}
+            <p class="article__deck type-body-lg">{{ article.short_description }}</p>
+        {% endif %}
         <div class="article__byline">
             <span class="article__author-avatar" aria-hidden="true"></span>
             <div>

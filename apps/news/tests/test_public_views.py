@@ -190,3 +190,25 @@ def test_search_results_query_count_does_not_scale_with_match_count(client, subc
         client.get(reverse('news:search'), {'q': 'Axtarışlıq'})
 
     assert len(four_matches.captured_queries) == len(one_match.captured_queries)
+
+
+@pytest.mark.django_db
+def test_article_detail_shows_the_short_description_as_a_deck(client, published_news):
+    """short_description previously only fed <meta> tags (SEO/social
+    preview) — never actually rendered as visible text on the article
+    page itself, despite its own form widget already being labeled
+    "Qısa təsvir (dek)..." implying it should be."""
+    response = client.get(published_news.get_absolute_url())
+    assert response.status_code == 200
+    assert published_news.short_description in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_news_card_shows_the_short_description(client, published_news):
+    """CLAUDE.md ch.6 "Cards" lists Short description as a standard
+    news-card field — search_results.html renders every result through
+    components/news_card.html, so this covers every page that reuses it
+    (category, search, tag, related articles)."""
+    response = client.get(reverse('news:search'), {'q': published_news.title[:5]})
+    assert response.status_code == 200
+    assert published_news.short_description in response.content.decode()

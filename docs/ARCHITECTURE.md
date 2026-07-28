@@ -3956,3 +3956,57 @@ plus the existing About-page tests updated for the new fixed slug.
 `makemigrations --check` clean, `collectstatic` re-verified under
 `config.settings.production` again (same reasoning as Phase 44). 258
 passed total (255 + 3).
+
+# Phase 46 (short_description was invisible everywhere except the homepage hero)
+
+## What was asked
+
+User noticed News' "Qısa təsvir" (short_description) shows on the
+homepage hero but not on the article detail page, and asked what it's
+actually for, whether it should appear elsewhere, and whether it
+should stay required. Discussed before changing anything.
+
+## Found
+
+`short_description` was doing real work already, just invisibly:
+`news/detail.html` only ever read it inside `<meta name="description">`/
+`og:description`/the JSON-LD `NewsArticle.description` — never as
+visible page text — despite its own form widget
+(`apps/news/forms.py`) already using the placeholder "Qısa təsvir
+(dek)..." ("dek" — journalism term for a lead sentence under a
+headline), implying it was always meant to render as one. Separately,
+`components/news_card.html` (reused by category pages, search results,
+tag pages, and "Oxşar xəbərlər") never showed it either — a direct gap
+against CLAUDE.md ch.6 "Cards", which explicitly lists "Short
+description" as a standard news-card field.
+
+Discussed three questions and got a decision on each: show it as a
+deck under the headline on the article page (yes); show it on regular
+news cards too, matching the CLAUDE.md card spec (yes); keep it a
+required field, given it now visibly matters in more places, not just
+SEO (yes, unchanged).
+
+## Fixed
+
+- `templates/news/detail.html` — `article.short_description` now
+  renders as `<p class="article__deck type-body-lg">` between the
+  headline and the byline. New `.article__deck` rule in
+  `static/css/pages/article.css` (color/spacing only — sizing comes
+  from the existing `.type-body-lg` utility, not duplicated here).
+- `templates/components/news_card.html` — same field added between
+  title and meta, as `<p class="news-card__excerpt">`. New
+  `.news-card__excerpt` in `static/css/components/cards.css`,
+  line-clamped to 2 lines (1 for the `--compact` variant used by
+  related articles) so a long excerpt can't stretch card heights
+  unevenly across a grid row — reused by every page that includes this
+  component, not just one.
+
+## Verification
+
+`pytest`: two new tests in `apps/news/tests/test_public_views.py` —
+the article detail page's rendered HTML now contains
+`short_description`'s text; a search-results card (exercising
+`news_card.html`, the same component every other card-rendering page
+shares) does too. `collectstatic` re-verified clean under
+`config.settings.production` (same reasoning as Phase 44/45 — this
+touched CSS again). 260 passed total (258 + 2).

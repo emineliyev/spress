@@ -15,6 +15,15 @@
     margin: var(--space-4) 0 var(--space-5);
 }
 
+/* The "dek" — a short lead sentence under the headline, journalism
+   convention (apps/news/forms.py's short_description widget already
+   labeled it this way; nothing actually rendered it until now). Sized
+   via .type-body-lg (typography.css); color/spacing here only. */
+.article__deck {
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-5);
+}
+
 .article__byline {
     display: flex;
     align-items: center;
