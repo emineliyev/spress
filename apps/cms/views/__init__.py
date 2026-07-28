@@ -4,6 +4,12 @@ responsibility") — re-exported here so `apps/cms/urls.py` keeps working
 with `views.XxxView` regardless of which submodule actually defines it.
 """
 
+from .about_stat import (
+    AboutStatCreateView,
+    AboutStatDeleteView,
+    AboutStatListView,
+    AboutStatUpdateView,
+)
 from .activity_log import ActivityLogListView
 from .advertisement import (
     AdCreateView,
@@ -84,6 +90,10 @@ from .user import (
 )
 
 __all__ = [
+    'AboutStatCreateView',
+    'AboutStatDeleteView',
+    'AboutStatListView',
+    'AboutStatUpdateView',
     'ActivityLogListView',
     'AdCreateView',
     'AdDeleteView',

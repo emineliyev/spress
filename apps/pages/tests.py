@@ -4,6 +4,7 @@ from django.urls import reverse
 
 from apps.pages.forms import ContactForm
 from apps.pages.models import Page
+from apps.settings_app.models import AboutStat
 
 
 @pytest.mark.django_db
@@ -53,7 +54,10 @@ def test_contact_form_valid_submission_sends_email(client, settings):
 
 @pytest.mark.django_db
 def test_about_page_renders_when_published():
-    Page.objects.create(title='Haqqımızda', content='<p>test</p>', is_published=True)
+    # slug='about' explicitly — apps.pages.views.ABOUT_SLUG is a fixed
+    # literal, not derived from the title, so relying on auto-generation
+    # here would slugify to 'haqqimizda' and never match.
+    Page.objects.create(title='Haqqımızda', slug='about', content='<p>test</p>', is_published=True)
     from django.test import Client
 
     response = Client().get(reverse('pages:about'))
@@ -64,6 +68,26 @@ def test_about_page_renders_when_published():
 def test_about_page_404_when_missing(client):
     response = client.get(reverse('pages:about'))
     assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_about_page_shows_cms_managed_stats():
+    """Previously three "number + label" cards were hardcoded directly
+    in templates/pages/about.html with no CMS control at all — now
+    AboutStat rows (apps/cms/views/about_stat.py) drive them."""
+    from django.test import Client
+
+    Page.objects.create(title='Haqqımızda', slug='about', content='<p>test</p>', is_published=True)
+    AboutStat.objects.create(number='2018', label='Fəaliyyətə başlayıb', order=0)
+    AboutStat.objects.create(number='40+', label='Jurnalist və redaktor', order=1)
+
+    response = Client().get(reverse('pages:about'))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert '2018' in content
+    assert 'Fəaliyyətə başlayıb' in content
+    assert '40+' in content
 
 
 @pytest.mark.django_db

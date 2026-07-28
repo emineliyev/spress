@@ -60,6 +60,9 @@ class ActivityLog(models.Model):
         SOCIAL_LINK_CREATED = 'social_link_created', 'Sosial şəbəkə linki yaratdı'
         SOCIAL_LINK_UPDATED = 'social_link_updated', 'Sosial şəbəkə linkini redaktə etdi'
         SOCIAL_LINK_DELETED = 'social_link_deleted', 'Sosial şəbəkə linkini sildi'
+        ABOUT_STAT_CREATED = 'about_stat_created', 'Haqqımızda statistikası yaratdı'
+        ABOUT_STAT_UPDATED = 'about_stat_updated', 'Haqqımızda statistikasını redaktə etdi'
+        ABOUT_STAT_DELETED = 'about_stat_deleted', 'Haqqımızda statistikasını sildi'
 
     actor = models.ForeignKey(
         settings.AUTH_USER_MODEL,

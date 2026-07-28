@@ -3,13 +3,17 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import DetailView, FormView, TemplateView
 
-from apps.core.utils import az_slugify
+from apps.settings_app.models import AboutStat
 
 from .forms import ContactForm
 from .models import ContactMessage, Page
 from .tasks import send_contact_email
 
-ABOUT_SLUG = az_slugify('Haqqımızda')
+# Deliberately a fixed literal, not az_slugify('Haqqımızda') (which
+# produces 'haqqimizda') — the editor managing this page is free to use
+# whatever URL slug reads best ('about' is what's actually in use),
+# and this constant only needs to match whatever that turns out to be.
+ABOUT_SLUG = 'about'
 
 
 class AboutView(TemplateView):
@@ -20,6 +24,10 @@ class AboutView(TemplateView):
         page = get_object_or_404(Page, slug=ABOUT_SLUG, is_published=True)
         context['page'] = page
         context['breadcrumb_items'] = [(page.title, None)]
+        # CMS-managed (apps/cms/views/about_stat.py) — previously three
+        # of these were hardcoded directly in about.html with no way to
+        # edit or remove them.
+        context['about_stats'] = AboutStat.objects.all()
         return context
 
 

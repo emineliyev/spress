@@ -18,19 +18,15 @@
         {{ page.content|safe }}
     </div>
 
+    {% if about_stats %}
     <div class="about-page__stats">
-        <div class="about-page__stat">
-            <div class="about-page__stat-number">2018</div>
-            <div class="about-page__stat-label">Fəaliyyətə başlayıb</div>
-        </div>
-        <div class="about-page__stat">
-            <div class="about-page__stat-number">40+</div>
-            <div class="about-page__stat-label">Jurnalist və redaktor</div>
-        </div>
-        <div class="about-page__stat">
-            <div class="about-page__stat-number">7</div>
-            <div class="about-page__stat-label">Əsas xəbər bölməsi</div>
-        </div>
+        {% for stat in about_stats %}
+            <div class="about-page__stat">
+                <div class="about-page__stat-number">{{ stat.number }}</div>
+                <div class="about-page__stat-label">{{ stat.label }}</div>
+            </div>
+        {% endfor %}
     </div>
+    {% endif %}
 </div>
 {% endblock %}

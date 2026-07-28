@@ -3892,3 +3892,67 @@ re-verified clean under `config.settings.production`
 (`ManifestStaticFilesStorage`, Phase 40) against a scratch `STATIC_ROOT`
 before pushing, given Phase 41's incident was triggered by exactly this
 kind of static-file change.
+
+# Phase 45 (About page 404 — a hardcoded slug expectation; hardcoded stats made CMS-managed)
+
+## What was asked
+
+User created a "Haqqımızda" page in the CMS, but the public `/about/`
+link still 404'd. Separately, once that was fixed, pointed out that
+the About page's three "number + label" cards (2018/40+/7) can't be
+edited or removed from the CMS at all.
+
+## Diagnosed: `AboutView` looks up a hardcoded slug the CMS never told the editor to use
+
+`apps/pages/views.py`'s `AboutView.get_context_data()` does
+`get_object_or_404(Page, slug=ABOUT_SLUG, is_published=True)`, where
+`ABOUT_SLUG` used to be `az_slugify('Haqqımızda')` → `'haqqimizda'` —
+a value derived from the display title, never shown to the editor
+anywhere in the CMS `Page` form (which has a perfectly normal, editable
+"URL slug" field). Asked the user what slug their page actually had:
+`about`. Two different strings, so the lookup never matched even
+though the page existed and was published — the generic
+`PageDetailView` catch-all route would have served it fine at its own
+URL, just not at `/about/` specifically, which is what `header.html`/
+`footer.html` both hardcode a link to.
+
+## Fixed: `ABOUT_SLUG` is now the literal the user actually wants, not a derived one
+
+`ABOUT_SLUG = 'about'` — a plain literal instead of `az_slugify(...)`,
+since there's no actual requirement that the slug match the display
+title's transliteration; `'about'` is a perfectly normal choice.
+Updated `apps/core/management/commands/seed_initial_data.py`'s seed
+Page entry to set `'slug': 'about'` explicitly too (it previously had
+no explicit slug at all, relying on the now-wrong auto-generation), and
+fixed `apps/pages/tests.py`'s `test_about_page_renders_when_published`,
+which had the same latent assumption.
+
+## Added: `AboutStat` — the hardcoded number/label cards are now a real CMS-managed list
+
+Discussed two options before building — delete the cards entirely
+(move similar content into the page's own CKEditor body) vs. a proper
+CMS-managed list; chose the list. `apps/settings_app/models.py`'s new
+`AboutStat` (`number` — a `CharField`, not an integer, since real
+values include non-numeric text like "40+" — `label`, `order`) is the
+same flat-list-with-manual-ordering shape as the existing `SocialLink`
+right above it in that file, and every layer around it mirrors
+`SocialLink`'s exactly: `AboutStatForm`, `apps/cms/views/about_stat.py`
+(`AdministratorRequiredMixin` throughout, same access level as
+`SocialLink`), `cms/about_stat_{list,form,confirm_delete}.html`, and a
+"Statistikanı idarə et" card linked from `settings.html` next to the
+existing "Sosial şəbəkələri idarə et" one. `apps.pages.views.AboutView`
+now passes `AboutStat.objects.all()` into context;
+`templates/pages/about.html`'s three hardcoded `.about-page__stat`
+blocks became one `{% for %}` loop.
+
+## Verification
+
+`pytest`: `apps/cms/tests/test_crud.py` — `AboutStat` create/edit/delete
+round-trips through the real CMS form and logs `ActivityLog`
+(`ABOUT_STAT_CREATED`/`UPDATED`/`DELETED`), a non-Administrator gets
+403; `apps/pages/tests.py` — the public About page actually renders
+CMS-created stat rows (number and label both present in the response),
+plus the existing About-page tests updated for the new fixed slug.
+`makemigrations --check` clean, `collectstatic` re-verified under
+`config.settings.production` again (same reasoning as Phase 44). 258
+passed total (255 + 3).

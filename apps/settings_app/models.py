@@ -69,6 +69,31 @@ class SocialLink(BaseModel):
         return self._ICON_CLASSES.get(self.platform, 'bi-link-45deg')
 
 
+class AboutStat(BaseModel):
+    """A single "big number + label" card on the public About page
+    (templates/pages/about.html's `.about-page__stat` blocks) — e.g.
+    "2018 / Fəaliyyətə başlayıb". Previously three of these were
+    hardcoded directly in that template with no way to edit or remove
+    them from the CMS at all; this is a real, CMS-managed, any-length
+    list instead, same flat-list-with-manual-ordering shape as
+    `SocialLink` above.
+
+    `number` is a `CharField`, not an integer — real values include
+    non-numeric text ("40+"), so there's nothing an `IntegerField` would
+    gain here.
+    """
+
+    number = models.CharField(max_length=20)
+    label = models.CharField(max_length=100)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return f'{self.number} — {self.label}'
+
+
 class SiteSettings(BaseModel):
     """Singleton row holding site-wide chrome settings (CLAUDE.md ch.9 "Settings").
 

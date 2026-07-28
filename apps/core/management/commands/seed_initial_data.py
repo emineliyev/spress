@@ -120,6 +120,7 @@ ARTICLES = [
 PAGES = [
     {
         'title': 'Haqqımızda',
+        'slug': 'about',
         'content': (
             'XəbərPortal — Azərbaycanda müstəqil, sürətli və dəqiq xəbər xidməti təqdim edən rəqəmsal '
             'media nəşridir. Məqsədimiz oxucuya hər bir hadisəni tarazlı və yoxlanılmış şəkildə çatdırmaqdır.\n\n'

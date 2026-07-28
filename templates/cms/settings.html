@@ -128,6 +128,16 @@
         </div>
     </section>
 
+    <section class="cms-settings-section">
+        <h2 class="cms-settings-section__title">Haqqımızda statistikası</h2>
+        <div class="cms-settings-card cms-settings-card--link">
+            <p>"Haqqımızda" səhifəsindəki ədəd + izah kartları (məs. "2018 — Fəaliyyətə başlayıb") ayrıca bölmədən idarə olunur — istənilən sayda əlavə edə bilərsiniz.</p>
+            <a href="{% url 'cms:about_stat_list' %}" class="btn btn--secondary">
+                <i class="bi bi-bar-chart" aria-hidden="true"></i> Statistikanı idarə et
+            </a>
+        </div>
+    </section>
+
     <button type="submit" class="btn btn--primary">Yadda saxla</button>
 </form>
 

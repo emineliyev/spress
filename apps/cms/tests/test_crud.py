@@ -13,7 +13,7 @@ from apps.categories.models import Category
 from apps.logs.models import ActivityLog
 from apps.news.models import News
 from apps.pages.models import Page
-from apps.settings_app.models import SocialLink
+from apps.settings_app.models import AboutStat, SocialLink
 from apps.tags.models import Tag
 
 
@@ -150,5 +150,36 @@ def test_social_link_create_edit_delete(admin_client):
 def test_journalist_cannot_manage_social_links(journalist_client):
     response = journalist_client.post(reverse('cms:social_link_create'), {
         'platform': SocialLink.Platform.FACEBOOK, 'url': 'https://facebook.com/spress', 'order': 0,
+    })
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_about_stat_create_edit_delete(admin_client):
+    create_response = admin_client.post(reverse('cms:about_stat_create'), {
+        'number': '2018', 'label': 'Fəaliyyətə başlayıb', 'order': 0,
+    })
+    assert create_response.status_code == 302
+    stat = AboutStat.objects.get(number='2018')
+    assert ActivityLog.objects.filter(action=ActivityLog.Action.ABOUT_STAT_CREATED).exists()
+
+    edit_response = admin_client.post(reverse('cms:about_stat_edit', args=[stat.pk]), {
+        'number': '2019', 'label': 'Fəaliyyətə başlayıb', 'order': 0,
+    })
+    assert edit_response.status_code == 302
+    stat.refresh_from_db()
+    assert stat.number == '2019'
+    assert ActivityLog.objects.filter(action=ActivityLog.Action.ABOUT_STAT_UPDATED).exists()
+
+    delete_response = admin_client.post(reverse('cms:about_stat_delete', args=[stat.pk]))
+    assert delete_response.status_code == 302
+    assert not AboutStat.objects.filter(pk=stat.pk).exists()
+    assert ActivityLog.objects.filter(action=ActivityLog.Action.ABOUT_STAT_DELETED).exists()
+
+
+@pytest.mark.django_db
+def test_journalist_cannot_manage_about_stats(journalist_client):
+    response = journalist_client.post(reverse('cms:about_stat_create'), {
+        'number': '2018', 'label': 'Fəaliyyətə başlayıb', 'order': 0,
     })
     assert response.status_code == 403

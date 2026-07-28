@@ -2,7 +2,7 @@ from django import forms
 
 from apps.core.forms import INVALID_URL_MESSAGE, MAX_VALUE_MESSAGE, MIN_VALUE_MESSAGE, REQUIRED_MESSAGE
 
-from .models import HOME_CATEGORY_SECTIONS_MAX, HOME_CATEGORY_SECTIONS_MIN, SiteSettings, SocialLink
+from .models import AboutStat, HOME_CATEGORY_SECTIONS_MAX, HOME_CATEGORY_SECTIONS_MIN, SiteSettings, SocialLink
 
 FIELD_CLASS = 'form-input'
 
@@ -54,5 +54,21 @@ class SocialLinkForm(forms.ModelForm):
         widgets = {
             'platform': forms.Select(attrs={'class': FIELD_CLASS}),
             'url': forms.URLInput(attrs={'class': FIELD_CLASS, 'placeholder': 'https://...'}),
+            'order': forms.NumberInput(attrs={'class': FIELD_CLASS, 'min': 0}),
+        }
+
+
+class AboutStatForm(forms.ModelForm):
+    class Meta:
+        model = AboutStat
+        fields = ['number', 'label', 'order']
+        # USE_I18N = False (apps/core/forms.py docstring)
+        error_messages = {
+            'number': REQUIRED_MESSAGE,
+            'label': REQUIRED_MESSAGE,
+        }
+        widgets = {
+            'number': forms.TextInput(attrs={'class': FIELD_CLASS, 'placeholder': 'məs. 2018 və ya 40+'}),
+            'label': forms.TextInput(attrs={'class': FIELD_CLASS, 'placeholder': 'məs. Fəaliyyətə başlayıb'}),
             'order': forms.NumberInput(attrs={'class': FIELD_CLASS, 'min': 0}),
         }
