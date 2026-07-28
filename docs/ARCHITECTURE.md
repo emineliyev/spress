@@ -3771,3 +3771,75 @@ something `pytest` (which never invokes `deploy.sh` or shells out to
 the same `curl --resolve` health-check command `deploy.sh` itself uses,
 both immediately after the manual recovery and is expected to self-
 verify on every future run now that the fix is in `deploy.sh` itself.
+
+# Phase 42 (permanent user delete; self-service password change)
+
+## What was asked
+
+Two additions, discussed before implementing: Administrators should be
+able to permanently delete a user, and any CMS user should be able to
+change their own password without an admin's involvement.
+
+## Context found before designing either
+
+User had no hard-delete or `is_deleted` field at all — "removing" a
+user has only ever meant deactivation (`is_active=False`,
+`UserDeactivateView`/`UserActivateView`, fully reversible). The one FK
+that matters for a real delete: `News.author` is `on_delete=PROTECT`
+(every other reference — `ActivityLog.actor`, every `BaseModel.created_by`/
+`updated_by` across categories/tags/pages/ads/media/social links/
+settings — is `SET_NULL`). Separately, no self-service password change
+existed anywhere: the only two password flows were both admin/email-
+driven (`UserResetPasswordView` and the public "forgot password" flow),
+and `docs/EMAIL_SETUP.md` already documents that both 500 without SMTP
+configured, which isn't live on this deployment yet.
+
+Discussed both before building: whether "delete" should mean an actual
+hard delete or just clearer deactivation UI (chose real permanent
+delete), and whether password change should be old+new password
+in-CMS or wait for SMTP (chose old+new password — works today,
+independent of email).
+
+## Added: `UserDeleteView`
+
+Mirrors the News/Category/Advertisement soft-delete-then-purge pattern
+even though User has no `is_deleted` field of its own —
+`is_active=False` is that checkpoint here instead:
+`user_list.html`'s row menu only shows "Həmişəlik sil" once "Deaktiv
+et" already has been (`UserDeleteView.get`/`post` both look up
+`is_active=False`, 404 otherwise — same convention as
+`CategoryPermanentDeleteView`). Blocks with a clear message (not a raw
+`ProtectedError`) when `target.articles.exists()`; refuses self-deletion,
+same reasoning as `UserDeactivateView`'s existing self-deactivation
+refusal. New `ActivityLog.Action.USER_DELETED` +
+`templates/cms/user_confirm_delete.html` (the `btn--danger` variant of
+`user_confirm_deactivate.html`, matching `news_confirm_permanent_delete.html`'s
+wording pattern).
+
+## Added: `ChangePasswordView` — self-service, no email
+
+`apps/cms/views/profile.py` (new file — a deliberately separate
+concern from `user.py`, which is entirely "an Administrator manages
+someone else's account"; this view only ever acts on `request.user`) —
+subclasses Django's own `PasswordChangeView`, `LoginRequiredMixin` only
+(none of `apps/core/mixins.py`'s role-scoped mixins fit, since every
+authenticated CMS user needs this regardless of role). New
+`ChangePasswordForm` (`apps/accounts/forms.py`, Azerbaijani labels,
+same `USE_I18N=False` reasoning as the neighboring `SetPasswordForm`/
+`PasswordResetForm`). Reachable from a new `bi-key` icon in the CMS
+topbar (`templates/cms/base.html`), next to logout. New
+`ActivityLog.Action.USER_PASSWORD_CHANGED`, distinct from the existing
+admin-triggered `USER_PASSWORD_RESET`.
+
+## Verification
+
+`pytest`: new `apps/cms/tests/test_user_delete_and_password.py` (8
+tests) — delete requires the target already deactivated (404
+otherwise); a clean deactivated user is actually removed from the DB;
+blocked (and kept in the DB) when the target authored an article;
+self-delete refused; a non-Administrator gets 403; change-password
+requires login; any role (tested with a Journalist, the least-
+privileged role) can change their own password and the new password
+actually works afterward (`user.check_password(...)`); a wrong current
+password is rejected and the password stays unchanged. 255 passed
+total (247 + 8).

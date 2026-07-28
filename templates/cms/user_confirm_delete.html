@@ -1,0 +1,28 @@
+{% extends "cms/base.html" %}
+{% load static %}
+
+{% block title %}Həmişəlik sil{% endblock %}
+{% block page_title %}İstifadəçini həmişəlik sil{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/cms/editor.css' %}">
+{% endblock %}
+
+{% block cms_content %}
+<div class="cms-confirm">
+    <i class="bi bi-exclamation-triangle cms-confirm__icon" aria-hidden="true"></i>
+    <h2 class="cms-confirm__title">"{{ target.get_full_name|default:target.username }}" həmişəlik silinsin?</h2>
+    <p class="cms-confirm__description">
+        Bu əməliyyat geri qaytarıla bilməz — istifadəçi bazadan tamamilə silinəcək.
+        {% if article_count %}
+            Bu istifadəçi {{ article_count }} xəbərin müəllifidir, ona görə silinə bilməz —
+            əvvəlcə həmin xəbərləri həmişəlik silin və ya başqa müəllifə köçürün.
+        {% endif %}
+    </p>
+    <form method="post" class="cms-confirm__actions">
+        {% csrf_token %}
+        <a href="{% url 'cms:user_list' %}" class="btn btn--secondary">Ləğv et</a>
+        <button type="submit" class="btn btn--danger"{% if article_count %} disabled{% endif %}>Həmişəlik sil</button>
+    </form>
+</div>
+{% endblock %}

@@ -57,6 +57,7 @@ from .page import (
     PageListView,
     PageUpdateView,
 )
+from .profile import ChangePasswordView
 from .seo import SeoOverviewView
 from .settings import SettingsUpdateView
 from .social_link import (
@@ -76,6 +77,7 @@ from .user import (
     UserActivateView,
     UserCreateView,
     UserDeactivateView,
+    UserDeleteView,
     UserListView,
     UserResetPasswordView,
     UserUpdateView,
@@ -97,6 +99,7 @@ __all__ = [
     'CategoryReorderView',
     'CategoryRestoreView',
     'CategoryUpdateView',
+    'ChangePasswordView',
     'ContactMessageDetailView',
     'ContactMessageListView',
     'ContactMessageToggleStatusView',
@@ -136,6 +139,7 @@ __all__ = [
     'UserActivateView',
     'UserCreateView',
     'UserDeactivateView',
+    'UserDeleteView',
     'UserListView',
     'UserResetPasswordView',
     'UserUpdateView',

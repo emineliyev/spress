@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import PasswordChangeForm as DjangoPasswordChangeForm
 from django.contrib.auth.forms import PasswordResetForm as DjangoPasswordResetForm
 from django.contrib.auth.forms import SetPasswordForm as DjangoSetPasswordForm
 from django.forms import PasswordInput, TextInput
@@ -53,6 +54,29 @@ class SetPasswordForm(DjangoSetPasswordForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['new_password1'].label = 'Yeni şifrə'
+        self.fields['new_password1'].widget.attrs.update({'class': FIELD_CLASS})
+        self.fields['new_password1'].help_text = (
+            'Şifrə ən azı 10 simvoldan ibarət olmalıdır, şəxsi məlumatlarınıza '
+            '(ad, istifadəçi adı və s.) bənzər olmamalı, tamamilə rəqəmlərdən '
+            'ibarət olmamalı və geniş yayılmış şifrələrdən biri olmamalıdır.'
+        )
+        self.fields['new_password2'].label = 'Yeni şifrə (təkrar)'
+        self.fields['new_password2'].widget.attrs.update({'class': FIELD_CLASS})
+        self.fields['new_password2'].help_text = 'Təsdiq üçün eyni şifrəni yenidən daxil edin.'
+
+
+class ChangePasswordForm(DjangoPasswordChangeForm):
+    """Self-service password change (apps/cms/views/profile.py's
+    ChangePasswordView) — same USE_I18N=False reasoning as
+    PasswordResetForm/SetPasswordForm above, plus the same help text
+    SetPasswordForm already shows so both password-setting screens in
+    the CMS explain the requirement identically."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['old_password'].label = 'Cari şifrə'
+        self.fields['old_password'].widget.attrs.update({'class': FIELD_CLASS})
         self.fields['new_password1'].label = 'Yeni şifrə'
         self.fields['new_password1'].widget.attrs.update({'class': FIELD_CLASS})
         self.fields['new_password1'].help_text = (

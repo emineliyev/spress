@@ -132,6 +132,10 @@
                         <div class="cms-topbar__name">{{ request.user.get_full_name|default:request.user.username }}</div>
                         <div class="cms-topbar__role">{{ request.user.get_role_display }}</div>
                     </div>
+                    <a href="{% url 'cms:change_password' %}" class="header-icon-btn" title="Şifrəni dəyiş">
+                        <i class="bi bi-key" aria-hidden="true"></i>
+                        <span class="visually-hidden">Şifrəni dəyiş</span>
+                    </a>
                     <form method="post" action="{% url 'accounts:logout' %}" class="header-logout-form">
                         {% csrf_token %}
                         <button type="submit" class="header-icon-btn" title="Çıxış">

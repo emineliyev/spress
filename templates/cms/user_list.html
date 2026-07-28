@@ -69,6 +69,7 @@
                                         {% csrf_token %}
                                         <button type="submit">Aktivləşdir</button>
                                     </form>
+                                    <a href="{% url 'cms:user_delete' member.pk %}" class="cms-row-menu__danger">Həmişəlik sil</a>
                                 {% endif %}
                             </div>
                         </div>

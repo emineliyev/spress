@@ -148,6 +148,58 @@ class UserActivateView(AdministratorRequiredMixin, View):
         return redirect('cms:user_list')
 
 
+class UserDeleteView(AdministratorRequiredMixin, View):
+    """Only reachable for an already-deactivated user (`user_list.html`'s
+    row menu only shows "Həmişəlik sil" once "Deaktiv et" already has
+    been) — mirrors the soft-delete-then-purge two-step every other
+    model in the CMS uses (News/Category/Advertisement), even though
+    User has no `is_deleted` field of its own to soft-delete with;
+    `is_active=False` is that checkpoint here. A real, hard DB delete,
+    unlike `UserDeactivateView` — self-deletion is refused for the same
+    reason self-deactivation is.
+
+    `News.author` is `on_delete=PROTECT` (unlike every other reference
+    to User, which is `SET_NULL` — `ActivityLog.actor`,
+    `BaseModel.created_by`/`updated_by` across categories/tags/pages/
+    ads/media/social links/settings) — deleting an author outright would
+    raise a raw `ProtectedError`, so it's checked and blocked with a
+    clear message first instead.
+    """
+
+    def get(self, request, pk):
+        target = get_object_or_404(User, pk=pk, is_active=False)
+        return render(request, 'cms/user_confirm_delete.html', {
+            'target': target,
+            'article_count': target.articles.count(),
+        })
+
+    def post(self, request, pk):
+        target = get_object_or_404(User, pk=pk, is_active=False)
+        if target.pk == request.user.pk:
+            messages.error(request, 'Öz hesabınızı silə bilməzsiniz.')
+            return redirect('cms:user_list')
+
+        article_count = target.articles.count()
+        if article_count:
+            messages.error(
+                request,
+                f'"{target.get_full_name() or target.username}" silinmədi — {article_count} xəbərin müəllifidir. '
+                'Əvvəlcə həmin xəbərləri həmişəlik silin və ya başqa müəllifə köçürün.',
+            )
+            return redirect('cms:user_list')
+
+        name = target.get_full_name() or target.username
+        target.delete()
+        ActivityLog.objects.create(
+            actor=request.user,
+            action=ActivityLog.Action.USER_DELETED,
+            description=name,
+            ip_address=get_client_ip(request),
+        )
+        messages.success(request, f'"{name}" həmişəlik silindi.')
+        return redirect('cms:user_list')
+
+
 class UserResetPasswordView(AdministratorRequiredMixin, View):
     """Not destructive — it only sends an email; the target's password
     doesn't change until they follow the link — so no confirm page,
