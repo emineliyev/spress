@@ -80,6 +80,12 @@ class News(SEOFieldsMixin, BaseModel):
     is_featured = models.BooleanField(default=False)
     is_breaking = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
+    # Off by default (editor request) — most articles are aggregated/
+    # edited by staff rather than individually bylined, so the public
+    # byline (templates/news/detail.html) falls back to "Redaksiya"
+    # unless this is explicitly checked for a piece worth crediting to
+    # its actual author.
+    show_author_name = models.BooleanField(default=False)
     published_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     view_count = models.PositiveIntegerField(default=0)

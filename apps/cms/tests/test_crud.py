@@ -44,6 +44,29 @@ def test_news_create_edit_delete(admin_client, category):
 
 
 @pytest.mark.django_db
+def test_news_show_author_name_checkbox_round_trips(admin_client, category):
+    """Off by default when the checkbox is left unchecked (a real HTML
+    checkbox sends nothing at all when unticked) — must actually persist
+    as on when explicitly checked, and back off again when unchecked."""
+    create_response = admin_client.post(reverse('cms:news_create'), {
+        'title': 'Müəllif ad checkbox testi', 'short_description': 'd', 'content': '<p>c</p>',
+        'category': category.pk, 'status': News.Status.DRAFT,
+        'show_author_name': 'on',
+    })
+    assert create_response.status_code == 302
+    article = News.objects.get(title='Müəllif ad checkbox testi')
+    assert article.show_author_name is True
+
+    admin_client.post(reverse('cms:news_edit', args=[article.pk]), {
+        'title': article.title, 'short_description': 'd', 'content': '<p>c</p>',
+        'category': category.pk, 'status': News.Status.DRAFT,
+        # show_author_name omitted — an unchecked checkbox sends nothing.
+    })
+    article.refresh_from_db()
+    assert article.show_author_name is False
+
+
+@pytest.mark.django_db
 def test_category_create_edit_delete(admin_client):
     create_response = admin_client.post(reverse('cms:category_create'), {'name': 'Yeni kateqoriya', 'is_active': True})
     assert create_response.status_code == 302

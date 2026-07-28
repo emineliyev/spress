@@ -4010,3 +4010,47 @@ the article detail page's rendered HTML now contains
 shares) does too. `collectstatic` re-verified clean under
 `config.settings.production` (same reasoning as Phase 44/45 — this
 touched CSS again). 260 passed total (258 + 2).
+
+# Phase 47 (author byline made opt-in, off by default)
+
+## What was asked
+
+Editor asked that the article byline stop automatically showing the
+writer's name — most articles are aggregated/edited by staff rather
+than individually reported, so the default should be anonymous
+("Redaksiya"), with a checkbox on the News form to opt a specific
+article into showing its real author.
+
+## Added: `News.show_author_name`
+
+New `BooleanField(default=False)` — off by default, matching the
+request directly (not a "0 means unlimited"-style sentinel on an
+existing field; a plain boolean is the actual right shape here). Added
+to `NewsForm` and `news_form.html` right next to the existing
+`is_featured`/`is_breaking` checkboxes, with an inline hint explaining
+the fallback.
+
+Two display sites needed the conditional, both in
+`templates/news/detail.html` (grepped for every `article.author`
+reference in public templates first to make sure neither was missed):
+
+- The visible byline (`.article__author-name`) — shows the real name
+  when checked, `"Redaksiya"` otherwise.
+- The `NewsArticle` JSON-LD structured data's `author` object — when
+  off, switches from `@type: Person` (a specific individual) to
+  `@type: Organization` (the site itself, via `site_settings.site_name`)
+  rather than either lying with a fake Person name or omitting `author`
+  entirely, which Google's structured-data guidelines expect populated
+  either way.
+
+## Verification
+
+`pytest`: `apps/news/tests/test_public_views.py` — the byline shows
+"Redaksiya" and not the author's username by default; shows the real
+username once `show_author_name=True`; `apps/cms/tests/test_crud.py` —
+the checkbox actually persists as `True` when submitted checked, and
+back to `False` when the field is omitted entirely (an unchecked HTML
+checkbox sends nothing at all — the same "must actually reset, not
+just leave the old value" concern verified for `home_show_all_categories`
+in Phase 34). `makemigrations --check` clean. 263 passed total
+(260 + 3).

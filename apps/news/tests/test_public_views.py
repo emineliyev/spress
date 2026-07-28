@@ -204,6 +204,32 @@ def test_article_detail_shows_the_short_description_as_a_deck(client, published_
 
 
 @pytest.mark.django_db
+def test_article_byline_shows_redaksiya_by_default(client, published_news):
+    """show_author_name defaults to False (editor request — most
+    articles are aggregated/edited by staff, not individually bylined)
+    — the public byline falls back to a generic "Redaksiya" label
+    instead of the real author's name unless explicitly opted into."""
+    response = client.get(published_news.get_absolute_url())
+    content = response.content.decode()
+    assert 'Redaksiya' in content
+    # published_news's author fixture has no first/last name, so the
+    # template's own display fallback is the username — that must not
+    # leak into the page while show_author_name is off.
+    assert published_news.author.username not in content
+
+
+@pytest.mark.django_db
+def test_article_byline_shows_the_real_name_when_enabled(client, published_news):
+    published_news.show_author_name = True
+    published_news.save(update_fields=['show_author_name'])
+
+    response = client.get(published_news.get_absolute_url())
+    content = response.content.decode()
+    assert published_news.author.username in content
+    assert 'Redaksiya' not in content
+
+
+@pytest.mark.django_db
 def test_news_card_shows_the_short_description(client, published_news):
     """CLAUDE.md ch.6 "Cards" lists Short description as a standard
     news-card field — search_results.html renders every result through

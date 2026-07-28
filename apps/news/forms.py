@@ -16,7 +16,7 @@ class NewsForm(forms.ModelForm):
         fields = [
             'title', 'slug', 'short_description', 'content',
             'category', 'tags', 'status', 'published_at',
-            'is_featured', 'is_breaking', 'featured_image',
+            'is_featured', 'is_breaking', 'show_author_name', 'featured_image',
             'meta_title', 'meta_description', 'meta_keywords', 'canonical_url',
             'og_title', 'og_description', 'og_image', 'robots_index', 'robots_follow',
         ]

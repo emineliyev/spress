@@ -30,8 +30,13 @@
     "datePublished": "{{ article.published_at|date:'c' }}",
     "dateModified": "{{ article.updated_at|date:'c' }}",
     "author": {
+        {% if article.show_author_name %}
         "@type": "Person",
         "name": "{{ article.author.get_full_name|default:article.author.username|escapejs }}"
+        {% else %}
+        "@type": "Organization",
+        "name": "{{ site_settings.site_name|default:'XəbərPortal'|escapejs }}"
+        {% endif %}
     },
     "publisher": {
         "@type": "Organization",
@@ -76,7 +81,9 @@
         <div class="article__byline">
             <span class="article__author-avatar" aria-hidden="true"></span>
             <div>
-                <div class="article__author-name">{{ article.author.get_full_name|default:article.author.username }}</div>
+                <div class="article__author-name">
+                    {% if article.show_author_name %}{{ article.author.get_full_name|default:article.author.username }}{% else %}Redaksiya{% endif %}
+                </div>
                 <div class="article__date">
                     {{ article.published_at|date:"d.m.Y" }} · {{ article.published_at|az_timesince }} · {{ article.reading_time_minutes }} dəq oxuma
                     · <i class="bi bi-eye" aria-hidden="true"></i> {{ article.view_count }} baxış
