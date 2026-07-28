@@ -5,6 +5,11 @@
  * templates/pages/about.html) via a common .rich-text-content marker
  * class, so figure/image/video-embed styling isn't duplicated per page
  * type (CLAUDE.md ch.7 "component-based architecture").
+ *
+ * Every rule here also targets .ck-content — CKEditor5's own editing-
+ * view root class (templates/cms/news_form.html, page_form.html) —
+ * so an editor sees the same result while typing that a reader sees
+ * once it's published, instead of a WYSIWYG mismatch.
  */
 
 /* base/reset.css resets every <a> to `color: inherit; text-decoration:
@@ -12,15 +17,43 @@
    component — but that leaves an editor-pasted link inside article
    body text visually identical to plain paragraph text. Scoped to rich
    text only, so the UI-wide reset elsewhere is untouched. */
-.rich-text-content a {
+.rich-text-content a,
+.ck-content a {
     color: var(--color-info);
     text-decoration: underline;
     text-underline-offset: 2px;
     transition: var(--transition-fast);
 }
 
-.rich-text-content a:hover {
+.rich-text-content a:hover,
+.ck-content a:hover {
     color: var(--color-primary);
+}
+
+/* Same base/reset.css reasoning as the <a> rule above — its
+   `ul, ol { list-style: none; padding: 0; }` is correct for UI chrome
+   (nav menus, card lists) but silently strips every bullet/number and
+   its indent from CKEditor-produced lists too. This is why "the list
+   button highlights but nothing visible happens" — the <ul>/<li>
+   structure is created correctly; it just renders with no marker and
+   no indent, identical to a plain paragraph. */
+.rich-text-content ul,
+.ck-content ul {
+    list-style: disc;
+    padding-left: var(--space-6);
+    margin: var(--space-4) 0;
+}
+
+.rich-text-content ol,
+.ck-content ol {
+    list-style: decimal;
+    padding-left: var(--space-6);
+    margin: var(--space-4) 0;
+}
+
+.rich-text-content li,
+.ck-content li {
+    margin-bottom: var(--space-2);
 }
 
 .rich-text-content figure.image {

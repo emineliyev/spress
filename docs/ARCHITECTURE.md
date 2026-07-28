@@ -3843,3 +3843,52 @@ privileged role) can change their own password and the new password
 actually works afterward (`user.check_password(...)`); a wrong current
 password is rejected and the password stays unchanged. 255 passed
 total (247 + 8).
+
+# Phase 44 (CKEditor lists were invisible — same root cause as Phase 39's invisible links)
+
+## What was asked
+
+User reported CKEditor's list buttons "don't work" — clicking bulleted/
+numbered list did nothing visible. Separately asked about adding text/
+background color to the editor toolbar; declined after discussing the
+trade-off (CLAUDE.md ch.9's deliberately minimal toolbar exists so
+articles share consistent typography instead of per-editor color
+choices) — no code change for that part.
+
+## Diagnosed
+
+Confirmed it wasn't a missing plugin first (grepped django_ckeditor_5's
+bundled `bundle.js` for `bulletedList`/`numberedList`/`ListEditing`/
+`ListUI` — all present) before looking anywhere else. Then asked the
+user to check the toolbar button's own active/pressed state when
+clicked, not just the text — it *did* highlight, meaning CKEditor's
+`bulletedList`/`numberedList` command was executing successfully and
+producing real `<ul>`/`<li>` elements; they just weren't rendering as a
+list. Exact same root cause as Phase 39's invisible links:
+`base/reset.css`'s `ul, ol { list-style: none; padding: 0; margin: 0; }`
+resets every list on the site for UI chrome (nav menus, card lists) —
+and, same as the `<a>` reset before it, silently strips every bullet/
+number and its indent from CKEditor-produced lists too, both in the
+final published article *and inside the CKEditor editing area itself*
+(the editor's own live preview uses the same site-wide CSS).
+
+## Fixed
+
+`static/css/components/rich-text.css` — extended the `<a>` rule from
+Phase 39 and added new `ul`/`ol`/`li` rules, this time targeting two
+selectors together: `.rich-text-content` (published output) **and**
+`.ck-content` (CKEditor5's own editing-view root class, confirmed
+present in `bundle.js`) — so an editor sees the actual final look while
+typing instead of a WYSIWYG mismatch, not just a fix that only shows up
+after publishing. `templates/cms/news_form.html` and `page_form.html`
+(the only two CKEditor5 fields in the project — `News.content` and
+`Page.content`) now load `rich-text.css`, which neither previously did.
+
+## Verification
+
+Visual/CSS only, same as Phase 39 — no Python behavior changed. Full
+`pytest` suite re-run anyway (255 passed, unchanged) and `collectstatic`
+re-verified clean under `config.settings.production`
+(`ManifestStaticFilesStorage`, Phase 40) against a scratch `STATIC_ROOT`
+before pushing, given Phase 41's incident was triggered by exactly this
+kind of static-file change.
