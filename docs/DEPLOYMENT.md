@@ -113,10 +113,15 @@ cron is simpler and sufficient for both of these today.
 ## Updating production (every deploy after the first)
 
 ```bash
-sudo -u spress -i
-cd /opt/spress
-./deploy/deploy.sh
+sudo -u spress bash -c "cd /opt/spress && ./deploy/deploy.sh"
 ```
+
+`spress` is a `nologin` system account by design (step 2's `adduser
+--system` — least privilege, CLAUDE.md ch.12), so `sudo -u spress -i`
+fails with "This account is currently not available." — that's
+`nologin` rejecting the login shell `-i` tries to start. Running an
+explicit `bash -c "..."` sidesteps that: sudo execs `bash` directly
+instead of asking the target account for its own shell.
 
 `deploy.sh` pulls `main`, reinstalls dependencies, migrates, collects
 static files, restarts both services, then checks the homepage actually
@@ -129,10 +134,8 @@ before assuming the previous deploy is still serving traffic correctly.
 There's no automatic rollback. To revert:
 
 ```bash
-cd /opt/spress
-git log --oneline -5          # find the last-known-good commit
-git checkout <commit-sha>
-./deploy/deploy.sh
+sudo -u spress bash -c "cd /opt/spress && git log --oneline -5"   # find the last-known-good commit
+sudo -u spress bash -c "cd /opt/spress && git checkout <commit-sha> && ./deploy/deploy.sh"
 ```
 
 ## What CI does and doesn't do
