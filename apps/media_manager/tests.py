@@ -61,7 +61,6 @@ def test_process_crop_converts_to_webp_and_generates_thumbnail(administrator):
 
     assert media.file_format == MediaFile.Format.WEBP
     assert media.thumbnail
-    assert media.original_file
     assert media.width == 1000
     assert media.height == 800
 

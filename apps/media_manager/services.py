@@ -86,7 +86,9 @@ def _resize_to_width(image, max_width):
 
 def process_crop(temp_id, *, crop_box=None, folder_id=None, user, alt_text='', caption='', media_file=None):
     """Step 2: crop (Pillow, using Cropper.js's reported box), resize,
-    convert to WebP, generate a thumbnail, store as a `MediaFile`.
+    convert to WebP, generate a thumbnail, store as a `MediaFile`. The
+    as-uploaded source bytes are discarded once this returns — only the
+    optimized WebP result (and its thumbnail) is kept on disk.
 
     SVGs skip crop/resize/WebP entirely (CLAUDE.md ch.3 "SVG files should
     not be converted") and are stored verbatim.
@@ -112,7 +114,6 @@ def process_crop(temp_id, *, crop_box=None, folder_id=None, user, alt_text='', c
 
     if extension == 'svg':
         instance.file = ContentFile(raw_bytes, name=temp_id)
-        instance.original_file = None
         instance.thumbnail = None
         instance.original_filename = temp_id
         instance.width = None
@@ -147,7 +148,6 @@ def process_crop(temp_id, *, crop_box=None, folder_id=None, user, alt_text='', c
     base_name = Path(temp_id).stem
     instance.file = ContentFile(main_buffer.getvalue(), name=f'{base_name}.webp')
     instance.thumbnail = ContentFile(thumbnail_buffer.getvalue(), name=f'{base_name}_thumb.webp')
-    instance.original_file = ContentFile(raw_bytes, name=temp_id)
     instance.original_filename = temp_id
     instance.width = image.width
     instance.height = image.height
@@ -160,14 +160,14 @@ def process_crop(temp_id, *, crop_box=None, folder_id=None, user, alt_text='', c
 
 
 def delete_media_file(media_file):
-    """Deletes a `MediaFile` row and its on-disk files (main/original/
-    thumbnail). DB row first, then files (`apps/cms/views/media.py`'s
-    `MediaDeleteView` established this order in Phase 10) — a delete
-    blocked by a PROTECT relation (e.g. a live ad banner) can't leave
-    files gone with the row still pointing at them.
+    """Deletes a `MediaFile` row and its on-disk files (main + thumbnail).
+    DB row first, then files (`apps/cms/views/media.py`'s `MediaDeleteView`
+    established this order in Phase 10) — a delete blocked by a PROTECT
+    relation (e.g. a live ad banner) can't leave files gone with the row
+    still pointing at them.
     """
     media_file.delete()
-    for field in (media_file.file, media_file.original_file, media_file.thumbnail):
+    for field in (media_file.file, media_file.thumbnail):
         if field:
             field.delete(save=False)
 

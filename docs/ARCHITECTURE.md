@@ -4054,3 +4054,52 @@ checkbox sends nothing at all — the same "must actually reset, not
 just leave the old value" concern verified for `home_show_all_categories`
 in Phase 34). `makemigrations --check` clean. 263 passed total
 (260 + 3).
+
+# Phase 48 (stop retaining as-uploaded original images)
+
+## What was asked
+
+The owner noticed that `MediaFile.original_file` — the pre-crop,
+pre-WebP source saved alongside every processed upload — was never
+being cleaned up, and asked to stop it from accumulating disk space.
+
+## Investigation
+
+`original_file` was written by `process_crop()`
+(`apps/media_manager/services.py`) on every non-SVG upload, with a
+model docstring claiming it existed so an item could be "re-cropped
+later without another quality-losing generation." Grepping the whole
+project for reads of that field (not just the write in `process_crop`
+and the delete in `delete_media_file`) turned up nothing — no view,
+template or JS ever serves or reprocesses it. The "Əvəz et" (Replace)
+action, the only way to change an already-uploaded image, goes through
+`stage_upload()` on a fresh file each time (`apps/cms/views/media.py`'s
+`MediaCropConfirmView`), not a re-crop of the stored original. The
+field was pure dead weight from day one, not a feature with an
+unfinished UI.
+
+## Change
+
+`process_crop()` no longer writes `original_file`; `delete_media_file()`
+no longer references it. `MediaFile.original_file` removed from the
+model, docstring updated to state plainly that only the optimized
+result is kept and there is no re-crop-in-place.
+
+New migration `media_manager/0003_remove_mediafile_original_file.py`
+does the cleanup in the two steps that order actually requires: a
+`RunPython` data migration deletes every existing row's on-disk
+original from storage first (`field.delete(save=False)` on the
+historical model — the file has to go before the column that points
+at it does), then `RemoveField` drops the column. Both run automatically
+on `manage.py migrate`, so this reclaims the space wherever the
+migration is applied — dev now, production on the next deploy — with
+no separate manual cleanup command to remember to run.
+
+## Verification
+
+`makemigrations --check --dry-run` confirmed the hand-written migration
+fully matches the model change. Applied locally: `media/uploads/originals/`
+went from its existing contents to 0 files. `pytest`: 263 passed (one
+outdated `assert media.original_file` removed from
+`apps/media_manager/tests.py`, no replacement needed — the field's
+absence is already enforced by `makemigrations --check`).

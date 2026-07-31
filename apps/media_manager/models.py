@@ -27,15 +27,15 @@ class MediaFile(BaseModel):
 
     `file` is the processed result of the upload→crop→optimize→WebP
     pipeline (`apps/media_manager/services.py`) — what the rest of the
-    project links to and what gets served. `original_file` is the
-    as-uploaded source, kept only so an item can be re-cropped later
-    without another quality-losing generation; it's never linked to
-    from outside this app. `thumbnail` is a small rendition for grid/
-    card contexts (CLAUDE.md ch.9 "Generate thumbnails").
+    project links to and what gets served. The as-uploaded source is
+    discarded once that pipeline finishes; there is no re-crop-in-place
+    (changing the crop means uploading again via "Əvəz et" / Replace).
+    `thumbnail` is a small rendition for grid/card contexts (CLAUDE.md
+    ch.9 "Generate thumbnails").
 
     Rows created before this pipeline existed (Phase 4's direct-upload
-    fallback) have `original_file`/`thumbnail` as `NULL` — callers must
-    fall back to `file` when `thumbnail` is empty, not assume it's set.
+    fallback) have `thumbnail` as `NULL` — callers must fall back to
+    `file` when `thumbnail` is empty, not assume it's set.
     """
 
     class Format(models.TextChoices):
@@ -45,7 +45,6 @@ class MediaFile(BaseModel):
         SVG = 'svg', 'SVG'
 
     file = models.FileField(upload_to='uploads/%Y/%m/')
-    original_file = models.FileField(upload_to='uploads/originals/%Y/%m/', null=True, blank=True)
     thumbnail = models.FileField(upload_to='thumbnails/%Y/%m/', null=True, blank=True)
     folder = models.ForeignKey(Folder, null=True, blank=True, on_delete=models.SET_NULL, related_name='files')
 
