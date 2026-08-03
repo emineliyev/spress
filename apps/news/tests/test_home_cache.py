@@ -60,7 +60,7 @@ def test_a_freshly_created_article_appears_on_the_next_home_request_without_manu
     )
 
     response = client.get(reverse('news:home'))
-    assert response.context['hero'].pk == article.pk
+    assert response.context['hero_slides'][0].pk == article.pk
 
 
 @pytest.mark.django_db

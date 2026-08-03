@@ -8,18 +8,25 @@
         {% else %}
             <span class="news-card__image news-card__image--placeholder" aria-hidden="true"></span>
         {% endif %}
+        {% if layout == 'hero-secondary' %}
+            <span class="news-card__category-badge">{{ article.category.name }}</span>
+        {% endif %}
     </a>
     <div class="news-card__body">
-        <a href="{{ article.category.get_absolute_url }}" class="news-card__category">{{ article.category.name }}</a>
+        {% if layout != 'hero-secondary' %}
+            <a href="{{ article.category.get_absolute_url }}" class="news-card__category">{{ article.category.name }}</a>
+        {% endif %}
         <h3 class="news-card__title">
             <a href="{{ article.get_absolute_url }}">{{ article.title }}</a>
         </h3>
-        {% if article.short_description %}
+        {% if article.short_description and layout != 'hero-secondary' %}
             <p class="news-card__excerpt">{{ article.short_description }}</p>
         {% endif %}
         <div class="news-card__meta">
             {{ article.published_at|az_timesince }}
-            <span class="news-card__views"><i class="bi bi-eye" aria-hidden="true"></i> {{ article.view_count }}</span>
+            {% if layout != 'hero-secondary' %}
+                <span class="news-card__views"><i class="bi bi-eye" aria-hidden="true"></i> {{ article.view_count }}</span>
+            {% endif %}
         </div>
     </div>
 </article>

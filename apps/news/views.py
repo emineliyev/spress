@@ -10,6 +10,9 @@ from .models import News
 
 POPULAR_NEWS_COUNT = 5
 HOME_SECTION_ARTICLES = 3
+HERO_SLIDES_COUNT = 5
+HERO_SECONDARY_COUNT = 2
+LATEST_NEWS_COUNT = 6
 BREAKING_TICKER_MAX = 8
 BREAKING_TICKER_SECONDS_PER_ITEM = 6
 BREAKING_TICKER_MIN_SECONDS = 18
@@ -43,20 +46,47 @@ class HomeView(TemplateView):
         return context
 
     def _build_home_context(self):
-        published = News.objects.published().select_related('category', 'featured_image')
-        hero = published.filter(is_featured=True).first() or published.first()
-        excluded_ids = [hero.pk] if hero else []
+        published = News.objects.published().select_related('category__parent', 'featured_image')
+
+        # Carousel slides: every featured article, newest first (`published`
+        # is already ordered `-published_at` — see News.Meta). No featured
+        # article at all still needs *something* in the hero position, so
+        # falls back to the single latest article — a 1-slide "carousel"
+        # (the template omits prev/next/dots whenever there's only one).
+        featured = list(published.filter(is_featured=True)[:HERO_SLIDES_COUNT])
+        hero_slides = featured or list(published[:1])
+        hero_ids = {article.pk for article in hero_slides}
+
+        hero_secondary = list(published.exclude(pk__in=hero_ids)[:HERO_SECONDARY_COUNT])
+        hero_and_secondary_ids = hero_ids | {article.pk for article in hero_secondary}
+
+        # Cross-category, pure reverse-chronological — the actual "Son
+        # xəbərlər" feed. Distinct from category_sections below, which are
+        # ordered by Category.order (an editorial/nav decision) and so
+        # don't reflect what was *just* published (the original complaint
+        # this section fixes: a newer article in a lower-ordered category
+        # sat visually below an older one in a higher-ordered category).
+        # Excludes hero_secondary too (both sit "above the fold" together)
+        # but *not* category_sections' own picks below — see there for why.
+        latest_news = list(published.exclude(pk__in=hero_and_secondary_ids)[:LATEST_NEWS_COUNT])
 
         home_settings = SiteSettings.get_solo()
         top_level_categories = Category.objects.active().visible().top_level().order_by('order')
         if not home_settings.home_show_all_categories:
             top_level_categories = top_level_categories[:home_settings.home_category_sections_count]
 
+        # Only hero_slides is excluded here — never hero_secondary or
+        # latest_news. home_show_all_categories guarantees every populated
+        # category gets its own section; excluding more than the single
+        # most-prominent placement risks a small category losing every
+        # article it has to some other section and disappearing entirely.
+        # A story repeating here and in Latest News (much further up the
+        # page) is normal on a news homepage, not a bug.
         category_sections = []
         for category in top_level_categories:
             items = list(
                 News.objects.in_category(category)
-                .exclude(pk__in=excluded_ids)
+                .exclude(pk__in=hero_ids)
                 .select_related('category__parent', 'featured_image')[:HOME_SECTION_ARTICLES]
             )
             if items:
@@ -72,7 +102,9 @@ class HomeView(TemplateView):
             'breaking_ticker_duration': max(
                 BREAKING_TICKER_MIN_SECONDS, len(breaking_articles) * BREAKING_TICKER_SECONDS_PER_ITEM,
             ),
-            'hero': hero,
+            'hero_slides': hero_slides,
+            'hero_secondary': hero_secondary,
+            'latest_news': latest_news,
             'category_sections': category_sections,
             'popular_news': list(published.order_by('-view_count')[:POPULAR_NEWS_COUNT]),
         }

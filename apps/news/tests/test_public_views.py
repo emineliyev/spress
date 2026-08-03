@@ -25,8 +25,106 @@ def test_home_page_hero_prefers_featured_over_latest(client, category, administr
         published_at=timezone.now() - timezone.timedelta(hours=1), is_featured=True,
     )
     response = client.get(reverse('news:home'))
-    assert response.context['hero'].pk == featured.pk
-    assert response.context['hero'].pk != latest.pk
+    assert response.context['hero_slides'][0].pk == featured.pk
+    assert latest.pk not in [a.pk for a in response.context['hero_slides']]
+
+
+@pytest.mark.django_db
+def test_home_page_hero_falls_back_to_latest_article_when_none_featured(client, category, administrator):
+    article = News.objects.create(
+        title='Seçilməmiş xəbər', short_description='d', content='<p>c</p>', category=category,
+        author=administrator, status=News.Status.PUBLISHED, published_at=timezone.now(),
+    )
+    response = client.get(reverse('news:home'))
+    assert [a.pk for a in response.context['hero_slides']] == [article.pk]
+
+
+@pytest.mark.django_db
+def test_home_page_hero_slides_include_every_featured_article_newest_first(client, category, administrator):
+    older = News.objects.create(
+        title='Köhnə seçilmiş', short_description='d', content='<p>c</p>', category=category,
+        author=administrator, status=News.Status.PUBLISHED,
+        published_at=timezone.now() - timezone.timedelta(hours=2), is_featured=True,
+    )
+    newer = News.objects.create(
+        title='Təzə seçilmiş', short_description='d', content='<p>c</p>', category=category,
+        author=administrator, status=News.Status.PUBLISHED,
+        published_at=timezone.now() - timezone.timedelta(hours=1), is_featured=True,
+    )
+    response = client.get(reverse('news:home'))
+    assert [a.pk for a in response.context['hero_slides']] == [newer.pk, older.pk]
+
+
+@pytest.mark.django_db
+def test_home_page_latest_news_ignores_category_order(client, administrator):
+    """Reported bug: category_sections are positioned by Category.order
+    (an editorial nav decision, left untouched on purpose), so an older
+    article in an earlier-ordered category always sat above a genuinely
+    newer article filed under a later-ordered category. latest_news is
+    the fix — a plain cross-category feed that only cares about
+    published_at, so the just-published article is always first
+    regardless of which category's box happens to render higher."""
+    from apps.categories.models import Category
+
+    politics = Category.objects.create(name='Siyasət', order=0)
+    world = Category.objects.create(name='Dünya', order=1)
+
+    # 3 newer filler articles occupy the (unfeatured) hero fallback slot
+    # plus the 2 hero_secondary slots, so the two articles under test
+    # both land in latest_news — isolating this test to that section
+    # specifically, rather than also exercising hero/hero_secondary's
+    # own (separately tested) chronological ordering.
+    for minutes_ago in (0, 5, 10):
+        News.objects.create(
+            title=f'Dolgu xəbər {minutes_ago}', short_description='d', content='<p>c</p>', category=politics,
+            author=administrator, status=News.Status.PUBLISHED,
+            published_at=timezone.now() - timezone.timedelta(minutes=minutes_ago),
+        )
+    older_in_earlier_category = News.objects.create(
+        title='Siyasət xəbəri', short_description='d', content='<p>c</p>', category=politics,
+        author=administrator, status=News.Status.PUBLISHED,
+        published_at=timezone.now() - timezone.timedelta(minutes=20),
+    )
+    newer_in_later_category = News.objects.create(
+        title='Dünya xəbəri', short_description='d', content='<p>c</p>', category=world,
+        author=administrator, status=News.Status.PUBLISHED,
+        published_at=timezone.now() - timezone.timedelta(minutes=15),
+    )
+
+    response = client.get(reverse('news:home'))
+    latest_ids = [a.pk for a in response.context['latest_news']]
+    assert latest_ids.index(newer_in_later_category.pk) < latest_ids.index(older_in_earlier_category.pk)
+
+
+@pytest.mark.django_db
+def test_home_page_hero_and_secondary_never_repeat_in_hero_or_latest_news(client, category, administrator):
+    """hero_slides and hero_secondary — the two "above the fold"
+    placements — must never repeat each other or show up again in
+    latest_news, immediately below them. category_sections is the one
+    exception (deliberate — see the comment in
+    HomeView._build_home_context): it only excludes hero_slides, not
+    hero_secondary, because home_show_all_categories guarantees every
+    populated category gets its own section, and a small category
+    losing its only article to a placement further up the page would
+    break that guarantee."""
+    articles = [
+        News.objects.create(
+            title=f'Xəbər {i}', short_description='d', content='<p>c</p>', category=category,
+            author=administrator, status=News.Status.PUBLISHED,
+            published_at=timezone.now() - timezone.timedelta(minutes=i),
+        )
+        for i in range(12)
+    ]
+    response = client.get(reverse('news:home'))
+
+    hero_ids = {a.pk for a in response.context['hero_slides']}
+    secondary_ids = {a.pk for a in response.context['hero_secondary']}
+    latest_ids = {a.pk for a in response.context['latest_news']}
+
+    assert not (hero_ids & secondary_ids)
+    assert not (hero_ids & latest_ids)
+    assert not (secondary_ids & latest_ids)
+    assert (hero_ids | secondary_ids | latest_ids) <= {a.pk for a in articles}
 
 
 @pytest.mark.django_db

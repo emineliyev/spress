@@ -13,26 +13,69 @@
 {% block content %}
 <div class="container home">
 
-    {% if hero %}
-    <section class="home-hero">
-        <a href="{{ hero.get_absolute_url }}" class="home-hero__image-link">
-            {% if hero.featured_image %}
-                <img src="{{ hero.featured_image.file.url }}" alt="{{ hero.featured_image.alt_text|default:hero.title }}" class="home-hero__image">
-            {% else %}
-                <span class="home-hero__image home-hero__image--placeholder" aria-hidden="true"></span>
-            {% endif %}
-        </a>
-        <div class="home-hero__overlay" aria-hidden="true"></div>
-        <div class="home-hero__content">
-            <span class="home-hero__badge">Seçilmiş xəbər</span>
-            <h1 class="home-hero__title"><a href="{{ hero.get_absolute_url }}">{{ hero.title }}</a></h1>
-            <p class="type-body-lg home-hero__excerpt">{{ hero.short_description }}</p>
-            <div class="home-hero__meta">
-                <i class="bi bi-clock" aria-hidden="true"></i> {{ hero.published_at|az_full_date }}
+    {% if hero_slides %}
+    <div class="home-hero-row">
+        <section class="home-hero" data-component="carousel">
+            <div class="home-hero__track">
+                {% for hero in hero_slides %}
+                <div class="home-hero__slide{% if forloop.first %} is-active{% endif %}" data-carousel-slide aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}">
+                    <a href="{{ hero.get_absolute_url }}" class="home-hero__image-link" tabindex="{% if forloop.first %}0{% else %}-1{% endif %}">
+                        {% if hero.featured_image %}
+                            <img src="{{ hero.featured_image.file.url }}" alt="{{ hero.featured_image.alt_text|default:hero.title }}" class="home-hero__image">
+                        {% else %}
+                            <span class="home-hero__image home-hero__image--placeholder" aria-hidden="true"></span>
+                        {% endif %}
+                    </a>
+                    <div class="home-hero__overlay" aria-hidden="true"></div>
+                    <div class="home-hero__content">
+                        <span class="home-hero__badge">Seçilmiş xəbər</span>
+                        <h1 class="home-hero__title"><a href="{{ hero.get_absolute_url }}" tabindex="-1">{{ hero.title }}</a></h1>
+                        <div class="home-hero__meta">
+                            <i class="bi bi-clock" aria-hidden="true"></i> {{ hero.published_at|az_full_date }}
+                        </div>
+                        <a href="{{ hero.get_absolute_url }}" class="btn btn--primary home-hero__cta" tabindex="-1">
+                            Ətraflı oxu <i class="bi bi-arrow-right" aria-hidden="true"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
-            <a href="{{ hero.get_absolute_url }}" class="btn btn--primary home-hero__cta">
-                Ətraflı oxu <i class="bi bi-arrow-right" aria-hidden="true"></i>
-            </a>
+            {% if hero_slides|length > 1 %}
+                <button type="button" class="home-hero__nav home-hero__nav--prev" data-carousel-prev aria-label="Əvvəlki xəbər">
+                    <i class="bi bi-chevron-left" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="home-hero__nav home-hero__nav--next" data-carousel-next aria-label="Növbəti xəbər">
+                    <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                </button>
+                <div class="home-hero__dots" data-carousel-dots>
+                    {% for hero in hero_slides %}
+                        <button type="button" class="home-hero__dot{% if forloop.first %} is-active{% endif %}" data-carousel-dot aria-label="Slayd {{ forloop.counter }}"></button>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </section>
+
+        {% if hero_secondary %}
+        <div class="home-hero-secondary">
+            {% for article in hero_secondary %}
+                {% include "components/news_card.html" with article=article layout="hero-secondary" %}
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if latest_news %}
+    <section class="home-latest">
+        <div class="home-section__header">
+            <h2 class="home-section__title">Son xəbərlər</h2>
+        </div>
+        <div class="grid">
+            {% for article in latest_news %}
+                <div class="col-span-4">
+                    {% include "components/news_card.html" with article=article layout="vertical" %}
+                </div>
+            {% endfor %}
         </div>
     </section>
     {% endif %}
@@ -75,4 +118,8 @@
         </aside>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script defer src="{% static 'js/components/carousel.js' %}"></script>
 {% endblock %}

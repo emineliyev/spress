@@ -4103,3 +4103,156 @@ went from its existing contents to 0 files. `pytest`: 263 passed (one
 outdated `assert media.original_file` removed from
 `apps/media_manager/tests.py`, no replacement needed — the field's
 absence is already enforced by `makemigrations --check`).
+
+# Phase 49 (homepage: date-ordered "Son xəbərlər" feed + hero carousel)
+
+## What was asked
+
+Two related complaints about the homepage. First: publishing a newer
+article in a lower-ordered category (e.g. Dünya, order=1) made it sit
+visually *below* an older article in a higher-ordered category (e.g.
+Siyasət, order=0) — because category_sections are positioned by
+Category.order (an intentional editorial/nav decision — admins choose
+which category leads), not by when anything was actually published.
+Second: the single-article hero's title (40px, full-bleed image) had
+grown too dominant over its background image; the owner sent a
+reference screenshot of a two-column layout — a multi-slide carousel
+(prev/next, dots) beside two smaller "top story" cards — and asked for
+both fixes.
+
+## Decision: don't touch Category.order
+
+Discussed directly: auto-reordering category sections by their newest
+article's date would fix the symptom but destroy the actual feature —
+admins deliberately choose which category leads the homepage
+(CLAUDE.md ch.9). Fix is additive instead: a genuine cross-category,
+pure-`published_at` feed ("Son xəbərlər"), placed between the hero and
+the category sections, so the truly latest article is always visible
+at the top of the page regardless of which category it's in.
+category_sections itself is untouched.
+
+## HomeView._build_home_context() (`apps/news/views.py`)
+
+Three new context values, each pulling from the same `published`
+queryset (already ordered `-published_at` via `News.Meta`):
+
+- `hero_slides` — every featured article, newest first, capped at
+  `HERO_SLIDES_COUNT` (5). No featured article at all falls back to
+  the single latest one — a 1-slide "carousel" (template omits prev/
+  next/dots whenever `hero_slides|length` is 1).
+- `hero_secondary` — the next `HERO_SECONDARY_COUNT` (2) articles,
+  excluding whatever's in `hero_slides`.
+- `latest_news` — the next `LATEST_NEWS_COUNT` (6), excluding both of
+  the above.
+
+Exclusion is deliberately asymmetric past this point:
+`category_sections` only excludes `hero_slides`, not `hero_secondary`
+or `latest_news`. First attempt excluded all three from
+category_sections too ("nothing should repeat anywhere on the page"),
+which broke `home_show_all_categories` (Phase 34) — three existing
+tests in `apps/cms/tests/test_settings.py` create categories with only
+2 articles each and assert every one gets a section; excluding up to
+9 articles (hero_slides + hero_secondary + latest_news) could zero out
+a small category's *entire* content, silently dropping it from a
+feature whose whole point is guaranteeing every category shows.
+hero_secondary/latest_news repeating a story that's also in its own
+category's box further down the page is normal on a news homepage;
+a category vanishing outright is not. hero_slides alone (1 article in
+the common no-featured-articles case) stays within the 2-per-category
+margin those tests were already written against.
+
+## Hero carousel
+
+`templates/news/home.html` — `.home-hero-row` wraps two columns: the
+carousel (`data-component="carousel"`, one `.home-hero__slide` per
+`hero_slides` item, first one `.is-active`) and `.home-hero-secondary`
+(2 `components/news_card.html` includes, `layout="hero-secondary"`).
+Prev/next buttons and dots only render when `hero_slides|length > 1`.
+
+New `static/js/components/carousel.js` — generic, data-attribute
+driven (any future `[data-component="carousel"]` block gets the same
+behavior for free), following the existing component pattern (IIFE,
+`DOMContentLoaded`, no framework). No-ops below 2 slides. Autoplay
+every 7s, paused on `mouseenter`/resumed on `mouseleave` (same idea as
+the breaking ticker's hover-pause, just JS-driven here since slides
+need class toggling, not only a CSS animation). Inactive slides get
+`aria-hidden="true"` and every link inside them `tabindex="-1"`, so
+keyboard/screen-reader users can't tab into a slide that isn't visibly
+on screen.
+
+`news_card.html` gained a `hero-secondary` layout branch: category
+renders as a badge overlaid on the image (`news-card__category-badge`,
+same visual treatment as `.home-hero__badge`) instead of a separate
+line, and the excerpt/view-count are dropped — kept the two cards
+compact enough to sit beside one tall hero without crowding it.
+
+`static/css/pages/home.css` — hero title dropped from 40px to 26px
+with a 2-line clamp (the actual "text too big" complaint: a narrower
+2fr-of-a-grid column made the old size overwhelm the image under it),
+overlay gradient lightened slightly to match. `.home-hero__slide`s are
+absolutely stacked, faded between via `.is-active` + `opacity`
+transition (`--transition-base`) — the carousel JS only ever toggles
+that one class.
+
+## Verification
+
+`pytest`: `test_home_page_hero_slides_include_every_featured_article_
+newest_first`, `test_home_page_hero_falls_back_to_latest_article_when_
+none_featured`, `test_home_page_latest_news_ignores_category_order`
+(direct regression test for the reported bug — 2 categories with
+different `order`, a newer article in the later-ordered one, asserts
+it's still first in `latest_news`), `test_home_page_hero_and_secondary_
+never_repeat_in_hero_or_latest_news` — all new, in
+`apps/news/tests/test_public_views.py`. Updated the two tests that
+read the old single `context['hero']` key. 267 passed total (263 + 4,
+after the category_sections exclusion-scope fix above brought the 3
+`test_settings.py` regressions back to green).
+
+Manual: `collectstatic --dry-run` under `config.settings.production`
+clean. Ran the dev server against real seeded data (22 published
+articles, 5 featured, 10 categories) and screenshotted the homepage —
+carousel renders with working prev/next/dots, hero-secondary cards
+show the badge-on-image treatment, Son xəbərlər and category sections
+both render correctly below. Confirmed by inspecting actual `pk`s that
+two visually-similar cards (shared seed-data title/stock photo) were
+genuinely different articles, not a duplicate slipping through the
+exclusion logic.
+
+# Phase 50 (hero carousel: mobile layout fix)
+
+## What was asked
+
+Immediate follow-up after Phase 49 shipped: on mobile, the hero-secondary
+2fr/1fr grid (home.css) doesn't have the width to split sensibly, so the
+two secondary cards were squeezed into a narrow column beside the
+carousel instead of stacking under it.
+
+## Change (`static/css/responsive/mobile.css`)
+
+At ≤992px: `.home-hero-row` drops to a single column (secondary cards
+move below the carousel); `.home-hero-secondary` switches to a row so
+the two cards sit side by side under it, with a fixed `aspect-ratio:
+4/3` replacing the `55%`-of-card-height image sizing from home.css
+(that percentage has nothing to resolve against once the cards are in
+a row instead of a column). At ≤576px, back to a stacked column — side
+by side gets cramped at phone width.
+
+Screenshotting the fix surfaced a second bug it exposed rather than
+caused: `.home-hero__nav`'s prev/next arrows are vertically centered
+on the whole hero (home.css), which works at the 480px desktop height
+but collides with the bottom-anchored badge/title/CTA block once the
+mobile hero shrinks to 360px — the content takes up proportionally
+more of a shorter section. Fixed by pinning the arrows near the top of
+the image at ≤992px instead (`top: var(--space-8); transform: none`),
+clear of the content at any hero height. Also caught and fixed a stale
+`.home-hero__title` override at 768px still set to the pre-Phase-49
+28px — larger than the new 26px desktop default, so mobile was
+briefly rendering the title *bigger* than desktop; dropped to 22px.
+
+## Verification
+
+Manual only (pure CSS) — Playwright screenshots at 390px (phone) and
+850px (tablet) against the dev server's real seeded data confirmed:
+secondary cards stack correctly at both widths (side-by-side at 850px,
+column at 390px), no arrow/badge overlap at either. `pytest`: 267
+passed, unchanged (no Python touched).

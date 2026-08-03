@@ -86,6 +86,37 @@
         padding: var(--space-6);
     }
 
+    /* Vertically-centered arrows (home.css) collide with the badge/
+       title once the shorter mobile hero makes the bottom-anchored
+       content block tall relative to the section itself — pinned near
+       the top of the image instead, clear of that content at any hero
+       height. */
+    .home-hero__nav {
+        top: var(--space-8);
+        transform: none;
+    }
+
+    /* Carousel + secondary cards side-by-side (home.css's 2fr/1fr grid)
+       only works with real width to split — below tablet, stack the
+       secondary cards under the carousel instead of squeezing them into
+       a narrow column beside it. */
+    .home-hero-row {
+        grid-template-columns: 1fr;
+    }
+
+    .home-hero-secondary {
+        flex-direction: row;
+    }
+
+    /* The 55%-of-card-height image (home.css, sized for the tall
+       column layout above) has nothing to resolve against once the
+       cards are in a row instead of a column — fixed aspect-ratio
+       instead. */
+    .news-card--hero-secondary .news-card__image-link {
+        height: auto;
+        aspect-ratio: 4 / 3;
+    }
+
     .home-body {
         flex-direction: column;
     }
@@ -152,7 +183,7 @@
     }
 
     .home-hero__title {
-        font-size: 28px;
+        font-size: 22px;
     }
 
     .article__title {
@@ -175,6 +206,16 @@
 @media (max-width: 576px) {
     .home {
         padding-top: var(--space-8);
+    }
+
+    /* Side-by-side (set at 992px above) gets cramped on a phone-width
+       screen — back to stacked, same as the desktop layout. */
+    .home-hero-secondary {
+        flex-direction: column;
+    }
+
+    .news-card--hero-secondary .news-card__image-link {
+        aspect-ratio: 16 / 9;
     }
 
     .about-page__stats {
