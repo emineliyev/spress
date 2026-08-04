@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 from django.contrib.auth.models import AnonymousUser
 from django.test import RequestFactory
@@ -5,9 +7,32 @@ from django.utils import timezone
 
 from apps.categories.models import Category
 from apps.core.context_processors import FOOTER_VISIBLE_CATEGORY_COUNT, NAV_VISIBLE_CATEGORY_COUNT, site
+from apps.core.templatetags.az_dates import az_full_date, az_timesince
 from apps.core.utils import az_slugify, generate_unique_slug, sanitize_rich_text_html
 from apps.core.views import csrf_failure, handler404, handler500
 from apps.news.models import News
+
+
+def test_az_full_date_shows_baku_local_time_not_utc():
+    """TIME_ZONE='Asia/Baku' (UTC+4), USE_TZ=True — datetimes are stored/
+    retrieved as aware UTC, so reading .hour/.strftime() straight off one
+    without timezone.localtime() first renders the UTC clock time, 4
+    hours behind what a Baku reader should see."""
+    utc_value = datetime.datetime(2026, 7, 24, 10, 11, tzinfo=datetime.timezone.utc)
+    assert az_full_date(utc_value) == '24 iyul 2026, 14:11'
+
+
+def test_az_timesince_old_article_date_uses_baku_calendar_day():
+    """Same UTC-vs-Baku concern as az_full_date, but for the >30-day
+    fallback specifically: 22:00 UTC on the 9th is already 02:00 Baku
+    time on the 10th — reading the date off the raw UTC value would
+    show the wrong calendar day, not just the wrong clock time."""
+    utc_value = timezone.now() - datetime.timedelta(days=40)
+    utc_value = utc_value.replace(hour=22, minute=0, second=0, microsecond=0)
+    expected = timezone.localtime(utc_value).strftime('%d.%m.%Y')
+
+    assert az_timesince(utc_value) == expected
+    assert az_timesince(utc_value) != utc_value.strftime('%d.%m.%Y')
 
 
 def test_az_slugify_transliterates_azerbaijani_letters():

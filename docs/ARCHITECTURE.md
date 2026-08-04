@@ -4256,3 +4256,58 @@ Manual only (pure CSS) — Playwright screenshots at 390px (phone) and
 secondary cards stack correctly at both widths (side-by-side at 850px,
 column at 390px), no arrow/badge overlap at either. `pytest`: 267
 passed, unchanged (no Python touched).
+
+# Phase 51 (fix: displayed dates were UTC, not Baku local time)
+
+## What was asked
+
+Owner asked to discuss how publish times are stored/displayed, given
+`TIME_ZONE = 'Asia/Baku'` (`config/settings/base.py`) but a suspicion
+readers were seeing Greenwich time instead.
+
+## Investigation
+
+Config itself is correct: `TIME_ZONE = 'Asia/Baku'` + `USE_TZ = True`
+means Django stores every datetime as UTC internally and is *supposed*
+to convert to Baku time (UTC+4, no DST) on the way out. Confirmed the
+CMS side already works — `NewsForm`'s `published_at` field renders and
+parses in Baku local time correctly, because Django's own form/widget
+machinery (`forms.DateTimeField`) does the `timezone.localtime()`
+conversion automatically; nothing custom overrides it there.
+
+The bug was isolated to `apps/core/templatetags/az_dates.py` —
+`az_full_date` and `az_timesince`'s >30-day fallback both read
+`.day`/`.month`/`.strftime()` straight off the aware UTC value instead
+of calling `timezone.localtime()` first (needed only because Django's
+own `|date` filter can't render Azerbaijani month names —
+`USE_I18N=False`, CLAUDE.md ch.3). Reproduced concretely in a shell
+before touching anything: a `published_at` of `10:11:45+00:00`
+rendered as "10:11" everywhere `az_full_date`/`az_timesince` is used
+(every news card, the article detail page, the new homepage hero,
+the CMS dashboard) — 4 hours behind the correct `14:11:45+04:00`.
+Confirmed the built-in `|date:'c'` filter used in `detail.html`'s
+NewsArticle JSON-LD is *not* affected — Django's own filter already
+localizes automatically when `USE_TZ=True`.
+
+## Fix
+
+Both functions now call `timezone.localtime(value)` before reading any
+date/time component. `az_timesince`'s relative-time buckets (< 1 min /
+hour / day / month) are untouched — subtracting two aware datetimes is
+timezone-agnostic, only the >30-day absolute-date fallback needed it.
+
+## Verification
+
+New `apps/core/tests.py` tests: `test_az_full_date_shows_baku_local_
+time_not_utc` (hardcodes the exact UTC→Baku 4-hour offset), `test_az_
+timesince_old_article_date_uses_baku_calendar_day` (a UTC value at
+22:00 — already a different calendar day in Baku, 02:00 the next
+morning — catches a date-off-by-one near midnight that a same-day test
+value wouldn't). Both filters previously had zero test coverage, which
+is how this shipped unnoticed. 269 passed total (267 + 2).
+
+Unrelated hiccup while running this: the full suite errored on every
+test (`_clear_cache` autouse fixture, `apps/core/tests.py`'s Redis
+`cache.clear()`) because the local Memurai (Redis-compatible) Windows
+service had stopped — not caused by this change, just discovered
+while verifying it. Restarted the service; not a code issue.
